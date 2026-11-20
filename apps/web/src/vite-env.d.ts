@@ -1,0 +1,5 @@
+/// <reference types="vite/client" />
+
+declare const __SCARLET_VERSION__: string;
+declare const __SCARLET_RELEASE_CHANNEL__: "stable" | "early-access" | "linux-preview" | null;
+declare const __SCARLET_REVISION__: string;

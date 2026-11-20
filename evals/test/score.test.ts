@@ -1,0 +1,153 @@
+import { describe, expect, it } from "vitest";
+import type { Change } from "../../packages/timeline/src/index.ts";
+import type { ReviewChangeExport } from "../src/engine.ts";
+import { artifactsFromCase } from "../src/evaluate.ts";
+import { scoreRun } from "../src/score.ts";
+import { cut, lines, media } from "./fixtures.ts";
+
+const MIC = "med_mic";
+const change = (c: Partial<Change>) => ({ noteIds: [], ranges: [], renders: [], state: "ready", author: { type: "agent", name: "test" },
+  description: "", projectId: "prj_test", ...c }) as Change;
+
+it("scores a task's final applied polish and excludes a staged version from before it", async () => {
+  const assembly = change({ id: "assembly", taskId: "task", intent: "requested", state: "approved", fromVersion: "empty", toVersion: "S" });
+  const applied = change({ id: "dialogue", taskId: "task", intent: "requested", state: "approved", fromVersion: "S", toVersion: "A",
+    cutReasons: [{ start: 1, end: 2, reason: "Retake" }] });
+  const stale = change({ id: "staged", taskId: "task", intent: "suggestion", fromVersion: "A", toVersion: "R", ops: [{}] });
+  const polish = change({ id: "polish", taskId: "task", intent: "requested", state: "approved", fromVersion: "A", toVersion: "P" });
+  const unrelated = change({ id: "other", taskId: "another", intent: "requested", state: "approved", fromVersion: "P", toVersion: "X" });
+  const pending = change({ id: "pending", taskId: "task", intent: "requested", state: "ready", fromVersion: "P", toVersion: "Q" });
+  const changes = [assembly, applied, stale, polish, unrelated, pending];
+  const task = { id: "task", projectId: "project", kind: "agent", state: "done", instruction: "", context: { version: "S" }, changeIds: changes.map(c => c.id) };
+  const run = await artifactsFromCase({
+    dir: "", evidence: new Map(), scans: () => undefined, origin: () => ({ task, events: [], changes }),
+    file: { schema: 1, id: "case", suite: "capability", createdAt: "", projectId: "project", fps: 30, media: [media(MIC)],
+      sourceVersion: "S", dialogueMedia: [MIC], request: { instruction: "", skillIds: [], skillNames: [] } },
+    timeline: version => cut(version, MIC, [[0, 5]]),
+  });
+  expect(run.versions).toEqual({ source: "S", applied: "P", proposed: "P" });
+  expect(run.parts!.map(c => c.id)).toEqual(["dialogue", "polish"]);
+  expect(run.review).toBeUndefined();
+});
+
+describe("a plan given as words", () => {
+  it("takes each cut's kind and decision from the words it names", () => {
+    // Line 2 is words 4 and 5 of the transcript. The agent asked to cut it, and Scarlet staged it instead.
+    const S = cut("S", MIC, [[0, 20]]), R = cut("R", MIC, [[0, 4], [6, 20]]);
+    const review = change({ id: "chg_r", intent: "suggestion", fromVersion: "S", toVersion: "R", cutReasons: [{ start: 4, end: 6, reason: "No quiet point at this edge." }] });
+    const score = scoreRun({
+      media: [media(MIC), media("med_screen")], timelines: { source: S, applied: S, proposed: R }, reviewChange: review,
+      plan: { version: "S", cuts: [{ start: 0, end: 0, mediaId: MIC, fromWord: 4, toWord: 5, kind: "retake", decision: "cut" }] },
+      evidence: new Map([[MIC, lines(MIC, 10)]]),
+    });
+    expect(score.review!.removal.byCategory).toMatchObject({ retake: { cuts: 1 } });
+    expect(score.review!.heldByScarlet).toBe(1);
+    expect(score.headline.heldByScarlet).toBe(1);
+  });
+});
+
+describe("scoring a synthetic run", () => {
+  // Ten spoken lines. The agent cuts line 2 outright and stages line 5 (a detector hit Scarlet added) for review.
+  const S = cut("S", MIC, [[0, 20]]);
+  const A = cut("A", MIC, [[0, 4], [6, 20]]);
+  const R = cut("R", MIC, [[0, 4], [6, 10], [12, 20]]);
+  const applied = change({ id: "chg_a", intent: "requested", state: "approved", fromVersion: "S", toVersion: "A", appliedVersion: "A",
+    cutReasons: [{ start: 4, end: 6, reason: "Earlier take of line 2." }] });
+  // Review reasons are on A's timeline: source 10–12 plays at 8–10.
+  const review = change({ id: "chg_r", intent: "suggestion", fromVersion: "A", toVersion: "R",
+    cutReasons: [{ start: 8, end: 10, reason: "Whisper only: possible filler left in the edit." }] });
+  const exported: ReviewChangeExport = { id: "chg_r", state: "approved", fromVersion: "A", toVersion: "R", firstCut: false, cuts: [
+    { index: 0, removed: { start: 8, end: 10 }, sources: [{ mediaId: MIC, start: 10, end: 12 }], reasons: [], decision: "approved",
+      assessment: { verdict: "cut", reason: "Repeated line.", inspected: true } }] };
+  const score = scoreRun({
+    media: [media(MIC), media("med_screen")],
+    timelines: { source: S, applied: A, proposed: R },
+    appliedChange: applied, reviewChange: review, review: exported,
+    plan: { version: "S", cuts: [{ start: 4, end: 6, kind: "retake", decision: "cut" }, { start: 14, end: 14.5, kind: "pause", decision: "keep" }] },
+    evidence: new Map([[MIC, lines(MIC, 10)]]),
+    reference: { label: "editor", timeline: R },
+  });
+
+  it("splits applied and review removals by category", () => {
+    expect(score.applied.removal).toMatchObject({ cuts: 1, joins: 1, seconds: 2, byCategory: { retake: { cuts: 1, seconds: 2 } } });
+    expect(score.review!.removal).toMatchObject({ cuts: 1, seconds: 2, byCategory: { filler: { cuts: 1, seconds: 2 } } });
+    expect(score.review!.cuts[0]).toMatchObject({ auto: true, start: 10, end: 12 });
+  });
+
+  it("measures each tier's new joins in silence", () => {
+    expect(score.applied.edgeList.map(e => [e.at, e.side])).toEqual([[4, "out"], [6, "in"]]);
+    expect(score.review!.edgeList.map(e => [e.at, e.side])).toEqual([[10, "out"], [12, "in"]]);
+    expect(score.applied.edges).toMatchObject({ total: 2, silence: 2, speech: 0 });
+  });
+
+  it("counts AI recommendations against editor decisions", () => {
+    expect(score.review).toMatchObject({ items: 1, ai: { cut: 1, inspected: 1 }, editor: { approved: 1 }, aiVsEditor: { "cut→approved": 1 } });
+  });
+
+  it("counts the gaps and doubled words each version still plays", () => {
+    // A second passes between every two lines. The applied cut joins line 1 to line 3 across one of them.
+    expect(score.pacing.source.gaps).toMatchObject({ inside: 9, atJoins: 0 });
+    expect(score.pacing.applied).toMatchObject({ joins: 1, medianJoinGapSeconds: 1, gaps: { inside: 7, atJoins: 1 }, repeats: { total: 0 } });
+    expect(score.pacing.reference).toMatchObject({ joins: 2, gaps: { inside: 5, atJoins: 2 } });
+    expect(score.pacing.appliedGaps).toHaveLength(8);
+    expect(score.headline).toMatchObject({ gapsLeft: 8, looseJoins: 1, repeatsLeft: 0, heldByScarlet: 0 });
+  });
+
+  it("does not apply a decided proposal a second time", () => {
+    const { applied: a, recommended, proposed } = score.reference!.operatingPoints;
+    expect(proposed.cut!.words.f1).toBe(1);
+    expect(recommended).toEqual(a);
+    expect(a.cut!.words).toMatchObject({ tp: 2, fn: 2, recall: 0.5 });
+    expect(score.headline).toMatchObject({ appliedCuts: 1, reviewCuts: 1, wordF1: 1, edgeF1At20ms: 1, requiredLinesMissing: 0 });
+  });
+});
+
+describe("what a task left, with staged cuts still waiting", () => {
+  // The pass applied line 2's cut (A), then its closing check took out line 7 (F). Cuts it staged on the source version,
+  // before either, still wait for the editor: line 5 recommended cut, line 8 a question.
+  const S = cut("S", MIC, [[0, 20]]);
+  const A = cut("A", MIC, [[0, 4], [6, 20]]);
+  const F = cut("F", MIC, [[0, 4], [6, 14], [16, 20]]);
+  const editor = cut("E", MIC, [[0, 4], [6, 10], [12, 14], [16, 20]]);
+  const applied = change({ id: "chg_a", intent: "requested", state: "approved", fromVersion: "S", toVersion: "A", appliedVersion: "A",
+    cutReasons: [{ start: 4, end: 6, reason: "Earlier take of line 2." }] });
+  const staged: ReviewChangeExport = { id: "chg_w", state: "ready", fromVersion: "S", toVersion: "W", firstCut: false, cuts: [
+    { index: 0, removed: { start: 10, end: 12 }, sources: [{ mediaId: MIC, start: 10, end: 12 }], reasons: [], decision: "pending",
+      assessment: { verdict: "cut", reason: "Earlier take of line 5.", inspected: true } },
+    { index: 1, removed: { start: 16, end: 18 }, sources: [{ mediaId: MIC, start: 16, end: 18 }], reasons: [], decision: "pending",
+      assessment: { verdict: "ask", reason: "Keep line 8?", inspected: true } }] };
+  const score = scoreRun({
+    media: [media(MIC)], timelines: { source: S, applied: A, proposed: A, final: F }, appliedChange: applied, waiting: [staged],
+    evidence: new Map([[MIC, lines(MIC, 10)]]), reference: { label: "editor", timeline: editor },
+  });
+
+  it("measures the edit the task ended on, not the applied version", () => {
+    expect(score.versions.final).toBe("F");
+    expect(score.pacing.final!.gaps).not.toEqual(score.pacing.applied.gaps);
+    expect(score.headline.gapsLeft).toBe(score.pacing.final!.gaps.inside + score.pacing.final!.gaps.atJoins);
+    expect(score.headline.deadAirSeconds).toBe(score.pacing.final!.gaps.excessSeconds);
+  });
+
+  it("counts staged cuts from an earlier version in what the editor gets", () => {
+    expect(score.playable.automatic).toMatchObject({ seconds: 16, edges: { total: 4 } });
+    expect(score.playable.recommended).toMatchObject({ seconds: 14, edges: { total: 6 } });
+    expect(score.headline).toMatchObject({ stagedWaiting: 2, needsYourCall: 1 });
+    // Accepting the picks takes line 5 out of the edit the task left: exactly the editor's cut.
+    expect(score.reference!.operatingPoints.recommended.cut!.words.f1).toBe(1);
+    expect(score.reference!.operatingPoints.proposed.cut!.words.precision).toBeLessThan(1);
+    expect(score.pacing.recommended!.joins).toBe(score.pacing.final!.joins + 1);
+  });
+  it("excludes keep, ask and skipped cuts even when their proposed edges clip speech", () => {
+    const suggestion = { ...staged, cuts: staged.cuts.map(c => ({ ...c, assessment: { ...c.assessment!, verdict: "keep" as const }, sources: [{ mediaId: MIC, start: 2.8, end: 4.8 }] })) };
+    const scored = scoreRun({ media: [media(MIC)], timelines: { source: S, applied: A, proposed: editor },
+      waiting: [suggestion, { ...staged, cuts: staged.cuts.map(c => ({ ...c, decision: "skipped" as const })) }], evidence: new Map([[MIC, lines(MIC, 10)]]) });
+    expect(scored.playable.recommended).toEqual(scored.playable.automatic);
+    expect(scored.headline.clippedWordsOnSound).toBe(0);
+  });
+  it("counts program time once for simultaneous dialogue tracks", () => {
+    const multi = { ...S, tracks: [...S.tracks, { ...S.tracks[1]!, id: "second", clips: cut("x", "other", [[0, 20]]).tracks[1]!.clips }] };
+    const scored = scoreRun({ media: [media(MIC), media("other")], timelines: { source: multi, applied: multi, proposed: multi }, evidence: new Map() });
+    expect(Object.keys(scored.playable.automatic.kept)).toHaveLength(2);
+    expect(scored.playable.automatic.seconds).toBe(20);
+  });
+});

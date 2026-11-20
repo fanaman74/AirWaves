@@ -1,0 +1,74 @@
+name: Model prices
+
+# Weekly: refresh the API price list Scarlet ships with (apps/server/src/repo/modelPrices.generated.ts)
+# from LiteLLM's public price file, and open a PR when a price changed or a model was added.
+# A PR opened with GITHUB_TOKEN doesn't start other workflows; set the MODEL_PRICES_TOKEN secret
+# (a token that can push and open PRs) for its checks to run by themselves.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: model-prices
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BRANCH: chore/model-prices
+      GH_TOKEN: ${{ secrets.MODEL_PRICES_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          token: ${{ secrets.MODEL_PRICES_TOKEN || github.token }}
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version: 22
+
+      - name: Refresh the price list
+        id: update
+        run: |
+          set -euo pipefail
+          pnpm --filter @scarlet/server prices:update | tee prices.log
+          if git diff --quiet -- apps/server/src/repo/modelPrices.generated.ts; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test the prices
+        if: steps.update.outputs.changed == 'true'
+        run: pnpm --filter @scarlet/server exec vitest run src/repo/modelPrices.test.ts
+
+      - name: Open or update the PR
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add apps/server/src/repo/modelPrices.generated.ts
+          git commit -m "Update model prices from LiteLLM"
+          git push --force origin "$BRANCH"
+          {
+            echo "Weekly refresh of the API prices Scarlet uses for a request's estimated cost."
+            echo
+            echo '```'
+            grep -E '^(Added|Changed|Removed):' prices.log || true
+            echo '```'
+            echo
+            echo "Source: LiteLLM's model_prices_and_context_window.json. Scarlet's own rates in apiTokenCost.ts still take precedence."
+          } > body.md
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$BRANCH" --body-file body.md
+          else
+            gh pr create --base main --head "$BRANCH" --title "Update model prices" --body-file body.md
+          fi

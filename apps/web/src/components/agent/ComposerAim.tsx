@@ -1,0 +1,81 @@
+import { useEffect, useId, useRef, useState } from "react";
+import { isComposing } from "../../lib/hotkeys";
+import { useUiStore } from "../../stores/ui";
+import { Icon } from "../ui/primitives";
+
+/** One thing the message is about: a cut, edit, moment, or marked stretch. */
+export interface AimItem {
+  key: string;
+  name: string;
+  displayName?: string;
+  clearLabel: string;
+  onClear(): void;
+}
+
+export function ComposerAim({ items, disabled, disabledReason }: {
+  items: [AimItem, ...AimItem[]]; disabled?: boolean; disabledReason?: string;
+}) {
+  const id = useId();
+  const group = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const setLit = useUiStore(s => s.setAimLit);
+  const [primary, ...additional] = items;
+  if (open && !additional.length) setOpen(false);
+
+  useEffect(() => {
+    setLit(hovered || focused || open);
+    return () => setLit(false);
+  }, [hovered, focused, open, setLit]);
+
+  useEffect(() => {
+    if (!open) return;
+    const dismissOutside = (event: Event) => {
+      if (!group.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || isComposing(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      trigger.current?.focus({ preventScroll: true });
+    };
+    document.addEventListener("pointerdown", dismissOutside, true);
+    document.addEventListener("focusin", dismissOutside);
+    document.addEventListener("keydown", dismissOnEscape, true);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside, true);
+      document.removeEventListener("focusin", dismissOutside);
+      document.removeEventListener("keydown", dismissOnEscape, true);
+    };
+  }, [open]);
+
+  const showLabel = `Show ${additional.map(item => item.name).join(" and ")}`;
+  const clear = (item: AimItem) => <button type="button" className="composer-aim-clear" disabled={disabled}
+    title={disabled ? disabledReason : item.clearLabel} aria-label={item.clearLabel} aria-description={disabled ? disabledReason : undefined}
+    onClick={() => { setOpen(false); item.onClear(); }}>
+    <Icon name="x" size={12} />
+  </button>;
+
+  return <div ref={group} className="composer-aim" onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}
+    onFocus={() => setFocused(true)}
+    onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
+    <span className="composer-aim-name" title={`About ${primary.name}`}>{primary.displayName ?? primary.name}</span>
+    {additional.length > 0 && <button ref={trigger} type="button" className="composer-aim-button"
+      aria-label={showLabel} title={showLabel}
+      aria-expanded={open} aria-controls={open ? id : undefined}
+      onClick={e => { e.currentTarget.focus({ preventScroll: true }); setOpen(value => !value); }}>
+      <span aria-hidden="true">+{additional.length}</span>
+      <Icon name="chevron" size={11} />
+    </button>}
+    {clear(primary)}
+    {open && <div id={id} className="composer-aim-card" data-escape-owner data-shortcut-overlay>
+      {additional.map(item => <div key={item.key} className="composer-aim-row" role="group" aria-label={item.name}>
+        <span aria-hidden="true" title={item.name}>{item.displayName ?? item.name}</span>
+        {clear(item)}
+      </div>)}
+    </div>}
+  </div>;
+}

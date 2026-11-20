@@ -1,0 +1,641 @@
+/**
+ * CTC forced alignment of transcript words against wav2vec2 character emissions.
+ * Pure functions: the worker in wordAlign.ts runs the model and calls these.
+ */
+import type { TimeRange, TranscriptSegment, TranscriptWord } from "@scarlet/timeline";
+
+export const SAMPLE_RATE = 16000;
+/** wav2vec2's feature encoder emits one frame per 320 samples (20 ms) from a 400-sample receptive field. */
+export const FRAME_SAMPLES = 320;
+const RECEPTIVE_SAMPLES = 400;
+export const FRAME_SECONDS = FRAME_SAMPLES / SAMPLE_RATE;
+export const CLASSES = 32;
+const BLANK = 0;
+export const SEPARATOR = 4;
+/** Spoken but not spellable in the model's alphabet (numbers, symbols, other scripts). Matches any character. */
+export const WILDCARD = -1;
+// facebook/wav2vec2-base-960h vocabulary: <pad>=0 (CTC blank), <s>, </s>, <unk>, "|"=4, then these from 5.
+export const CTC_LETTERS = "ETAONIHSRDLUMWCFGYPBVK'XJQZ";
+// Both models use blank=0, separator=4 and character IDs starting at 5.
+export const SPANISH_CTC_LETTERS = "'-ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÖÚÜ";
+
+/** Frames the model emits for `samples` of audio. */
+export function framesFor(samples: number): number {
+  return samples < RECEPTIVE_SAMPLES ? 0 : Math.floor((samples - RECEPTIVE_SAMPLES) / FRAME_SAMPLES) + 1;
+}
+
+const ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+  "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+const SCALES: Array<[number, string]> = [[1e9, "billion"], [1e6, "million"], [1e3, "thousand"]];
+
+function cardinal(n: number): string {
+  if (n < 20) return ONES[n]!;
+  if (n < 100) return TENS[Math.floor(n / 10)]! + (n % 10 ? " " + ONES[n % 10] : "");
+  if (n < 1000) return ONES[Math.floor(n / 100)] + " hundred" + (n % 100 ? " " + cardinal(n % 100) : "");
+  for (const [size, name] of SCALES) if (n >= size) return cardinal(Math.floor(n / size)) + " " + name + (n % size ? " " + cardinal(n % size) : "");
+  return "";
+}
+
+/** "1999" as a year, "429" as "four twenty-nine": the number in two halves. */
+function inPairs(n: number, split: number): string {
+  const head = Math.floor(n / split), tail = n % split;
+  return cardinal(head) + " " + (tail === 0 ? "hundred" : tail < 10 ? "oh " + ONES[tail] : cardinal(tail));
+}
+
+const ORDINAL: Record<string, string> = { one: "first", two: "second", three: "third", five: "fifth", eight: "eighth", nine: "ninth", twelve: "twelfth" };
+const lastWord = (words: string, change: (w: string) => string) => words.replace(/(\S+)$/, change);
+
+/**
+ * How a number written in digits may be said, most likely first: "$7.63" is "seven sixty three", or "seven dollars and
+ * sixty three cents", and so on. Null when the text is not a number.
+ */
+export function spokenNumber(text: string): string[] | null {
+  const core = text.trim().replace(/^[^\p{L}\p{N}$€£]+|[^\p{L}\p{N}%]+$/gu, "");
+  const m = /^([$€£]?)(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?(%|st|nd|rd|th|s|k|m|bn?)?$/i.exec(core);
+  if (!m) return null;
+  const [, currency, whole, fraction, suffix = ""] = m;
+  const digits = whole!.replace(/,/g, "");
+  if (digits.length > 12) return null;
+  const n = Number(digits);
+  const one = (d: string) => d.split("").map(c => ONES[Number(c)]).join(" ");
+  let forms = digits.length > 1 && digits.startsWith("0") ? [one(digits)] : [cardinal(n)];
+  if (!fraction && !currency && digits.length === 4 && n >= 1100 && n < 2100 && n % 1000 >= 10) forms.unshift(inPairs(n, 100));
+  else if (!fraction && digits.length === 3 && !digits.startsWith("0") && n % 100) forms.push(inPairs(n, 100));
+  const unit = suffix.toLowerCase();
+  if (unit === "k") forms = forms.flatMap(f => [f + " k", f + " thousand"]);
+  else if (unit === "m") forms = forms.map(f => f + " million");
+  else if (unit === "b" || unit === "bn") forms = forms.map(f => f + " billion");
+  else if (["st", "nd", "rd", "th"].includes(unit)) forms = forms.map(f => lastWord(f, w => ORDINAL[w] ?? (w.endsWith("y") ? w.slice(0, -1) + "ieth" : w + "th")));
+  else if (unit === "s") forms = forms.map(f => lastWord(f, w => w.endsWith("y") ? w.slice(0, -1) + "ies" : w + "s"));
+  const [money, cents] = currency === "$" ? ["dollars", "cents"] : currency === "€" ? ["euros", "cents"] : currency === "£" ? ["pounds", "pence"] : [];
+  const units = money && n === 1 ? money.slice(0, -1) : money;
+  if (fraction && money && fraction.length === 2) {
+    const c = Number(fraction), small = c < 10 ? "oh " + ONES[c] : cardinal(c);
+    forms = forms.flatMap(f => [`${f} ${small}`, `${f} ${units} and ${cardinal(c)} ${cents}`, `${f} ${units} ${cardinal(c)}`, `${f} point ${one(fraction)}`]);
+  } else {
+    if (fraction) forms = forms.map(f => `${f} point ${one(fraction)}`);
+    if (money) forms = forms.flatMap(f => [`${f} ${units}`, f]);
+  }
+  if (unit === "%") forms = forms.map(f => f + " percent");
+  return [...new Set(forms)].slice(0, 4);
+}
+
+/**
+ * Character labels for one transcript word, one list for each way it may be said, most likely first. `null` when the
+ * text is not speech (punctuation, bracketed sound tags). A number is spelled as it is said, with a word separator
+ * between its words, so the aligner hears it like any other word. A single WILDCARD when the word is spoken but cannot
+ * be spelled in A–Z (its own times are kept, but it still occupies audio between its neighbors).
+ */
+export function wordReadings(text: string, letters = CTC_LETTERS): number[][] | null {
+  const raw = text.trim();
+  if (!raw || /^[[(*♪].*[\])*♪]$/u.test(raw)) return null;
+  const english = letters === CTC_LETTERS;
+  const whole = english ? spokenNumber(raw) : null;
+  if (whole) return whole.map(form => spell(form, letters)!);
+  const normalized = english ? raw.normalize("NFKD").replace(/\p{M}/gu, "") : raw.normalize("NFC");
+  const s = normalized.replace(/[‘’ʼ`´]/g, "'").toUpperCase();
+  const out: number[] = [];
+  const letter = (ch: string | undefined) => !!ch && ch !== "'" && ch !== "-" && letters.includes(ch);
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]!;
+    if (letter(ch)) out.push(5 + letters.indexOf(ch));
+    else if (ch === "'") {
+      // Contractions keep their apostrophe; quotes around a word do not.
+      if (letter(s[i - 1]) && letter(s[i + 1])) out.push(5 + letters.indexOf(ch));
+    } else if (/[-–—/]/.test(ch)) {
+      if (out.length && out.at(-1) !== SEPARATOR && letter(s[i + 1])) out.push(ch === "-" && letters.includes("-") ? 5 + letters.indexOf("-") : SEPARATOR);
+    } else if (english && /\d/.test(ch)) {
+      // A number inside a name ("GPT-6", "M4") is said as its words.
+      const run = /^\d+(?:[.,]\d+)*/.exec(s.slice(i))![0];
+      if (out.length && out.at(-1) !== SEPARATOR) out.push(SEPARATOR);
+      out.push(...spell(spokenNumber(run)?.[0] ?? run.split("").map(d => ONES[Number(d)] ?? "").join(" "), letters)!);
+      i += run.length - 1;
+      if (letter(s[i + 1])) out.push(SEPARATOR);
+    } else if (/[\p{L}\p{N}$%&@+#=€£]/u.test(ch)) return [[WILDCARD]];
+  }
+  return out.length ? [out] : null;
+}
+
+/** Labels for words written in letters, a separator between words. */
+function spell(words: string, letters: string): number[] | null {
+  const out: number[] = [];
+  for (const ch of words.toUpperCase()) {
+    if (letters.includes(ch) && ch !== "'" && ch !== "-") out.push(5 + letters.indexOf(ch));
+    else if (ch === " " && out.length && out.at(-1) !== SEPARATOR) out.push(SEPARATOR);
+  }
+  while (out.at(-1) === SEPARATOR) out.pop();
+  return out.length ? out : null;
+}
+
+/** The labels for the way a word is most likely said (wordReadings). */
+export function wordLabels(text: string, letters = CTC_LETTERS): number[] | null {
+  return wordReadings(text, letters)?.[0] ?? null;
+}
+
+/** Measured on a gated close mic against energy onsets: the first letter's frame lags the onset by ~20 ms. */
+const ONSET_LEAD = 0.02;
+/** At most 300 ms of a following separator counts as the word's tail; longer is a pause. */
+const MAX_TAIL_FRAMES = 15;
+/**
+ * A spoken word's letters follow one another. When the path leaves more than half a second between two of them it has
+ * found them in noise: a "Thank" Whisper heard over a silence was spelled across 16 s, and every letter scored well.
+ */
+const MAX_LETTER_GAP_FRAMES = 25;
+
+export interface AlignWord { text: string; start: number; end: number }
+export interface WordTiming { start: number; end: number; score: number }
+
+/** Labels for a run of words, a word separator after each spoken word. The model emits the separator as
+ * the word's sound ends, so it marks word ends better than the last letter's emission spike. */
+export function groupLabels(words: readonly AlignWord[], letters = CTC_LETTERS, reading: readonly number[] = []) {
+  const tokens: number[] = [];
+  const owner: number[] = [];
+  let spoken = 0, spelled = 0;
+  words.forEach((w, i) => {
+    const readings = wordReadings(w.text, letters);
+    const labels = readings && readings[Math.min(reading[i] ?? 0, readings.length - 1)]!;
+    if (!labels) return;
+    spoken++;
+    if (labels[0] !== WILDCARD) spelled++;
+    for (const t of labels) { tokens.push(t); owner.push(i); }
+    tokens.push(SEPARATOR);
+    owner.push(-1);
+  });
+  return { tokens, owner, spoken, spelled };
+}
+
+/**
+ * Viterbi path through the CTC topology (optional blanks around every label, a blank required between
+ * repeated labels) over frames [from, to) of a (frames × CLASSES) log-probability matrix.
+ * Returns each label's first and last frame, or null when the frames cannot hold the labels.
+ */
+export function ctcAlign(logProbs: Float32Array, from: number, to: number, tokens: readonly number[], classes = CLASSES,
+  needed = tokens.length): Array<[number, number]> | null {
+  return ctcPath(logProbs, from, to, tokens, classes, needed)?.spans ?? null;
+}
+
+/** ctcAlign's path, with its log probability: how well the labels explain the frames, comparable between label
+ * sequences over the same frames. */
+export function ctcPath(logProbs: Float32Array, from: number, to: number, tokens: readonly number[], classes = CLASSES,
+  needed = tokens.length): { spans: Array<[number, number]>; score: number } | null {
+  const T = to - from, L = tokens.length, S = 2 * L + 1;
+  // Labels past `needed` are optional context: the path may stop after any of them, and only the needed ones get spans.
+  needed = Math.min(Math.max(1, needed), L);
+  let required = needed;
+  for (let k = 1; k < needed; k++) if (tokens[k] === tokens[k - 1] && tokens[k] !== WILDCARD) required++;
+  if (!L || T < required || T * S > 64e6) return null;
+  const finish = 2 * needed + 1;
+  const wild = tokens.includes(WILDCARD) ? new Float32Array(T) : undefined;
+  if (wild) {
+    for (let t = 0; t < T; t++) {
+      let best = -Infinity;
+      for (let c = 5; c < classes; c++) best = Math.max(best, logProbs[(from + t) * classes + c]!);
+      wild[t] = best;
+    }
+  }
+  const emit = (t: number, s: number) => {
+    const token = s % 2 === 0 ? BLANK : tokens[(s - 1) / 2]!;
+    return token === WILDCARD ? wild![t]! : logProbs[(from + t) * classes + token]!;
+  };
+  // A label can be entered from the previous blank, or directly from the previous label when they differ.
+  const skip = new Uint8Array(S);
+  for (let s = 3; s < S; s += 2) {
+    const a = tokens[(s - 1) / 2], b = tokens[(s - 3) / 2];
+    skip[s] = Number(a !== b || a === WILDCARD);
+  }
+  const back = new Uint8Array(T * S);
+  let prev = new Float64Array(S).fill(-Infinity), cur = new Float64Array(S);
+  prev[0] = emit(0, 0);
+  if (S > 1) prev[1] = emit(0, 1);
+  for (let t = 1; t < T; t++) {
+    // States that can still finish by the last frame, and that are reachable by now.
+    const lo = Math.max(0, finish - 2 * (T - t)), hi = Math.min(S - 1, 2 * t + 1);
+    cur.fill(-Infinity);
+    for (let s = lo; s <= hi; s++) {
+      let best = prev[s]!, arg = 0;
+      if (s >= 1 && prev[s - 1]! > best) { best = prev[s - 1]!; arg = 1; }
+      if (skip[s] && prev[s - 2]! > best) { best = prev[s - 2]!; arg = 2; }
+      if (best === -Infinity) continue;
+      cur[s] = best + emit(t, s);
+      back[t * S + s] = arg;
+    }
+    [prev, cur] = [cur, prev];
+  }
+  // The path ends on the last needed label, or anywhere in the optional context after it.
+  let s = S - 1;
+  for (let end = S - 2; end >= finish - 2; end--) if (prev[end]! > prev[s]!) s = end;
+  if (prev[s] === -Infinity) return null;
+  const score = prev[s]!;
+  const spans: Array<[number, number]> = new Array(L);
+  for (let t = T - 1; t >= 0; t--) {
+    if (s % 2) {
+      const k = (s - 1) / 2;
+      const span = spans[k];
+      if (span) span[0] = from + t;
+      else spans[k] = [from + t, from + t];
+    }
+    if (t) s -= back[t * S + s]!;
+  }
+  return { spans: needed < L ? spans.slice(0, needed) : spans, score };
+}
+
+/** Peak probability of a label within its aligned frames. */
+function peak(logProbs: Float32Array, token: number, [first, last]: [number, number], classes: number) {
+  let best = -Infinity;
+  for (let t = first; t <= last; t++) best = Math.max(best, logProbs[t * classes + token]!);
+  return Math.exp(best);
+}
+
+export interface Emissions {
+  /** (frames × CLASSES) log probabilities. */
+  logProbs: Float32Array;
+  frames: number;
+  /** Seconds of frame 0, in the caller's time base. */
+  origin: number;
+}
+
+/**
+ * Align one run of words inside the window [start, end) seconds. A word's score is the mean peak probability
+ * of its letters; wildcard and unspoken words get no timing.
+ *
+ * `next`: the words that follow the run, read as optional context. The window reaches past the run's last word, and
+ * speech there would otherwise be explained by the run's own last letters: "fixing it" took the "i…t" of the next
+ * run's "right", which then had no audio left and fell back to Whisper's estimate (8.5 s for one word).
+ */
+export function alignGroup(em: Emissions, words: readonly AlignWord[], start: number, end: number, alphabet = CTC_LETTERS,
+  next: readonly AlignWord[] = []): Array<WordTiming | undefined> {
+  // A number can be said more than one way. Each other way is tried in turn and kept when it explains the run's sound
+  // better: a shorter reading's letters can each be heard well while the rest of the number goes unexplained.
+  const reading = words.map(() => 0);
+  let best = alignReading(em, words, start, end, alphabet, next, reading);
+  words.forEach((w, i) => {
+    const ways = wordReadings(w.text, alphabet)?.length ?? 0;
+    for (let r = 1; r < ways; r++) {
+      const tried = alignReading(em, words, start, end, alphabet, next, reading.with(i, r));
+      if (tried.path > best.path) { reading[i] = r; best = tried; }
+    }
+  });
+  return best.timings;
+}
+
+function alignReading(em: Emissions, words: readonly AlignWord[], start: number, end: number, alphabet: string,
+  next: readonly AlignWord[], reading: readonly number[]): { timings: Array<WordTiming | undefined>; path: number } {
+  const timings: Array<WordTiming | undefined> = new Array(words.length).fill(undefined);
+  const none = { timings, path: -Infinity };
+  const classes = 5 + alphabet.length;
+  const { tokens, owner, spoken, spelled } = groupLabels(words, alphabet, reading);
+  // Mostly unspellable text (another language, numbers) gives the aligner too little to anchor on.
+  if (!spelled || spelled < 0.6 * spoken) return none;
+  const from = Math.max(0, Math.floor((start - em.origin) / FRAME_SECONDS));
+  const to = Math.min(em.frames, Math.ceil((end - em.origin) / FRAME_SECONDS));
+  if (to <= from) return none;
+  const context = groupLabels(next, alphabet).tokens;
+  const found = ctcPath(em.logProbs, from, to, [...tokens, ...context], classes, tokens.length);
+  if (!found) return none;
+  const { spans } = found;
+  const time = (frame: number) => em.origin + frame * FRAME_SECONDS;
+  let k = 0, previousEnd = -Infinity;
+  while (k < tokens.length) {
+    const word = owner[k]!;
+    if (word < 0) { k++; continue; }
+    const first = k;
+    let total = 0, letters = 0, spread = false;
+    for (; k < tokens.length && owner[k] === word; k++) {
+      if (tokens[k]! >= 5) { total += peak(em.logProbs, tokens[k]!, spans[k]!, classes); letters++; }
+      // A pause between the words of a number ("seven… sixty-three") is no letter gap.
+      if (k > first && tokens[k]! >= 5 && tokens[k - 1]! >= 5 && spans[k]![0] - spans[k - 1]![1] - 1 > MAX_LETTER_GAP_FRAMES) spread = true;
+    }
+    if (!letters) continue;
+    // A letter is emitted shortly after its sound begins. The lead never reaches back past zero, where the caller's
+    // audio starts: a transcript can't hold a negative time.
+    const lead = (frame: number) => Math.max(0, previousEnd, time(frame) - ONSET_LEAD);
+    // Spread over speech the transcript has no words for, the word is looked for again on its own, up to the next word.
+    const said = spread && lastSaid(em.logProbs, Math.max(from, Math.ceil((previousEnd - em.origin) / FRAME_SECONDS)),
+      k + 1 < tokens.length ? spans[k + 1]![0] : to, tokens.slice(first, k + 1), classes);
+    if (said) {
+      timings[word] = { start: lead(said.first), end: time(said.end), score: said.score };
+      previousEnd = time(said.end);
+      continue;
+    }
+    const end = Math.min(spans[k]![1] + 1, spans[k - 1]![1] + 1 + MAX_TAIL_FRAMES);
+    timings[word] = { start: lead(spans[first]![0]), end: time(end), score: spread ? 0 : total / letters };
+    previousEnd = time(end);
+  }
+  return { timings, path: found.score };
+}
+
+/**
+ * A word's best match inside frames [from, to), its letters (`labels`, ending on the separator) read with the frames
+ * either side free: the speech there needn't be explained by them. `apart` is where its letters still sit too far
+ * apart: the frames after the letter before that gap, and the first frame of the letter after it.
+ */
+type Spot = { first: number; end: number; score: number; least: number };
+
+function spotWord(logProbs: Float32Array, from: number, to: number, labels: readonly number[], classes: number):
+  Spot | { apart: readonly [number, number] } | null {
+  const T = to - from, wide = classes + 1, free = classes;
+  if (T < labels.length + 2) return null;
+  const local = new Float32Array(T * wide);
+  for (let t = 0; t < T; t++) local.set(logProbs.subarray((from + t) * classes, (from + t + 1) * classes), t * wide);
+  const found = ctcPath(local, 0, T, [free, ...labels, free], wide);
+  if (!found) return null;
+  const spans = found.spans.slice(1, -1).map(([a, b]) => [a + from, b + from] as [number, number]);
+  let total = 0, least = Infinity, letters = 0, firstLetter = -1, lastLetter = -1;
+  for (let k = 0; k < labels.length; k++) {
+    if (labels[k]! < 5) continue;
+    if (lastLetter >= 0 && spans[k]![0] - spans[lastLetter]![1] - 1 > MAX_LETTER_GAP_FRAMES) {
+      return { apart: [spans[lastLetter]![1] + 1, spans[k]![0]] as const };
+    }
+    const heard = peak(logProbs, labels[k]!, spans[k]!, classes);
+    total += heard;
+    least = Math.min(least, heard);
+    letters++;
+    if (firstLetter < 0) firstLetter = k;
+    lastLetter = k;
+  }
+  if (!letters) return null;
+  return { first: spans[firstLetter]![0], end: Math.min(spans.at(-1)![1] + 1, spans[lastLetter]![1] + 1 + MAX_TAIL_FRAMES), score: total / letters, least };
+}
+
+/**
+ * Where a word was last said inside frames [from, to), or null when nothing there scores as the word. Whisper writes
+ * what a speaker meant, so a restart it tidied away ("now, now, if I had, now even if" came out "Now, even if") leaves
+ * the transcript's word on the take that runs on into the words after it, the earlier takes' speech beside it
+ * unwritten. The forced path spelled such a "Now," across the takes, and left where Whisper put it, a cut of the
+ * speech before it took the "now" that was kept (2026-11-19).
+ */
+function lastSaid(logProbs: Float32Array, from: number, to: number, labels: readonly number[], classes: number,
+  budget = { spots: 64 }): Spot | null {
+  if (labels.includes(WILDCARD) || budget.spots-- <= 0) return null;
+  const found = spotWord(logProbs, from, to, labels, classes);
+  if (!found) return null;
+  // Letters found apart are two places: the later is looked in first.
+  if ("apart" in found) return lastSaid(logProbs, found.apart[0], to, labels, classes, budget)
+    ?? lastSaid(logProbs, from, found.apart[1], labels, classes, budget);
+  // Free to choose its place, the word must be heard there letter by letter: "thank" isn't the "hank" of other speech.
+  if (found.least < MIN_SCORE) return null;
+  return lastSaid(logProbs, found.end, to, labels, classes, budget) ?? found;
+}
+
+/**
+ * Inference windows of at most `size` samples, overlapping by at least `overlap`. Starts are frame-aligned so
+ * frames line up globally; each frame is kept from the window whose center it is nearest ([keep[0], keep[1])
+ * in global frames).
+ */
+export function planChunks(samples: number, size = 30 * SAMPLE_RATE, overlap = 2 * SAMPLE_RATE) {
+  const total = framesFor(samples);
+  const chunks: Array<{ start: number; length: number; keep: [number, number] }> = [];
+  if (!total) return chunks;
+  const stride = Math.max(FRAME_SAMPLES, Math.floor((size - overlap) / FRAME_SAMPLES) * FRAME_SAMPLES);
+  for (let start = 0; ; start += stride) {
+    // Keep the last window full length so it has as much context as the others.
+    const last = start + size >= samples;
+    if (last) start = Math.max(0, Math.ceil((samples - size) / FRAME_SAMPLES) * FRAME_SAMPLES);
+    const length = Math.min(size, samples - start);
+    const first = start / FRAME_SAMPLES;
+    const previous = chunks.at(-1);
+    let keep = first;
+    if (previous) {
+      keep = Math.floor((first + previous.start / FRAME_SAMPLES + framesFor(previous.length)) / 2);
+      previous.keep[1] = keep;
+    }
+    chunks.push({ start, length, keep: [keep, first + framesFor(length)] });
+    if (last) break;
+  }
+  return chunks;
+}
+
+/** Join per-window model outputs ((frames × CLASSES) each) into one matrix for the planned range. */
+export function stitchChunks(chunks: ReturnType<typeof planChunks>, outputs: readonly Float32Array[], classes = CLASSES): Float32Array {
+  const frames = chunks.length ? chunks.at(-1)!.keep[1] : 0;
+  const out = new Float32Array(frames * classes);
+  chunks.forEach((chunk, i) => {
+    const first = chunk.start / FRAME_SAMPLES;
+    const [from, to] = chunk.keep;
+    out.set(outputs[i]!.subarray((from - first) * classes, (to - first) * classes), from * classes);
+  });
+  return out;
+}
+
+/** In-place log-softmax over each frame's classes. */
+export function logSoftmax(logits: Float32Array, classes = CLASSES): Float32Array {
+  for (let at = 0; at < logits.length; at += classes) {
+    let max = -Infinity;
+    for (let c = 0; c < classes; c++) max = Math.max(max, logits[at + c]!);
+    let sum = 0;
+    for (let c = 0; c < classes; c++) sum += Math.exp(logits[at + c]! - max);
+    const norm = max + Math.log(sum);
+    for (let c = 0; c < classes; c++) logits[at + c] = logits[at + c]! - norm;
+  }
+  return logits;
+}
+
+/** Mean letter peak probability below which a word keeps its original time. Spoken words score ~1; text the
+ * audio does not contain (Whisper's repetition loops, words invented over silence) scores near 0. */
+export const MIN_SCORE = 0.2;
+
+/**
+ * Consecutive segments joined into runs of at most `maxSeconds` (Whisper's segment edges are themselves
+ * approximate). A longer segment splits between words. `index` holds each word's position in the flat
+ * word order of `segments`. A resumed alignment starts a fresh group at its first unfinished word.
+ */
+export function alignmentGroups(segments: readonly TranscriptSegment[], maxSeconds = 30, fromWord = 0) {
+  type Group = { start: number; end: number; words: AlignWord[]; index: number[] };
+  const groups: Group[] = [];
+  let current: Group | undefined;
+  let flat = 0;
+  for (const seg of segments) {
+    const skipped = Math.min(seg.words.length, Math.max(0, fromWord - flat));
+    flat += skipped;
+    const words = skipped ? seg.words.slice(skipped) : seg.words;
+    if (!words.length) continue;
+    const lo = skipped ? words[0]!.start : Math.min(seg.start, words[0]!.start);
+    const hi = words.reduce((end, w) => Math.max(end, w.end), seg.end);
+    if (!current || hi - current.start > maxSeconds) {
+      current = undefined;
+      for (const w of words) {
+        if (!current || w.end - current.start > maxSeconds) groups.push(current = { start: current ? w.start : lo, end: w.end, words: [], index: [] });
+        current.words.push({ text: w.text, start: w.start, end: w.end });
+        current.index.push(flat++);
+        current.end = Math.max(current.end, w.end);
+      }
+    } else {
+      for (const w of words) {
+        current.words.push({ text: w.text, start: w.start, end: w.end });
+        current.index.push(flat++);
+      }
+    }
+    current!.end = Math.max(current!.end, hi);
+  }
+  return groups;
+}
+
+/** Where a recording sounds inside a stretch of it: runs of seconds that are not quiet by level or voice activity.
+ * Undefined when nothing was measured there. */
+export type SoundIn = (gap: TimeRange) => readonly TimeRange[] | undefined;
+
+type Placement = { start: number; end: number; aligned: boolean };
+type UnplacedRun = { first: number; last: number; lo: number; hi: number; gap?: TimeRange };
+
+function placements(words: readonly TranscriptWord[], timings: ReadonlyArray<WordTiming | null | undefined>, minScore: number, fixedPrefix: number): Placement[] {
+  return words.map((w, i) => {
+    const t = timings[i];
+    return t && t.score >= minScore && t.end >= t.start ? { start: t.start, end: t.end, aligned: true } : { start: w.start, end: w.end, aligned: i < fixedPrefix };
+  });
+}
+
+/**
+ * Each run of words the aligner could not place, between the placed words either side of it (`lo`, `hi`, infinite at
+ * an open end), and the stretch of the recording that holds it (`gap`). A run with nothing placed after it has a gap
+ * only when `whole`: while alignment is under way such a run holds words not yet tried.
+ */
+function unplacedRuns(times: readonly Placement[], whole: boolean): UnplacedRun[] {
+  const runs: UnplacedRun[] = [];
+  for (let i = 0; i < times.length;) {
+    if (times[i]!.aligned) { i++; continue; }
+    const first = i;
+    while (i < times.length && !times[i]!.aligned) i++;
+    const lo = first > 0 ? times[first - 1]!.end : -Infinity;
+    const hi = i < times.length ? times[i]!.start : Infinity;
+    if (lo === -Infinity && hi === Infinity) continue;
+    const run = times.slice(first, i);
+    const rs = run.reduce((v, t) => Math.min(v, t.start), Infinity), re = run.reduce((v, t) => Math.max(v, t.end), -Infinity);
+    const start = lo === -Infinity ? Math.max(0, Math.min(rs, hi)) : lo;
+    const end = hi === Infinity ? Math.max(re, lo) : hi;
+    const measured = end > start && (whole || hi !== Infinity);
+    runs.push({ first, last: i, lo, hi, ...(measured && { gap: { start, end } }) });
+  }
+  return runs;
+}
+
+/** The stretches of the recording that hold the words the aligner could not place (see applyTimings). */
+export function unplacedGaps(segments: readonly TranscriptSegment[], timings: ReadonlyArray<WordTiming | null | undefined>, minScore = MIN_SCORE,
+  fixedPrefix = 0, whole = true): TimeRange[] {
+  return unplacedRuns(placements(segments.flatMap(s => s.words), timings, minScore, fixedPrefix), whole).flatMap(r => r.gap ? [r.gap] : []);
+}
+
+/** Whisper's word times run 100-300 ms off: an estimate this close to a stretch of sound names it. */
+const ESTIMATE_REACH = 0.25;
+/** The shortest a number is said in: "two" or "six" runs about this long. */
+const UNTRIED_SECONDS = 0.15;
+
+/**
+ * Keep a run's words, already fitted into their gap, on the sound in that gap. Each word goes with the stretch of sound
+ * its estimate covers most, or one just beside it: its start can sit on the tail of the word before or a breath. The
+ * gap holds no other words, so a stretch's sound is its words': the first takes it from its start and the last to its
+ * end, and words between keep their estimates. A word near no sound was not heard there, so it takes no time, right
+ * after the word before it, and holds up no pause. Whisper's estimate stays the guide: it is often right about where a
+ * word starts and wrong about how long it lasts (one "right" ran 8.5 s over a pause).
+ *
+ * A number or symbol was never tried: the aligner can't spell it, so nothing says it wasn't heard. It was said somewhere
+ * in the gap, on sound long enough to say it. It goes with such a stretch however far its estimate sits from one, and
+ * not with a sliver. Left where Whisper put them, a "5.5" took the 80 ms onset of the next word and a "56" took no time,
+ * each beside a second of "five point five" and "fifty six" that then read as a pause, and a pass trimmed the first
+ * as one (2026-11-16).
+ */
+function keepOnSound(words: readonly TranscriptWord[], run: Placement[], sound: readonly TimeRange[], gap: TimeRange) {
+  const labels = words.map(w => wordLabels(w.text));
+  // A number the aligner spelled but couldn't place is still one it may have misread.
+  const spoken = labels.map(l => !!l), untried = labels.map((l, i) => l?.[0] === WILDCARD || (!!l && /\p{N}/u.test(words[i]!.text)));
+  const holdsUntried = (k: number) => sound[k]!.end - sound[k]!.start >= UNTRIED_SECONDS;
+  // The stretch each spoken word goes with, in order: never one before the stretch of the word before it.
+  const heard: Array<number | undefined> = [];
+  let floor = 0;
+  run.forEach((t, i) => {
+    if (!spoken[i]) return;
+    const overlap = (k: number) => Math.min(sound[k]!.end, t.end) - Math.max(sound[k]!.start, t.start);
+    const distance = (k: number) => Math.max(sound[k]!.start - t.end, t.start - sound[k]!.end, 0);
+    // An untried word passes over slivers while a longer stretch is still to come.
+    let longEnough = false;
+    if (untried[i]) for (let k = floor; k < sound.length; k++) longEnough ||= holdsUntried(k);
+    const fits = (k: number) => !longEnough || holdsUntried(k);
+    const reach = untried[i] ? Infinity : ESTIMATE_REACH;
+    let best: number | undefined;
+    for (let k = floor; k < sound.length; k++) if (fits(k) && overlap(k) > 0 && (best === undefined || overlap(k) > overlap(best))) best = k;
+    if (best === undefined) {
+      for (let k = floor; k < sound.length; k++) if (fits(k) && distance(k) <= reach && (best === undefined || distance(k) < distance(best))) best = k;
+    }
+    heard[i] = best;
+    if (best !== undefined) floor = best;
+  });
+  let previous = gap.start;
+  run.forEach((t, i) => {
+    const k = heard[i];
+    if (!spoken[i]) {
+      t.start = Math.max(t.start, previous);
+      t.end = Math.max(t.end, t.start);
+    } else if (k === undefined) {
+      t.start = previous;
+      t.end = previous;
+    } else {
+      const island = sound[k]!, length = t.end - t.start;
+      const first = heard.indexOf(k) === i, last = heard.lastIndexOf(k) === i;
+      t.start = Math.max(previous, first ? island.start : Math.min(Math.max(t.start, island.start), island.end));
+      // A word moved later onto its sound keeps its length.
+      t.end = Math.max(t.start, last ? island.end : Math.min(island.end, Math.max(t.end, t.start + length)));
+    }
+    previous = t.end;
+  });
+}
+
+/** Fit a run's estimates between the placed words either side, keeping their order. */
+function fitIntoGap(run: Placement[], lo: number, hi: number) {
+  const rs = run.reduce((v, t) => Math.min(v, t.start), Infinity), re = run.reduce((v, t) => Math.max(v, t.end), -Infinity);
+  if (rs >= lo && re <= hi) return;
+  if (lo === -Infinity || hi === Infinity || hi <= lo) {
+    for (const t of run) {
+      t.start = Math.min(Math.max(t.start, lo), hi);
+      t.end = Math.min(Math.max(t.end, t.start), hi);
+    }
+    return;
+  }
+  // Keep the part of the original span inside the gap, or the whole gap when they do not meet.
+  const a = Math.max(lo, rs), b = Math.min(hi, re);
+  const [to0, to1] = b > a ? [a, b] : [lo, hi];
+  const scale = re > rs ? (to1 - to0) / (re - rs) : 0;
+  for (const t of run) {
+    t.start = to0 + (t.start - rs) * scale;
+    t.end = Math.max(t.start, to0 + (t.end - rs) * scale);
+  }
+}
+
+/**
+ * New segments with confident aligned times (by flat word index). Other words keep their own times, fitted
+ * into the gap between their aligned neighbors so that word order holds. Segment bounds widen to cover
+ * their words.
+ *
+ * With `sound` measured for a run's gap (unplacedGaps), its words are then kept on that sound (keepOnSound): a word
+ * laid over quiet hides a pause from everything that reads the transcript.
+ */
+export function applyTimings(segments: readonly TranscriptSegment[], timings: ReadonlyArray<WordTiming | null | undefined>, minScore = MIN_SCORE,
+  fixedPrefix = 0, sound?: SoundIn, whole = true): TranscriptSegment[] {
+  const words = segments.flatMap(s => s.words);
+  const times = placements(words, timings, minScore, fixedPrefix);
+  for (const { first, last, lo, hi, gap } of unplacedRuns(times, whole)) {
+    const run = times.slice(first, last);
+    fitIntoGap(run, lo, hi);
+    const heard = gap && sound?.(gap);
+    if (gap && heard) keepOnSound(words.slice(first, last), run, heard, gap);
+  }
+  let at = 0;
+  return segments.map(seg => {
+    const next = seg.words.map(w => {
+      const timing = timings[at], t = times[at++]!;
+      const out = t.start === w.start && t.end === w.end ? w : { ...w, start: round(t.start), end: round(t.end) };
+      if (timing) alignerHeard.set(out, timing.score >= minScore && timing.end >= timing.start);
+      return out;
+    });
+    if (!next.length) return seg;
+    return { ...seg, start: Math.min(seg.start, next[0]!.start), end: next.reduce((end, w) => Math.max(end, w.end), seg.end), words: next };
+  });
+}
+
+export const round = (seconds: number) => Math.round(seconds * 1000) / 1000;
+
+/**
+ * Whether the aligner heard each word it placed or tried, for what runs next in the same process. A word Whisper
+ * invented over a silence scores near 0 (at most 0.17 on one recording), and one muttered 25 dB under the speech
+ * still scores near 1: its letters are in the sound. Nothing is kept for a word aligned in an earlier run.
+ */
+export const alignerHeard = new WeakMap<TranscriptWord, boolean>();

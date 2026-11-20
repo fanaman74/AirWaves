@@ -1,0 +1,139 @@
+// @vitest-environment happy-dom
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { buildThreads, threadEditList, type VersionSummary } from "@scarlet/shared";
+import { api } from "../../lib/client";
+import { buildDb, PRJ } from "../../lib/mock/fixtures";
+import { useProjectStore, type ProjectData } from "../../stores/project";
+import { rejectInstruction, ThreadAction, useThreadEdits } from "./ThreadEdits";
+import type { Thread, ThreadEdit } from "@scarlet/shared";
+
+let root: Root;
+let container: HTMLDivElement;
+let data: ProjectData;
+const initialStore = useProjectStore.getState();
+
+beforeEach(() => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  localStorage.clear();
+  container = document.createElement("div");
+  document.body.append(container);
+  root = createRoot(container);
+  const db = buildDb();
+  const project = db.projects.find(p => p.id === PRJ)!;
+  data = {
+    id: PRJ, project, timeline: db.timelines[project.head!]!, media: project.media, changes: db.changes, notes: db.notes,
+    renders: [], tasks: db.tasks, taskEvents: db.taskEvents, versions: db.versions[PRJ]!,
+  };
+});
+
+afterEach(async () => {
+  await act(async () => root.unmount());
+  container.remove();
+  useProjectStore.setState(initialStore, true);
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+const click = (element: Element) => act(async () => (element as HTMLElement).click());
+const menuItems = () => [...container.querySelectorAll('[role="menuitem"]')].map(item => item.textContent?.trim());
+
+it("asks for the versions again when the head moved while they were on their way, so Undo these edits comes back", async () => {
+  const thread = buildThreads(data).find(t => t.changes.some(c => c.id === "chg_approved_2"))!;
+  // The working cut after an undo elsewhere: a new head on top of this thread's version.
+  const moved = { ...data.project, head: "ver_4" };
+  const after: VersionSummary[] = [...data.versions!.map(v => ({ ...v, isHead: false })),
+    { version: "ver_4", parent: "ver_3", name: "Main", changeId: null, description: "Undo · Trim the pause", duration: 16, isHead: true, createdAt: new Date().toISOString() }];
+  let deliver!: (list: { versions: VersionSummary[] }) => void;
+  const asked = vi.spyOn(api, "versions").mockImplementationOnce(() => new Promise(resolve => { deliver = resolve; }))
+    .mockResolvedValue({ versions: after });
+  vi.spyOn(api, "workspace").mockResolvedValue({ project: moved, timeline: { ...data.timeline!, version: "ver_4" } });
+  // The list isn't loaded yet, so the menu's lookup is on its way when the head moves.
+  useProjectStore.setState({ current: { ...data, versions: undefined }, status: "ready" });
+  await act(async () => root.render(<ThreadAction projectId={PRJ} thread={thread} edits={threadEditList(thread)} onPlay={() => {}} />));
+  expect(asked).toHaveBeenCalledTimes(1);
+  await act(() => useProjectStore.getState().refreshHead(PRJ));
+  // The store drops the list that was asked for under the old head, and leaves it unset.
+  await act(async () => deliver({ versions: data.versions! }));
+  expect(asked).toHaveBeenCalledTimes(2);
+  expect(useProjectStore.getState().current!.versions).toEqual(after);
+  await click(container.querySelector('[aria-label="More for this thread"]')!);
+  expect(menuItems()).toEqual(["Undo these edits", "File this thread"]);
+});
+
+it("undoes every applied change in the thread from its menu, newest first, and files the thread", async () => {
+  const thread = buildThreads(data).find(t => t.changes.some(c => c.id === "chg_approved_2"))!;
+  const historyEdit = vi.fn().mockResolvedValue(undefined), setThreadDone = vi.fn().mockResolvedValue(undefined);
+  useProjectStore.setState({ current: data, status: "ready", historyEdit, setThreadDone });
+  await act(async () => root.render(<ThreadAction projectId={PRJ} thread={thread} edits={threadEditList(thread)} onPlay={() => {}} />));
+  const item = (text: string) => [...container.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(i => i.textContent?.trim() === text)!;
+  await click(container.querySelector('[aria-label="More for this thread"]')!);
+  await click(item("Undo these edits"));
+  const applied = thread.changes.filter(c => c.state === "approved").map(c => c.appliedVersion ?? c.toVersion).reverse();
+  expect(historyEdit.mock.calls).toEqual(applied.map(version => [version, "revert"]));
+  await click(container.querySelector('[aria-label="More for this thread"]')!);
+  await click(item("File this thread"));
+  expect(setThreadDone).toHaveBeenCalledWith(thread.id, true, expect.any(String));
+});
+
+it("leaves the menu out where it is turned off, and still says what it reported", async () => {
+  const thread = buildThreads(data).find(t => t.changes.some(c => c.id === "chg_approved_2"))!;
+  useProjectStore.setState({ current: data, status: "ready" });
+  await act(async () => root.render(<ThreadAction projectId={PRJ} thread={thread} edits={threadEditList(thread)} onPlay={() => {}} menuOnly menu={false} />));
+  // With nothing to report there is nothing at all.
+  expect(container.innerHTML).toBe("");
+  // A thread filed earlier still says so.
+  const filed = { ...data, project: { ...data.project, completedThreads: { [thread.id]: JSON.stringify([thread.tasks.at(-1)?.id, thread.changes.at(-1)?.id, thread.updatedAt]) } } };
+  await act(async () => { useProjectStore.setState({ current: filed }); });
+  expect(container.textContent).toBe("Filed");
+});
+
+it("reads a request's edits again for a new working cut only while they are needed, and keeps the last ones meanwhile", async () => {
+  const thread = buildThreads(data).find(t => t.changes.some(c => c.id === "chg_approved_2"))!;
+  const [first, ...rest] = threadEditList(thread) as ThreadEdit[];
+  expect(rest.length).toBeGreaterThan(0);
+  const read = vi.spyOn(api, "threadEdits").mockImplementation(async () =>
+    ({ version: useProjectStore.getState().current!.project.head!, edits: useProjectStore.getState().current!.project.head === "ver_4" ? [first!, ...rest] : [first!] }));
+  let shown: number[] = [];
+  let current = false;
+  function Probe({ thread, needed }: { thread: Thread; needed: boolean }) {
+    const { listed, located } = useThreadEdits(PRJ, thread, needed);
+    shown.push(listed.length);
+    current = !!located;
+    return null;
+  }
+  useProjectStore.setState({ current: data, status: "ready" });
+  // Out of view from the start, the list is still read once.
+  await act(async () => root.render(<Probe thread={thread} needed={false} />));
+  expect(read).toHaveBeenCalledOnce();
+  expect(shown.at(-1)).toBe(1);
+  // A new working cut: out of view, nothing is read, and the list it had stays.
+  shown = [];
+  await act(async () => { useProjectStore.setState({ current: { ...data, project: { ...data.project, head: "ver_4" } } }); });
+  expect(read).toHaveBeenCalledOnce();
+  expect(shown).not.toContain(0);
+  expect(shown.at(-1)).toBe(1);
+  // The list it kept isn't the engine's for this working cut, so nothing on the timeline is placed from it.
+  expect(current).toBe(false);
+  // Back in view, it is read for the working cut it is on.
+  await act(async () => root.render(<Probe thread={thread} needed />));
+  expect(read).toHaveBeenCalledTimes(2);
+  expect(shown.at(-1)).toBe(1 + rest.length);
+  expect(current).toBe(true);
+  // In view, each new working cut is read at once.
+  await act(async () => { useProjectStore.setState({ current: { ...data, project: { ...data.project, head: "ver_5" } } }); });
+  expect(read).toHaveBeenCalledTimes(3);
+  // Out of view again, a change to the request's own edits is still read: only a new working cut is waited out.
+  await act(async () => root.render(<Probe thread={thread} needed={false} />));
+  expect(read).toHaveBeenCalledTimes(3);
+  const changed = { ...thread, changes: thread.changes.map((c, i) => i ? c : { ...c, appliedVersion: "ver_5" }) };
+  await act(async () => root.render(<Probe thread={changed} needed={false} />));
+  expect(read).toHaveBeenCalledTimes(4);
+});
+
+it("words the request to reject one edit by its number and name", () => {
+  expect(rejectInstruction({ editNumber: 2, label: "captions" })).toBe("The editor rejected edit 2, “captions”. Put back exactly what it changed and leave every other edit as it is.");
+  expect(rejectInstruction({ label: "captions" })).toMatch(/^The editor rejected “captions”\. /);
+  expect(rejectInstruction({})).toMatch(/^The editor rejected this edit\. /);
+});

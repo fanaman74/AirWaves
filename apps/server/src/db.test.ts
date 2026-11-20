@@ -1,0 +1,331 @@
+import { mkdtempSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createProject } from "@scarlet/timeline";
+import { createRepos } from "./repo/index.js";
+import { createApp } from "./app.js";
+import { Db, migrate, openDb } from "./db.js";
+import { startWalCheckpointer } from "./walCheckpointer.js";
+import { foldStrandedPasses, recordLeftOutFootage, retireLeftoverPasses } from "./services/changes.js";
+import { migrateDialogueOperations } from "./services/tasks.js";
+
+let directory: string;
+let db: Db;
+
+beforeEach(() => {
+  directory = mkdtempSync(join(tmpdir(), "scarlet-db-test-"));
+  db = new Db(join(directory, "plain.db"));
+  db.exec("CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT, pinned INTEGER)");
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  db.close();
+  rmSync(directory, { recursive: true, force: true });
+});
+
+const bodies = () => (db.prepare("SELECT body FROM notes ORDER BY id").all() as { body: string | null }[]).map(row => row.body);
+
+it("checkpoints a busy library off the writer thread and preserves committed edits on close", async () => {
+  const file = join(directory, "library.db");
+  const library = openDb(file);
+  const sync = library.pragma("synchronous", { simple: true });
+  const initialSize = statSync(file).size;
+  library.pragma("wal_autocheckpoint = 517");
+  const worker = startWalCheckpointer(library, file, () => {}, 50);
+  try {
+    await expect.poll(() => library.pragma("wal_autocheckpoint", { simple: true })).toBe(0);
+    library.exec("CREATE TABLE edits (body TEXT)");
+    const save = library.prepare("INSERT INTO edits VALUES (?)");
+    library.transaction(() => { for (let i = 0; i < 300; i++) save.run("x".repeat(4000)); })();
+    await expect.poll(() => statSync(file).size, { timeout: 5000 }).toBeGreaterThan(initialSize + 1_000_000);
+    expect(library.pragma("synchronous", { simple: true })).toBe(sync);
+  } finally {
+    await worker?.stop();
+    library.close();
+  }
+  const reopened = openDb(file);
+  try {
+    expect(reopened.prepare("SELECT count(*) AS n FROM edits").get()).toEqual({ n: 300 });
+  } finally { reopened.close(); }
+});
+
+it("keeps automatic checkpoints when the background connection cannot open", async () => {
+  const log = vi.fn();
+  db.pragma("wal_autocheckpoint = 517");
+  const worker = startWalCheckpointer(db, join(directory, "missing", "library.db"), log);
+  try {
+    await expect.poll(() => log.mock.calls.length).toBe(1);
+  } finally { await worker?.stop(); }
+  expect(db.pragma("wal_autocheckpoint", { simple: true })).toBe(517);
+});
+
+it("stores a missing value as NULL and a boolean as 0 or 1", () => {
+  db.prepare("INSERT INTO notes (body, pinned) VALUES (?, ?), (?, ?)").run(undefined, true, "kept", false);
+  expect(db.prepare("SELECT body, pinned FROM notes ORDER BY id").all()).toEqual([{ body: null, pinned: 1 }, { body: "kept", pinned: 0 }]);
+  expect(db.prepare("SELECT body FROM notes WHERE pinned = ?").get(false)).toEqual({ body: "kept" });
+  expect([...db.prepare("SELECT pinned FROM notes ORDER BY id").iterate()]).toEqual([{ pinned: 1 }, { pinned: 0 }]);
+});
+
+it("reads a pragma as a row or its one value, and sets one", () => {
+  expect(db.pragma("user_version = 7")).toBeUndefined();
+  expect(db.pragma("user_version")).toEqual({ user_version: 7 });
+  expect(db.pragma("user_version", { simple: true })).toBe(7);
+  // A pragma with nothing to report has no row.
+  expect(db.pragma("table_info(nothing_by_this_name)")).toBeUndefined();
+});
+
+it("undoes a part of a transaction that throws and keeps the rest, with only the kept part's effects", () => {
+  const effects: string[] = [];
+  const part = (body: string, fail = false) => db.savepoint(() => {
+    db.prepare("INSERT INTO notes (body) VALUES (?)").run(body);
+    db.afterCommit(() => effects.push(body));
+    if (fail) throw new Error(`${body} failed`);
+    return body;
+  });
+  db.transaction(() => {
+    expect(part("first")).toBe("first");
+    expect(() => part("second", true)).toThrow("second failed");
+    part("third");
+    expect(effects).toEqual([]);
+  }, "immediate")();
+  expect(bodies()).toEqual(["first", "third"]);
+  expect(effects).toEqual(["first", "third"]);
+  // With no transaction open it is one of its own.
+  expect(() => part("fourth", true)).toThrow("fourth failed");
+  expect(part("fifth")).toBe("fifth");
+  expect(bodies()).toEqual(["first", "third", "fifth"]);
+  expect(db.inTransaction).toBe(false);
+});
+
+it("undoes a transaction that throws, and runs none of the effects it scheduled", () => {
+  const effects: string[] = [];
+  const write = db.transaction((body: string, fail: boolean) => {
+    db.prepare("INSERT INTO notes (body) VALUES (?)").run(body);
+    expect(db.inTransaction).toBe(true);
+    db.afterCommit(() => effects.push(`${body} announced with ${bodies().length} saved`));
+    if (fail) throw new Error("changed my mind");
+    return body.length;
+  }, "immediate");
+  expect(() => write("lost", true)).toThrow("changed my mind");
+  expect(db.inTransaction).toBe(false);
+  expect(bodies()).toEqual([]);
+  expect(effects).toEqual([]);
+  // The effect waits for the commit: it sees the row as saved.
+  expect(write("kept", false)).toBe(4);
+  expect(effects).toEqual(["kept announced with 1 saved"]);
+  // Outside a transaction the write is already visible, so an effect runs at once.
+  db.afterCommit(() => effects.push("now"));
+  expect(effects.at(-1)).toBe("now");
+});
+
+it("keeps a committed write and the effects after it when one effect throws, and reports the one that threw", () => {
+  const reported: unknown[] = [], ran: string[] = [];
+  db.onEffectError = error => reported.push(error);
+  const failure = new Error("listener broke");
+  const result = db.transaction(() => {
+    db.prepare("INSERT INTO notes (body) VALUES ('saved')").run();
+    db.afterCommit(() => ran.push("first"));
+    db.afterCommit(() => { throw failure; });
+    db.afterCommit(() => ran.push("third"));
+    return "returned";
+  })();
+  expect(result).toBe("returned");
+  expect(bodies()).toEqual(["saved"]);
+  expect(ran).toEqual(["first", "third"]);
+  expect(reported).toEqual([failure]);
+});
+
+it("warns the process about a failed effect when nothing else is listening", () => {
+  const warned = vi.spyOn(process, "emitWarning").mockImplementation(() => {});
+  db.transaction(() => { db.afterCommit(() => { throw "not even an error"; }); })();
+  expect(warned).toHaveBeenCalledWith("not even an error");
+});
+
+it("writes a failed after-commit listener to the engine log with where it threw", async () => {
+  const lines: string[] = [];
+  const { ctx } = createApp({ dataDir: join(directory, "engine"), skillsSeedDir: join(directory, "empty-seed"), env: {}, log: line => lines.push(line) });
+  try {
+    lines.length = 0;
+    ctx.db.transaction(() => {
+      ctx.bus.on("ws", function brokenListener() { throw new Error("listener broke"); });
+      ctx.bus.publish({ type: "render.settings.updated" });
+    })();
+    expect(lines).toEqual([expect.stringMatching(/^\[error\] after-commit listener failed: Error: listener broke\n\s+at .*brokenListener/)]);
+  } finally { await ctx.close(); }
+});
+
+it("brings a new library up to date once, and leaves an up-to-date one alone", () => {
+  const file = join(directory, "library.db");
+  const library = openDb(file);
+  const version = library.pragma("user_version", { simple: true }) as number;
+  expect(version).toBeGreaterThanOrEqual(20);
+  expect(library.prepare("SELECT count(*) AS runs FROM task_usage").get()).toEqual({ runs: 0 });
+  expect(library.pragma("journal_mode", { simple: true })).toBe("wal");
+  expect(library.pragma("foreign_keys", { simple: true })).toBe(1);
+  library.prepare("INSERT INTO settings (id, json) VALUES (1, '{}')").run();
+  library.close();
+  const again = openDb(file);
+  expect(again.pragma("user_version", { simple: true })).toBe(version);
+  expect(again.prepare("SELECT json FROM settings").get()).toEqual({ json: "{}" });
+  again.close();
+});
+
+it("recovers first-video format decisions in a library with a newer schema version", () => {
+  const file = join(directory, "formats.db");
+  const library = openDb(file);
+  const repos = createRepos(library);
+  const fresh = repos.projects.insert(createProject("Audio first"));
+  repos.projects.putMedia(fresh.id, { id: "mic", kind: "audio", name: "Voice", path: "voice.wav" }, "ready");
+  const imported = repos.projects.insert(createProject("Existing video"));
+  repos.projects.putMedia(imported.id, { id: "camera", kind: "video", name: "Phone", path: "phone.mov", width: 1080, height: 1920 }, "ready");
+  const chosen = repos.projects.insert(createProject("Explicit landscape"));
+  repos.activity.put({ id: "choice", projectId: chosen.id, type: "project.updated", actor: { type: "human", name: "Editor" },
+    summary: "Set project format", data: { settings: chosen.settings }, createdAt: chosen.createdAt! });
+  library.exec("ALTER TABLE projects DROP COLUMN format_set");
+  const newerVersion = (library.pragma("user_version", { simple: true }) as number) + 8;
+  library.pragma(`user_version = ${newerVersion}`);
+  library.close();
+
+  const reopened = openDb(file);
+  try {
+    expect(reopened.pragma("user_version", { simple: true })).toBe(newerVersion);
+    const { projects } = createRepos(reopened);
+    expect(projects.formatSet(fresh.id)).toBe(false);
+    expect(projects.formatSet(imported.id)).toBe(true);
+    expect(projects.formatSet(imported.id, true)).toBe(false);
+    expect(projects.formatSet(chosen.id)).toBe(true);
+    expect(projects.formatSet(chosen.id, true)).toBe(true);
+  } finally { reopened.close(); }
+});
+
+it("installs the telemetry revision by name, beside a library whose numbered migration already added it", () => {
+  const file = join(directory, "telemetry.db");
+  const library = openDb(file);
+  const version = library.pragma("user_version", { simple: true }) as number;
+  const revision = () => library.prepare("SELECT telemetry_revision AS n FROM settings WHERE id = 1").get() as { n: number };
+  library.prepare("INSERT INTO settings (id, json) VALUES (1, '{}')").run();
+  // A library that had it from the numbered migration keeps it, its trigger and its count, with no change of version.
+  library.prepare("UPDATE settings SET json = '{\"telemetryEnabled\":false}'").run();
+  expect(revision()).toEqual({ n: 1 });
+  library.close();
+  let again = openDb(file);
+  expect(again.pragma("user_version", { simple: true })).toBe(version);
+  expect(again.prepare("SELECT telemetry_revision AS n FROM settings").get()).toEqual({ n: 1 });
+  // A library at the same number without it, as a checkout's own numbers could leave one, gets it by name.
+  again.exec("DROP TRIGGER telemetry_preference_changed; ALTER TABLE settings DROP COLUMN telemetry_revision;");
+  again.close();
+  again = openDb(file);
+  try {
+    expect(again.pragma("user_version", { simple: true })).toBe(version);
+    again.prepare("UPDATE settings SET json = '{\"telemetryEnabled\":true}'").run();
+    expect(again.prepare("SELECT telemetry_revision AS n FROM settings").get()).toEqual({ n: 1 });
+  } finally { again.close(); }
+});
+
+it("doesn't run a migration again when another engine applied it after the version was read", () => {
+  const file = join(directory, "shared.db");
+  const first = openDb(file);
+  const version = first.pragma("user_version", { simple: true });
+  // A second engine opening the same library read the version before the first finished migrating it.
+  const second = new Db(file);
+  const read = second.pragma.bind(second);
+  let stale = true;
+  vi.spyOn(second, "pragma").mockImplementation((text, opts) => {
+    if (text === "user_version" && stale) { stale = false; return 0; }
+    return read(text, opts);
+  });
+  expect(() => migrate(second)).not.toThrow();
+  expect(read("user_version", { simple: true })).toBe(version);
+  first.close();
+  second.close();
+});
+
+it("preserves a telemetry opt-out across upgrades and later settings changes from an older engine", () => {
+  const file = join(directory, "telemetry.db");
+  const old = new Db(file);
+  migrate(old, 26); // Last public schema before the Settings switch.
+  const previous = { transcription: {}, noteCleanup: {}, render: {} };
+  old.prepare("INSERT INTO settings (id, json) VALUES (1, ?)").run(JSON.stringify(previous));
+  const library = openDb(file);
+  try {
+    const { settings } = createRepos(library);
+    expect(settings.telemetryPreference()).toEqual({ enabled: true, revision: 0 });
+    settings.update({ telemetryEnabled: false });
+    // Older releases save the entire settings row, including only keys recognized by their schema.
+    old.prepare("UPDATE settings SET json = ? WHERE id = 1").run(JSON.stringify({ ...previous, render: { concurrency: 3 } }));
+    expect(settings.telemetryPreference()).toEqual({ enabled: false, revision: 1 });
+    expect(settings.get()).toMatchObject({ telemetryEnabled: false, render: { concurrency: 3 } });
+    settings.update({ telemetryEnabled: true });
+    expect(settings.telemetryPreference()).toEqual({ enabled: true, revision: 2 });
+  } finally {
+    library.close();
+    old.close();
+  }
+});
+
+it("backfills only successful transcriptions and preserves them across old writers updating the same transcript", () => {
+  const library = new Db(":memory:");
+  try {
+    migrate(library, 25); // Last release before media stored transcription history.
+    const sourceAt = "2026-01-01T00:00:00.000Z", successAt = "2026-01-02T00:00:00.000Z", later = "2026-01-03T00:00:00.000Z";
+    library.prepare("INSERT INTO projects(id,name,settings,created_at,updated_at) VALUES ('p','test','{}',?,?)").run(sourceAt, sourceAt);
+    const file = (id: string, doc: Record<string, unknown>) => {
+      const fields = { transcriptId: "trs_" + id, importId: "import_" + id };
+      library.prepare("INSERT INTO media(id,project_id,status,json,created_at) VALUES (?,'p','ready',?,?)").run(id, JSON.stringify(fields), sourceAt);
+      library.prepare("INSERT INTO transcripts(id,media_id,project_id,json,created_at) VALUES (?,?,'p',?,?)")
+        .run(fields.transcriptId, id, JSON.stringify(doc), doc.createdAt);
+    };
+    const task = (mediaId: string, state: string, at: string, localModel?: string) => {
+      const doc = { context: { mediaId, localModel }, finishedAt: at };
+      library.prepare("INSERT INTO tasks(id,project_id,kind,agent,state,json,created_at) VALUES (?,'p','transcribe','api',?,?,?)")
+        .run(mediaId + state, state, JSON.stringify(doc), sourceAt);
+    };
+    file("labelled", { speakerAnalysis: { version: 1 }, createdAt: later });
+    task("labelled", "done", successAt, "crisperwhisper");
+    task("labelled", "failed", later, "custom");
+    file("raw", { provider: "whispercpp", createdAt: sourceAt });
+    file("custom", { provider: "whispercpp", localModel: "custom", createdAt: later });
+    task("custom", "done", successAt, "custom");
+    file("orphan-labels", { localModel: "whispercpp", speakerAnalysis: { version: 1 }, createdAt: later });
+    file("partial", { createdAt: later });
+    task("partial", "failed", later);
+    file("invalid-date", { createdAt: "date unknown" });
+    migrate(library);
+    const fields = (id: string) => JSON.parse((library.prepare("SELECT json FROM media WHERE id=?").get(id) as { json: string }).json);
+    const original = { completedAt: successAt, model: "CrisperWhisper 2.0 large" };
+    expect(fields("labelled").lastTranscription).toEqual(original);
+    expect(fields("raw").lastTranscription).toEqual({ completedAt: sourceAt });
+    expect(fields("custom").lastTranscription).toEqual({ completedAt: successAt });
+    expect(fields("orphan-labels").lastTranscription).toEqual({ model: "Whisper large-v3-turbo" });
+    expect(fields("partial").lastTranscription).toBeUndefined();
+    expect(fields("invalid-date").lastTranscription).toBeUndefined();
+    const olderSave = library.prepare("UPDATE media SET json = ? WHERE id = 'labelled'");
+    olderSave.run(JSON.stringify({ transcriptId: "trs_labelled" }));
+    expect(fields("labelled")).toMatchObject({ lastTranscription: original, importId: "import_labelled" });
+    olderSave.run(JSON.stringify({ transcriptId: "new" }));
+    expect(fields("labelled").lastTranscription).toBeUndefined();
+  } finally { library.close(); }
+});
+
+it("finds what the start-up repairs and the export list look for without reading every edit, request or render", async () => {
+  const { ctx } = createApp({ dataDir: join(directory, "engine"), skillsSeedDir: join(directory, "empty-seed"), env: {}, log: () => {} });
+  try {
+    const prepare = vi.spyOn(ctx.db, "prepare");
+    retireLeftoverPasses(ctx);
+    foldStrandedPasses(ctx);
+    recordLeftOutFootage(ctx);
+    migrateDialogueOperations(ctx);
+    ctx.renders.exports();
+    const queries = [...new Set(prepare.mock.calls.map(([sql]) => sql))].filter(sql => /^SELECT json\b.*FROM (changes|tasks|renders)\b/s.test(sql));
+    prepare.mockRestore();
+    // Each begins with an index that holds only the rows of projects with a proposal waiting, or the rows it looks for.
+    expect(queries.map(sql => (ctx.db.prepare("EXPLAIN QUERY PLAN " + sql).all() as { detail: string }[])[0]!.detail)).toEqual([
+      "SEARCH changes USING INDEX changes_project_state (project_id=? AND state=?)",
+      "SEARCH changes USING INDEX changes_state (state=?)",
+      "SCAN changes USING INDEX changes_left_out_unread",
+      "SCAN tasks USING INDEX tasks_dialogue_unset",
+      "SCAN renders USING INDEX renders_export",
+    ]);
+  } finally { await ctx.close(); }
+});

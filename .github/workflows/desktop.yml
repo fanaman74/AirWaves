@@ -1,0 +1,126 @@
+name: Desktop
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      early_access_version:
+        description: "Early Access numeric version, for example 0.1.4. Leave empty for a regular check build."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# A newer push supersedes test builds. Releases, manual builds and retries get their own group.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.run_attempt == '1' && vars.SCARLET_STABLE_RELEASES != 'true' && vars.SCARLET_STABLE_RELEASES != 'updater-signed' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.number.outputs.version }}
+      signing: ${{ steps.number.outputs.signing }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Test release tooling
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y minisign
+          node --test .github/scripts/prepare-desktop-updates.test.mjs
+          ruby .github/tests/desktop_permissions_test.rb
+          node --test apps/desktop/scripts/release-version.test.mjs apps/desktop/scripts/verify-desktop-package.test.mjs apps/desktop/scripts/fetch-chrome.test.mjs .github/scripts/publish-desktop-release.test.mjs
+      - name: Resolve the version for this commit
+        id: number
+        env:
+          EARLY_ACCESS_VERSION: ${{ inputs.early_access_version }}
+          SIGNING: ${{ vars.SCARLET_STABLE_RELEASES }}
+        run: |
+          node apps/desktop/scripts/release-version.mjs check
+          if [ -n "$EARLY_ACCESS_VERSION" ]; then
+            version=$(node apps/desktop/scripts/release-version.mjs early-access "$EARLY_ACCESS_VERSION")
+          else
+            version=$(node apps/desktop/scripts/release-version.mjs for-commit)
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          case "$SIGNING" in
+            true|updater-signed) echo "signing=$SIGNING" >> "$GITHUB_OUTPUT" ;;
+            *) echo "signing=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  build:
+    needs: version
+    uses: ./.github/workflows/desktop-build.yml
+    with:
+      release: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.version.outputs.signing == 'true' || needs.version.outputs.signing == 'updater-signed') }}
+      platform_signing: ${{ needs.version.outputs.signing == 'true' }}
+      version: ${{ needs.version.outputs.version }}
+      early_access: ${{ github.event_name == 'workflow_dispatch' && inputs.early_access_version != '' }}
+
+  publish:
+    needs: [version, build, ci]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.version.outputs.signing == 'true' || needs.version.outputs.signing == 'updater-signed')
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    # Each push has its own version. Only repeat attempts for that version share a lock.
+    concurrency:
+      group: publish-desktop-${{ needs.version.outputs.version }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      # The signer alone is installed below, without scripts.
+      - uses: ./.github/actions/setup
+        with:
+          node-version: 24
+          pnpm-cache: false
+          install: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: scarlet-desktop-*
+          merge-multiple: true
+          path: installers
+      - name: Install the pinned updater signer
+        run: pnpm --filter @scarlet/desktop install --frozen-lockfile --ignore-scripts
+      - name: Sign the verified update packages
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: |
+          set -euo pipefail
+          : "${TAURI_SIGNING_PRIVATE_KEY:?Set the updater signing key in the main-only release environment}"
+          for suffix in macOS-Apple-Silicon.app.tar.gz macOS-Intel.app.tar.gz Windows-x64-Setup.exe Windows-x64.msi; do
+            package="$GITHUB_WORKSPACE/installers/Scarlet-$RELEASE_VERSION-$suffix"
+            test -s "$package"
+            pnpm --filter @scarlet/desktop exec tauri signer sign --app-version "$RELEASE_VERSION" "$package" > /dev/null
+            test -s "$package.sig"
+          done
+      - name: Verify the update signatures and assemble the public feed
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y minisign
+          node .github/scripts/prepare-desktop-updates.mjs "$RELEASE_VERSION" installers
+      - name: Publish the verified macOS and Windows installers together
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATER_SIGNED_ONLY: ${{ needs.version.outputs.signing == 'updater-signed' }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: node .github/scripts/publish-desktop-release.mjs "$RELEASE_VERSION" installers

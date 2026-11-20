@@ -1,0 +1,86 @@
+import { expect, it } from "vitest";
+import { madeSentence, sentenceText } from "./madeSentence";
+
+const length = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
+const cut = (start: number, end: number) => ({ label: "A stumble", beforeCut: { version: "v0", removed: { start, end } } });
+const say = (edits: Parameters<typeof madeSentence>[0]) => sentenceText(madeSentence(edits, length));
+
+it("says how much the cuts took out, with the figures in bold", () => {
+  const parts = madeSentence([cut(0, 60), cut(100, 171)], length);
+  expect(sentenceText(parts)).toBe("Took out 2:11 in 2 cuts.");
+  expect(parts.filter(part => typeof part !== "string")).toEqual([{ strong: "2:11" }, { strong: "2 cuts" }]);
+});
+
+it("counts what isn't a cut by what it did, after the cuts", () => {
+  expect(say([cut(0, 60), cut(100, 171), { label: "Punch in on Matt", kind: "zoom" }, { label: "Punch in on the guest", kind: "zoom" }, { label: "Host full-frame", kind: "reframe" }]))
+    .toBe("Took out 2:11 in 2 cuts, and made 2 zooms and 1 reframe.");
+  // A kind with no word of its own is an edit beside the others.
+  expect(say([cut(0, 60), cut(100, 171), { label: "Assemble the call" }])).toBe("Took out 2:11 in 2 cuts, and made 1 other edit.");
+});
+
+it("names a few edits that aren't cuts, and counts many by kind", () => {
+  expect(say([{ label: "music bed", kind: "audio" }, { label: "captions", kind: "text" }, { label: "wrap" }])).toBe("Made 3 edits: music bed, captions, wrap.");
+  const frames = ["Frame the watch", "Frame the prompt", "Frame the card", "Frame the chart"].map(label => ({ label, kind: "reframe" as const }));
+  expect(say(frames)).toBe("Made 4 reframes.");
+  expect(say([...frames, { label: "Lower-third: Matt", kind: "overlay" }, { label: "Assemble" }])).toBe("Made 4 reframes, 1 overlay and 1 other edit.");
+  expect(say(["One", "Two", "Three", "Four"].map(label => ({ label })))).toBe("Made 4 edits.");
+});
+
+it("says what Scarlet said about the one edit a request made", () => {
+  expect(say([{ label: "Camera full-frame for the intro", summary: "Made the host camera fill the frame for the intro lines." }])).toBe("Made the host camera fill the frame for the intro lines.");
+  const flagged = { label: "Trim the pause", check: "The join lands on a breath", reason: "The gap interrupts the answer." };
+  expect(say([flagged])).toBe("Trim the pause.");
+  expect(say([cut(0, 4.2)])).toBe("A stumble.");
+});
+
+it("counts an edit made in several places once, and says so when it is the only one", () => {
+  const same = { label: "Camera full screen", kind: "reframe" as const };
+  expect(say([same, same, same])).toBe("Camera full screen, in 3 places.");
+  expect(say([same, same, { label: "music bed", kind: "audio" }])).toBe("Made 2 edits: Camera full screen, music bed.");
+  // Over a list with a row for each place, the sentence counts the places, as that list does.
+  expect(sentenceText(madeSentence([cut(0, 60), same, same, same], length, true))).toBe("Took out 1:00 in 1 cut, and made 3 reframes.");
+});
+
+it("says nothing for a request with no edits, and counts cuts whose length isn't known", () => {
+  expect(madeSentence([], length)).toEqual([]);
+  expect(say([cut(5, 5), cut(9, 9)])).toBe("Made 2 cuts.");
+});
+
+it("counts the graphics a request made, and says what Scarlet said about a single one", () => {
+  const lower = (name: string) => ({ label: `Lower third: ${name}`, kind: "graphic" as const });
+  expect(say([lower("Daniel"), lower("Matt")])).toBe("Made 2 graphics.");
+  expect(say([cut(0, 60), lower("Daniel"), lower("Matt")])).toBe("Took out 1:00 in 1 cut, and made 2 graphics.");
+  expect(say([{ ...lower("Daniel"), summary: "Added a lower third naming Daniel as he first speaks." }])).toBe("Added a lower third naming Daniel as he first speaks.");
+  expect(say([lower("Daniel"), { label: "Punch in", kind: "zoom" }])).toBe("Made 2 edits: Lower third: Daniel, Punch in.");
+});
+
+it("counts transitions beside the other edits a request made", () => {
+  const zoom = (n: number) => ({ label: `Zoom ${n}`, kind: "zoom" as const });
+  const swipe = (n: number) => ({ label: `Swipe ${n}`, kind: "transition" as const });
+  expect(say([zoom(1), zoom(2), zoom(3), zoom(4), swipe(1), swipe(2), swipe(3), swipe(4)])).toBe("Made 4 zooms and 4 transitions.");
+});
+
+it("counts the spots Scarlet marked for the editor on their own, since they changed nothing in the video", () => {
+  const spot = (label: string) => ({ label, kind: "other" as const, marker: true as const });
+  expect(say([cut(0, 60), cut(100, 171), { label: "Punch in", kind: "zoom" }, spot("Fall Guys comparison footage"), spot("Boat comparison footage")]))
+    .toBe("Took out 2:11 in 2 cuts, and made 1 zoom, and marked 2 spots for you.");
+  expect(say([spot("Fall Guys comparison footage"), spot("Boat comparison footage")])).toBe("Marked 2 spots for you.");
+  expect(say([{ label: "Punch in", kind: "zoom" }, spot("Boat comparison footage")])).toBe("Made 1 edit: Punch in, and marked 1 spot for you.");
+  expect(say([{ ...spot("Boat comparison footage"), summary: "Marked where the boat comparison belongs." }])).toBe("Marked where the boat comparison belongs.");
+});
+
+it("counts a marker listed in several places as the one edit it is", () => {
+  const spot = (label: string) => ({ label, kind: "other" as const, marker: true as const });
+  const boat = spot("Boat comparison footage");
+  expect(say([cut(0, 60), boat, boat])).toBe("Took out 1:00 in 1 cut, and marked 1 spot for you.");
+  expect(say([boat, boat])).toBe("Boat comparison footage, in 2 places.");
+  expect(say([boat, boat, spot("Fall Guys comparison footage")])).toBe("Marked 2 spots for you.");
+});
+
+it("says footage put back as what was done to it, never as something made", () => {
+  const back = { label: "Restored the first sound", kind: "restore" as const };
+  expect(say([cut(0, 60), cut(100, 171), back, { label: "Frame the chart", kind: "reframe" }, { label: "Frame the card", kind: "reframe" }]))
+    .toBe("Took out 2:11 in 2 cuts, put back 1 passage, and made 2 reframes.");
+  expect(say([cut(0, 60), cut(100, 171), back, { ...back, label: "Restored the pause" }])).toBe("Took out 2:11 in 2 cuts and put back 2 passages.");
+  expect(say([back, ...["A", "B", "C", "D"].map(label => ({ label, kind: "zoom" as const }))])).toBe("Put back 1 passage and made 4 zooms.");
+});
