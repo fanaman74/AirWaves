@@ -3,7 +3,7 @@
  * browsers (uses global fetch). Used by the web UI, MCP server and agent host.
  */
 import type { EditReviewRequest } from "./telemetry.js";
-import type { ApiProviderId, ApiProviderModel, ApiProviderSecret, ApiProviderStatus, GenerateMusicRequest, TestApiKeyResult, TestApiModelResult, TestMusicResult } from "./apiProviders.js";
+import type { ApiProviderId, ApiProviderModel, ApiProviderSecret, ApiProviderStatus, GenerateMusicRequest, ImprovePromptResult, Instructions, PromptKind, SavedPrompt, TestApiKeyResult, TestApiModelResult, TestMusicResult } from "./apiProviders.js";
 import type { z } from "zod/v3";
 import { requireSecureEngineUrl } from "./engineTransport.js";
 import type { TranscriptSearchResult } from "./transcriptSearch.js";
@@ -767,6 +767,26 @@ export class ScarletClient {
   /** Generate music with the saved OpenRouter key and add it to the project's media. */
   generateMusic(projectId: string, body: GenerateMusicRequest) {
     return this.post<{ media: MediaAsset; model: string; text?: string }>(`/projects/${apiPathId(projectId)}/music`, body);
+  }
+  instructions() {
+    return this.get<Instructions>("/instructions");
+  }
+  /** null resets a field to the built-in text. */
+  saveInstructions(body: { editing?: string | null; music?: string | null }) {
+    return this.request<Instructions>("PUT", "/instructions", body);
+  }
+  savedPrompts() {
+    return this.get<{ prompts: SavedPrompt[] }>("/prompts");
+  }
+  savePrompt(body: { kind: PromptKind; title?: string; text: string }) {
+    return this.post<{ prompt: SavedPrompt }>("/prompts", body);
+  }
+  deletePrompt(id: string) {
+    return this.request<{ ok: true }>("DELETE", `/prompts/${apiPathId(id)}`);
+  }
+  /** Rewrite a request or a music description with a saved AI provider. */
+  improvePrompt(body: { kind: PromptKind; text: string; agent?: string; model?: string }) {
+    return this.post<ImprovePromptResult>("/prompts/improve", body);
   }
   removeApiProvider(provider: ApiProviderId) {
     return this.request<{ ok: true }>("DELETE", `/providers/${provider}`);

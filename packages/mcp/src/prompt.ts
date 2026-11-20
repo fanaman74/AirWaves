@@ -57,6 +57,8 @@ export interface PromptContext {
   attachments?: Array<{ id: string; name: string; size: number; mime?: string; path: string }>;
   /** The project's style guide: pasted text in full, or the file it is in. */
   styleGuide?: { name: string; text?: string; path?: string; mime?: string };
+  /** AirWaves: the editor's own version of the built-in instructions (Settings → Instructions). Replaces SCARLET_INTRO. */
+  intro?: string;
 }
 
 /** A size the editor reads, for a file. */
@@ -231,7 +233,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
   if (ctx.editSkill) return buildSkillEditPrompt(ctx, ctx.editSkill);
   if (ctx.learningCheck) return buildLearningCheckPrompt(ctx.learningCheck);
   if (ctx.areaCheck) return buildAreaCheckPrompt(ctx.areaCheck, ctx.capabilities?.toolPrefix ?? "");
-  const parts: string[] = [SCARLET_INTRO];
+  const parts: string[] = [ctx.intro?.trim() || SCARLET_INTRO];
   // Only a caller that says the run has the tool is asked: a harness's default says what it can do, not how this run was launched.
   if (ctx.capabilities?.plan) parts.push(PLAN_STEPS);
 

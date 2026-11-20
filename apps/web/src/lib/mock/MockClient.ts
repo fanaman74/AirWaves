@@ -69,13 +69,13 @@ export class MockClient implements ScarletApi {
 
   private activityLog: ActivityEntry[] = [];
   /** AirWaves AI providers in the demo: any key works except one starting with "bad". */
-  private providers: Partial<Record<ApiProviderId, { apiKey: string; model: string; modelLabel?: string; enabled: boolean; savedAt: string }>> = {};
+  private providers: Partial<Record<ApiProviderId, { apiKey: string; model: string; modelLabel?: string; musicModel?: string; enabled: boolean; savedAt: string }>> = {};
 
   async apiProviders() {
     const ids: ApiProviderId[] = ["aistudio", "openrouter"];
     return { providers: ids.map((id): ApiProviderStatus => {
       const p = this.providers[id];
-      return p ? { id, configured: true, enabled: p.enabled, keyPreview: maskApiKey(p.apiKey), model: p.model, modelLabel: p.modelLabel, savedAt: p.savedAt } : { id, configured: false, enabled: false };
+      return p ? { id, configured: true, enabled: p.enabled, keyPreview: maskApiKey(p.apiKey), model: p.model, modelLabel: p.modelLabel, musicModel: p.musicModel, savedAt: p.savedAt } : { id, configured: false, enabled: false };
     }) };
   }
   private mockKey(id: ApiProviderId, apiKey?: string) {
@@ -103,7 +103,7 @@ export class MockClient implements ScarletApi {
   }
   async saveApiProvider(id: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean; musicModel?: string }) {
     const apiKey = this.mockKey(id, body.apiKey);
-    this.providers[id] = { apiKey, model: body.model, modelLabel: body.modelLabel, enabled: body.enabled ?? true, savedAt: new Date().toISOString() };
+    this.providers[id] = { apiKey, model: body.model, modelLabel: body.modelLabel, enabled: body.enabled ?? true, savedAt: new Date().toISOString(), ...(body.musicModel && { musicModel: body.musicModel }) };
     return { provider: (await this.apiProviders()).providers.find(p => p.id === id)! };
   }
   async musicModels() {
@@ -112,6 +112,38 @@ export class MockClient implements ScarletApi {
   async testMusic(_model: string) {
     await new Promise(r => setTimeout(r, 600));
     return { ok: false, error: "The demo can't compose music." };
+  }
+  private instructionsSaved: { editing?: string; music?: string } = {};
+  private prompts: Array<{ id: string; kind: "edit" | "music"; title: string; text: string; createdAt: string }> = [];
+  async instructions() {
+    return { ...this.instructionsSaved, defaults: { editing: "# You are editing a video in AirWaves\n\n(The demo shows a shortened version of the built-in instructions.)", music: "" } };
+  }
+  async saveInstructions(body: { editing?: string | null; music?: string | null }) {
+    for (const k of ["editing", "music"] as const) {
+      if (body[k] === undefined) continue;
+      if (!body[k]?.trim()) delete this.instructionsSaved[k];
+      else this.instructionsSaved[k] = body[k]!;
+    }
+    return this.instructions();
+  }
+  async savedPrompts() {
+    return { prompts: this.prompts };
+  }
+  async savePrompt(body: { kind: "edit" | "music"; title?: string; text: string }) {
+    const prompt = { id: `prm_${Date.now()}`, kind: body.kind, title: body.title || body.text.slice(0, 60), text: body.text, createdAt: new Date().toISOString() };
+    this.prompts.unshift(prompt);
+    return { prompt };
+  }
+  async deletePrompt(id: string) {
+    this.prompts = this.prompts.filter(p => p.id !== id);
+    return { ok: true as const };
+  }
+  async improvePrompt(body: { kind: "edit" | "music"; text: string }) {
+    await new Promise(r => setTimeout(r, 500));
+    const text = body.kind === "music"
+      ? `${body.text.trim()}. Instrumental background track, 110 BPM, warm synth pads, soft drums, gentle build in the middle and a calm fade-out.`
+      : `${body.text.trim()}\n\n- Keep it under 60 seconds and cut long pauses and filler words.\n- Keep the strongest moments in their original order.\n- Add captions and soft background music under the voice.`;
+    return { text, provider: "openrouter", model: "openai/gpt-5" };
   }
   async removeApiProvider(id: ApiProviderId) {
     delete this.providers[id];

@@ -7,6 +7,7 @@ import type { EngineStatus } from "../../lib/desktop";
 
 vi.mock("../../lib/realtime", async importOriginal => ({ ...(await importOriginal<object>()), startRealtime: () => () => {}, reconnectRealtime: () => {} }));
 vi.mock("../../lib/dropTargets", async importOriginal => ({ ...(await importOriginal<object>()), listenForFileDrops: () => () => {} }));
+vi.mock("./ModelChips", () => ({ ModelChips: () => null }));
 // A page whose code never arrives holds the router on what it shows while that code loads.
 vi.mock("../../pages/SettingsPage", () => new Promise(() => {}));
 

@@ -106,3 +106,43 @@ export function maskApiKey(key: string): string {
   if (k.length <= 10) return "•".repeat(k.length);
   return `${k.slice(0, 4)}…${k.slice(-4)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Instructions and saved prompts (Settings → Instructions, the model chips)
+// ---------------------------------------------------------------------------
+
+export const PromptKind = z.enum(["edit", "music"]);
+export type PromptKind = z.infer<typeof PromptKind>;
+
+export interface Instructions {
+  /** The editor's version of the built-in editing instructions; undefined = the built-in text. */
+  editing?: string;
+  /** Added to every music description sent to the music model. */
+  music?: string;
+  defaults: { editing: string; music: string };
+}
+export const SaveInstructionsRequest = z.object({
+  editing: z.string().max(100_000).nullable().optional(),
+  music: z.string().max(4000).nullable().optional(),
+});
+
+export const SavedPrompt = z.object({
+  id: z.string(),
+  kind: PromptKind,
+  title: z.string(),
+  text: z.string(),
+  createdAt: z.string(),
+});
+export type SavedPrompt = z.infer<typeof SavedPrompt>;
+export const SavePromptRequest = z.object({ kind: PromptKind, title: z.string().trim().max(120).optional(), text: z.string().trim().min(1).max(8000) });
+
+export const ImprovePromptRequest = z.object({
+  kind: PromptKind,
+  text: z.string().trim().min(1).max(8000),
+  /** The model picked for editing; used when it is an API provider. */
+  agent: z.string().optional(),
+  model: z.string().optional(),
+});
+export interface ImprovePromptResult { text: string; provider: string; model: string }
+
+export const DEFAULT_MUSIC_INSTRUCTIONS = "";

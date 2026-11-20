@@ -262,3 +262,10 @@ describe("stripFrontmatter", () => {
     expect(stripFrontmatter("---\nnever closed")).toBe("---\nnever closed");
   });
 });
+
+it("starts with the editor's own instructions when Settings → Instructions has them", () => {
+  const own = buildSystemPrompt({ project: "A project.", skills: [], intro: "# My house rules\nAlways keep it under a minute." });
+  expect(own.startsWith("# My house rules")).toBe(true);
+  expect(own).not.toContain("# You are editing a video in AirWaves");
+  expect(buildSystemPrompt({ project: "A project.", skills: [], intro: "  " })).toContain("# You are editing a video in AirWaves");
+});

@@ -1,6 +1,7 @@
 import { agentCapabilities, isAsideTask, isLearningCheck, isProjectEditTask, PROJECT_EDIT_TASK_KINDS, isSkillEdit, planText, queueBlocker, type QueueChange, reviewItemPath, splitAgentTarget, TaskPlan, dialogueCommand, skillCommands, taskDialogueOperation, taskRunKind } from "@scarlet/shared";
 import { AgentId, type AgentHost, type CompleteTaskRequest, type Task, type TaskEvent, type TaskKind, type TaskPrompt, type User } from "@scarlet/shared";
 import { buildSystemPrompt } from "@scarlet/mcp/prompt";
+import { readInstructions } from "../routes/instructions.js";
 import { join } from "node:path";
 import { carriesAudio, describeDialogueRemovals, dialogueReceipt, dialogueRemovals, newId, type Author, type Change, type Project } from "@scarlet/timeline";
 import { mimeFor, styleGuidePath } from "./graphics.js";
@@ -520,6 +521,7 @@ export function taskPrompt(ctx: Ctx, task: Task, opts: { workDir?: string; fresh
     timeLimitMinutes: opts.timeLimitMinutes,
     capabilities: { ...agentCapabilities(task.agent), plan: plans },
     ...graphicsContext(ctx, project, task),
+    intro: readInstructions(ctx).editing,
   });
   // Whether the host launches the CLI with its own to-do tool on.
   const plan = plans ? { plan: true } : {};

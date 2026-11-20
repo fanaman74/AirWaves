@@ -24,6 +24,7 @@ import { now } from "../db.js";
 import { ingestMedia } from "../services/ingest.js";
 import { requestAttempt, requireLocalPauseTarget, requireProjectEditAttempt } from "../services/taskAttempt.js";
 import { jsonBody, requireProject } from "./util.js";
+import { readInstructions } from "./instructions.js";
 
 interface StoredProvider {
   apiKey: string;
@@ -75,9 +76,18 @@ export class ProviderStore {
   }
 }
 
+const stores = new Map<string, ProviderStore>();
+/** The one store for a library, so every route sees a save at once. */
+export function providerStore(ctx: Pick<Ctx, "paths">): ProviderStore {
+  const path = join(ctx.paths.root, "providers.json");
+  let store = stores.get(path);
+  if (!store) stores.set(path, store = new ProviderStore(path));
+  return store;
+}
+
 export function providerRoutes(ctx: Ctx, opts: { fetch?: FetchFn; store?: ProviderStore } = {}) {
   const r = new Hono<AppEnv>();
-  const store = opts.store ?? new ProviderStore(join(ctx.paths.root, "providers.json"));
+  const store = opts.store ?? providerStore(ctx);
   const f: FetchFn = opts.fetch ?? ((input, init) => fetch(input, init));
 
   const providerId = (raw: string) => {
@@ -166,7 +176,8 @@ export function providerRoutes(ctx: Ctx, opts: { fetch?: FetchFn; store?: Provid
     const signal = AbortSignal.any([ctx.projectSignal(project.id), c.req.raw.signal]);
     let song;
     try {
-      song = await generateMusic({ apiKey: saved.apiKey, model, prompt: body.prompt, signal }, f);
+      const extra = readInstructions(ctx).music?.trim();
+      song = await generateMusic({ apiKey: saved.apiKey, model, prompt: extra ? `${body.prompt}\n\n${extra}` : body.prompt, signal }, f);
     } catch (err) {
       throw badRequest("music_failed", `Music generation failed (${model}): ${(err as Error).message}`);
     }

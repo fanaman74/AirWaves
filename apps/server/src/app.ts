@@ -22,6 +22,7 @@ import { renderRoutes } from "./routes/renders.js";
 import { storageRoutes } from "./routes/storage.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { providerRoutes } from "./routes/providers.js";
+import { instructionRoutes } from "./routes/instructions.js";
 import { skillRoutes } from "./routes/skills.js";
 import { graphicRoutes } from "./routes/graphics.js";
 import { historyRoutes } from "./routes/history.js";
@@ -306,6 +307,7 @@ export function createApp(options: ServerOptions): ScarletApp {
   api.route("/", graphicRoutes(ctx));
   api.route("/", settingsRoutes(ctx));
   api.route("/", providerRoutes(ctx));
+  api.route("/", instructionRoutes(ctx));
   api.route("/", storageRoutes(ctx));
   api.route("/", evalExportRoutes(ctx));
   app.route("/api", api);

@@ -12,6 +12,7 @@ import { useUiStore } from "../../stores/ui";
 import { scheduleStorageScan } from "../../lib/storage";
 import { ExportStarNotice } from "./ExportStarNotice";
 import { ShortcutsModal } from "./ShortcutsModal";
+import { ModelChips } from "./ModelChips";
 import { StartupRecovery } from "./StartupRecovery";
 import { BootSplash, startup } from "./BootSplash";
 import { captureProjectPlace } from "../../lib/updatePlace";
@@ -148,6 +149,7 @@ export function AppShell() {
         <Outlet />
       </div>
       <ExportStarNotice />
+      <ModelChips />
       <ShortcutsModal />
     </div>
   );
