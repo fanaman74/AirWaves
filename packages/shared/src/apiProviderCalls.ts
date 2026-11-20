@@ -282,3 +282,136 @@ export function portableSchema(schema: unknown, root = schema): Record<string, u
   if (out.type === "array" && !out.items) out.items = { type: "string" };
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Music (OpenRouter audio-output models such as Google Lyria)
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_MUSIC_MODEL = "google/lyria-3-pro-preview";
+
+export interface GeneratedAudio {
+  bytes: Uint8Array;
+  mime: string;
+  ext: string;
+  /** Any words the model sent with the audio (lyrics, a description). */
+  text: string;
+}
+
+/** OpenRouter models that answer with audio. The default catalog lists text models only. */
+export async function listMusicModels(apiKey: string, f: FetchFn = fetch): Promise<ApiProviderModel[]> {
+  const body = await getJson<{ data?: (OpenRouterModel & { architecture?: { output_modalities?: string[] } })[] }>(
+    `${apiBaseUrl("openrouter")}/models?output_modalities=audio`, { headers: authHeaders("openrouter", apiKey) }, f);
+  return (body.data ?? [])
+    .filter((m) => m.architecture?.output_modalities?.includes("audio") ?? /lyria|music|audio/i.test(m.id))
+    .map((m) => ({ id: m.id, label: m.name ?? m.id, contextLength: m.context_length }))
+    .sort((a, b) => Number(b.id === DEFAULT_MUSIC_MODEL) - Number(a.id === DEFAULT_MUSIC_MODEL) || a.label.localeCompare(b.label));
+}
+
+/** What the bytes are, from their first few: providers differ (WAV, MP3) and don't always say. */
+export function sniffAudio(bytes: Uint8Array, hint?: string): { mime: string; ext: string } {
+  const head = String.fromCharCode(...bytes.subarray(0, 12));
+  if (head.startsWith("RIFF") && head.slice(8, 12) === "WAVE") return { mime: "audio/wav", ext: "wav" };
+  if (head.startsWith("ID3") || (bytes[0] === 0xff && ((bytes[1] ?? 0) & 0xe0) === 0xe0)) return { mime: "audio/mpeg", ext: "mp3" };
+  if (head.startsWith("OggS")) return { mime: "audio/ogg", ext: "ogg" };
+  if (head.startsWith("fLaC")) return { mime: "audio/flac", ext: "flac" };
+  if (head.slice(4, 8) === "ftyp") return { mime: "audio/mp4", ext: "m4a" };
+  const h = (hint ?? "").toLowerCase();
+  if (h.includes("mp3") || h.includes("mpeg")) return { mime: "audio/mpeg", ext: "mp3" };
+  if (h.includes("wav")) return { mime: "audio/wav", ext: "wav" };
+  return { mime: "audio/wav", ext: "wav" };
+}
+
+function base64Bytes(b64: string): Uint8Array {
+  const clean = b64.replace(/^data:[^,]*,/, "").replace(/\s+/g, "");
+  const g = globalThis as { Buffer?: { from(s: string, enc: string): Uint8Array } };
+  if (g.Buffer) return new Uint8Array(g.Buffer.from(clean, "base64"));
+  const bin = atob(clean);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/** Collects audio from the places providers put it: a streamed `delta.audio`, `message.audio`, an audio content part or a data URL. */
+class AudioCollector {
+  private parts: string[] = [];
+  private whole: string[] = [];
+  format?: string;
+  text = "";
+
+  take(m: Record<string, unknown> | undefined, streamed: boolean) {
+    if (!m) return;
+    const audio = m.audio as { data?: string; format?: string; transcript?: string } | undefined;
+    if (audio?.data) (streamed ? this.parts : this.whole).push(audio.data);
+    if (audio?.format) this.format = audio.format;
+    if (audio?.transcript) this.text += audio.transcript;
+    const content = m.content;
+    if (typeof content === "string") {
+      const url = /data:(audio\/[\w.+-]+);base64,([A-Za-z0-9+/=\s]+)/.exec(content);
+      if (url) { this.whole.push(url[2]!); this.format ??= url[1]; }
+      else this.text += content;
+    } else if (Array.isArray(content)) {
+      for (const p of content as Record<string, any>[]) {
+        const data = p?.input_audio?.data ?? p?.audio?.data ?? (typeof p?.audio_url?.url === "string" ? p.audio_url.url : undefined) ?? (p?.type === "audio" ? p?.data : undefined);
+        if (typeof data === "string") { this.whole.push(data); this.format ??= p?.input_audio?.format ?? p?.audio?.format ?? p?.format; }
+        else if (typeof p?.text === "string") this.text += p.text;
+      }
+    }
+  }
+
+  bytes(): Uint8Array | undefined {
+    const b64 = this.parts.length ? this.parts.join("") : this.whole.sort((a, b) => b.length - a.length)[0];
+    return b64 ? base64Bytes(b64) : undefined;
+  }
+}
+
+/**
+ * Ask an OpenRouter audio model (Lyria) for music. Streams, as audio output requires on OpenRouter, and also reads a
+ * plain JSON answer. Lyria Pro makes a whole song (about two minutes) whatever length is asked for.
+ */
+export async function generateMusic(req: { apiKey: string; model?: string; prompt: string; signal?: AbortSignal }, f: FetchFn = fetch): Promise<GeneratedAudio> {
+  const res = await f(`${apiBaseUrl("openrouter")}/chat/completions`, {
+    method: "POST",
+    headers: authHeaders("openrouter", req.apiKey),
+    body: JSON.stringify({
+      model: req.model || DEFAULT_MUSIC_MODEL,
+      messages: [{ role: "user", content: req.prompt }],
+      modalities: ["text", "audio"],
+      stream: true,
+    }),
+    signal: req.signal ?? AbortSignal.timeout(300_000),
+  });
+  if (!res.ok) throw await failure(res);
+  const got = new AudioCollector();
+  const type = res.headers.get("content-type") ?? "";
+  if (type.includes("text/event-stream") && res.body) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    const line = (l: string) => {
+      const t = l.trim();
+      if (!t.startsWith("data:")) return;
+      const data = t.slice(5).trim();
+      if (!data || data === "[DONE]") return;
+      let chunk: { choices?: { delta?: Record<string, unknown>; message?: Record<string, unknown> }[]; error?: { message?: string } };
+      try { chunk = JSON.parse(data); } catch { return; }
+      if (chunk.error) throw new ApiProviderError(chunk.error.message ?? "The provider returned an error.");
+      got.take(chunk.choices?.[0]?.delta, true);
+      got.take(chunk.choices?.[0]?.message, false);
+    };
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) >= 0) { line(buffer.slice(0, nl)); buffer = buffer.slice(nl + 1); }
+    }
+    line(buffer);
+  } else {
+    const json = await res.json() as { choices?: { message?: Record<string, unknown> }[]; error?: { message?: string } };
+    if (json.error) throw new ApiProviderError(json.error.message ?? "The provider returned an error.");
+    got.take(json.choices?.[0]?.message, false);
+  }
+  const bytes = got.bytes();
+  if (!bytes?.length) throw new ApiProviderError(`The model sent no audio${got.text.trim() ? `: ${got.text.trim().slice(0, 200)}` : "."} Check that it is a music model.`);
+  return { bytes, ...sniffAudio(bytes, got.format), text: got.text.trim() };
+}

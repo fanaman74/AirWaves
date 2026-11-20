@@ -96,6 +96,7 @@ import { transitionOps } from "./transition.js";
 import { MediaPreparing, describeError, errorResult, errorText, formatZodError, json, noteEvidenceMiss, notePreparing, noteUnmeasured, text, toolDiagnostics, toolRefusal, unavailable, unmeasured, unmeasuredLine, type ToolResult } from "./tool-result.js";
 import { keptEditsNote } from "./editor-kept.js";
 import { registerPerception } from "./perception-tools.js";
+import { registerMusic } from "./music-tools.js";
 import { registerGraphics } from "./graphics-tools.js";
 import { sourceRangeToTimeline, sourceToTimeline, timelineWords } from "./timeline-perception.js";
 import { PAUSE_FLOOR_SECONDS, partLeftovers } from "./dialogue-leftovers.js";
@@ -3781,6 +3782,7 @@ ${OPS_DOC}`,
 
   registerGraphics({ tool, client, projectId: ctx.projectId, task: ctx.task, author: ctx.author, caps,
     readArtifact: async path => readArtifact(await artifactDir(), path), getProject: getHeader });
+  registerMusic({ tool, client, projectId: ctx.projectId });
 
   tool(
     "export_otio",

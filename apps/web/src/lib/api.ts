@@ -14,6 +14,8 @@ export type ScarletApi = Pick<
   | "testApiModel"
   | "saveApiProvider"
   | "removeApiProvider"
+  | "musicModels"
+  | "testMusic"
   | "url"
   | "fileUrl"
   | "wsUrl"

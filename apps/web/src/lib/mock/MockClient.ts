@@ -101,10 +101,17 @@ export class MockClient implements ScarletApi {
     await new Promise(r => setTimeout(r, 700));
     return model.includes("llama") ? { ok: false, error: "No endpoints found that support tool use.", ms: 700 } : { ok: true, reply: "Ready to cut your video!", ms: 812, tools: true };
   }
-  async saveApiProvider(id: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean }) {
+  async saveApiProvider(id: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean; musicModel?: string }) {
     const apiKey = this.mockKey(id, body.apiKey);
     this.providers[id] = { apiKey, model: body.model, modelLabel: body.modelLabel, enabled: body.enabled ?? true, savedAt: new Date().toISOString() };
     return { provider: (await this.apiProviders()).providers.find(p => p.id === id)! };
+  }
+  async musicModels() {
+    return { models: [{ id: "google/lyria-3-pro-preview", label: "Google: Lyria 3 Pro Preview" }, { id: "google/lyria-3-clip-preview", label: "Google: Lyria 3 Clip Preview" }] };
+  }
+  async testMusic(_model: string) {
+    await new Promise(r => setTimeout(r, 600));
+    return { ok: false, error: "The demo can't compose music." };
   }
   async removeApiProvider(id: ApiProviderId) {
     delete this.providers[id];

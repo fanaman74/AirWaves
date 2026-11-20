@@ -60,6 +60,8 @@ export const ApiProviderStatus = z.object({
   keyPreview: z.string().optional(),
   model: z.string().optional(),
   modelLabel: z.string().optional(),
+  /** OpenRouter only: the audio model music_generate uses (Google Lyria). */
+  musicModel: z.string().optional(),
   savedAt: z.string().optional(),
 });
 export type ApiProviderStatus = z.infer<typeof ApiProviderStatus>;
@@ -81,7 +83,19 @@ export const SaveApiProviderRequest = z.object({
   model: ApiModelId,
   modelLabel: z.string().max(200).optional(),
   enabled: z.boolean().default(true),
+  /** Leave out to keep the saved one; empty to clear. */
+  musicModel: z.union([ApiModelId, z.literal("")]).optional(),
 });
+
+export const TestMusicRequest = z.object({ apiKey: ApiKey.optional(), model: ApiModelId, prompt: z.string().trim().min(1).max(2000).optional() });
+export interface TestMusicResult { ok: boolean; error?: string; ms?: number; mime?: string; bytes?: number; audioBase64?: string; text?: string }
+
+export const GenerateMusicRequest = z.object({
+  prompt: z.string().trim().min(3).max(2000),
+  name: z.string().trim().min(1).max(200).optional(),
+  model: ApiModelId.optional(),
+});
+export type GenerateMusicRequest = z.infer<typeof GenerateMusicRequest>;
 
 export interface TestApiKeyResult { ok: boolean; error?: string; detail?: string }
 export interface TestApiModelResult { ok: boolean; error?: string; reply?: string; ms?: number; tools?: boolean }

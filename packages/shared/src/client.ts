@@ -3,7 +3,7 @@
  * browsers (uses global fetch). Used by the web UI, MCP server and agent host.
  */
 import type { EditReviewRequest } from "./telemetry.js";
-import type { ApiProviderId, ApiProviderModel, ApiProviderSecret, ApiProviderStatus, TestApiKeyResult, TestApiModelResult } from "./apiProviders.js";
+import type { ApiProviderId, ApiProviderModel, ApiProviderSecret, ApiProviderStatus, GenerateMusicRequest, TestApiKeyResult, TestApiModelResult, TestMusicResult } from "./apiProviders.js";
 import type { z } from "zod/v3";
 import { requireSecureEngineUrl } from "./engineTransport.js";
 import type { TranscriptSearchResult } from "./transcriptSearch.js";
@@ -753,8 +753,20 @@ export class ScarletClient {
   testApiModel(provider: ApiProviderId, model: string, apiKey?: string) {
     return this.post<TestApiModelResult>(`/providers/${provider}/test-model`, { apiKey, model });
   }
-  saveApiProvider(provider: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean }) {
+  saveApiProvider(provider: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean; musicModel?: string }) {
     return this.request<{ provider: ApiProviderStatus }>("PUT", `/providers/${provider}`, body);
+  }
+  /** OpenRouter models that make audio (Lyria). */
+  musicModels(apiKey?: string) {
+    return this.post<{ models: ApiProviderModel[] }>("/providers/openrouter/music-models", { apiKey });
+  }
+  /** Generates one track to listen to in Settings. Lyria Pro costs about $0.08 a song. */
+  testMusic(model: string, prompt?: string, apiKey?: string) {
+    return this.post<TestMusicResult>("/providers/openrouter/test-music", { apiKey, model, prompt });
+  }
+  /** Generate music with the saved OpenRouter key and add it to the project's media. */
+  generateMusic(projectId: string, body: GenerateMusicRequest) {
+    return this.post<{ media: MediaAsset; model: string; text?: string }>(`/projects/${apiPathId(projectId)}/music`, body);
   }
   removeApiProvider(provider: ApiProviderId) {
     return this.request<{ ok: true }>("DELETE", `/providers/${provider}`);

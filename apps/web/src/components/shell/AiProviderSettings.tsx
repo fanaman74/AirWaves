@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { API_PROVIDERS, type ApiProviderId, type ApiProviderModel, type ApiProviderStatus } from "@scarlet/shared";
+import { API_PROVIDERS, DEFAULT_MUSIC_MODEL, type ApiProviderId, type ApiProviderModel, type ApiProviderStatus } from "@scarlet/shared";
 import { api, errorMessage } from "../../lib/client";
 import { useHostsStore } from "../../stores/hosts";
 import { Icon, InlineError, SectionTitle, Spinner, Toggle } from "../ui/primitives";
@@ -189,6 +189,7 @@ function ProviderCard({ status, onChanged }: { status: ApiProviderStatus; onChan
         )}
       </div>
       {savedNote && !editing && <div className="text-[12px] text-ok mb-1" role="status">{savedNote}</div>}
+      {status.id === "openrouter" && status.configured && !editing && <MusicSettings status={status} onChanged={onChanged} />}
 
       {editing && (
         <ol className="space-y-4">
@@ -287,5 +288,98 @@ function ProviderMark({ id }: { id: ApiProviderId }) {
     <span aria-hidden className={`inline-flex size-9 items-center justify-center rounded-lg text-[13px] font-bold ${id === "aistudio" ? "bg-[#1a73e8]/15 text-[#8ab4f8]" : "bg-[#6467f2]/15 text-[#a5a7ff]"}`}>
       {id === "aistudio" ? "G" : "OR"}
     </span>
+  );
+}
+
+/**
+ * AirWaves: the music model behind the music_generate tool. OpenRouter's audio models (Google Lyria) are listed with
+ * the saved key; a sample can be generated and heard here before saving. Lyria Pro costs about $0.08 a track.
+ */
+function MusicSettings({ status, onChanged }: { status: ApiProviderStatus; onChanged: () => void }) {
+  const [models, setModels] = useState<ApiProviderModel[] | null>(null);
+  const [model, setModel] = useState(status.musicModel ?? DEFAULT_MUSIC_MODEL);
+  const [loadError, setLoadError] = useState("");
+  const [prompt, setPrompt] = useState("Upbeat cinematic electronic track for a drone video over the sea, 125 BPM, instrumental");
+  const [testState, setTestState] = useState<StepState>("idle");
+  const [testMsg, setTestMsg] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string>();
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    api.musicModels().then(r => {
+      if (!alive) return;
+      const list = r.models.some(m => m.id === model) ? r.models : [{ id: model, label: model }, ...r.models];
+      setModels(list);
+    }).catch(e => alive && setLoadError(errorMessage(e)));
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => () => { if (audioUrl) URL.revokeObjectURL(audioUrl); }, [audioUrl]);
+
+  const test = async () => {
+    setTestState("busy"); setTestMsg(""); setAudioUrl(undefined); setSaved("");
+    try {
+      const r = await api.testMusic(model, prompt);
+      if (!r.ok || !r.audioBase64) {
+        setTestState("fail"); setTestMsg(r.error ?? "No audio came back."); return;
+      }
+      const bin = atob(r.audioBase64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      setAudioUrl(URL.createObjectURL(new Blob([bytes], { type: r.mime ?? "audio/wav" })));
+      setTestState("ok");
+      setTestMsg(`Generated in ${((r.ms ?? 0) / 1000).toFixed(0)} s · ${((r.bytes ?? 0) / 1024 / 1024).toFixed(1)} MB ${r.mime?.replace("audio/", "").toUpperCase() ?? ""}`);
+    } catch (e) {
+      setTestState("fail"); setTestMsg(errorMessage(e));
+    }
+  };
+
+  const save = async () => {
+    if (!status.model) return;
+    setSaving(true); setSaved("");
+    try {
+      await api.saveApiProvider("openrouter", { model: status.model, modelLabel: status.modelLabel, enabled: status.enabled, musicModel: model });
+      setSaved("Music model saved. Ask for music in any request, e.g. “compose a track for this montage and put it under the video”.");
+      onChanged();
+    } catch (e) {
+      setSaved(""); setTestMsg(errorMessage(e)); setTestState("fail");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 border-t border-line pt-4" data-section="music">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon name="audio" />
+        <span className="text-[13px] font-semibold text-fg">Music generation</span>
+        <span className="text-[12px] text-muted">{status.musicModel ? `· ${status.musicModel}` : "· not set (uses Lyria 3 Pro)"}</span>
+      </div>
+      <p className="text-[12px] text-muted mb-3">Lets the editing agent compose a track with Google Lyria and add it to your media. About $0.08 per track on OpenRouter; a track is a whole song (around two minutes) that the edit trims to fit.</p>
+      <InlineError>{loadError}</InlineError>
+      <div className="flex flex-wrap gap-2 mb-2">
+        <div role="listbox" aria-label="Music model" className="flex flex-wrap gap-1.5">
+          {(models ?? [{ id: model, label: model }]).map(m => (
+            <button key={m.id} type="button" role="option" aria-selected={m.id === model} data-music-model={m.id}
+              onClick={() => { setModel(m.id); setTestState("idle"); setTestMsg(""); setAudioUrl(undefined); }}
+              className={`rounded-md border px-2.5 py-1 text-[12px] ${m.id === model ? "border-hi/50 bg-raised text-fg" : "border-line text-muted hover:text-fg"}`}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <input className="field flex-1 min-w-[240px] border border-line" aria-label="Sample music prompt" value={prompt} onChange={e => setPrompt(e.target.value)} />
+        <button type="button" className="btn-ghost" disabled={testState === "busy" || !prompt.trim()} onClick={() => void test()}>
+          {testState === "busy" ? <><Spinner className="size-3" /> Composing… (up to a minute)</> : "Generate sample"}
+        </button>
+        <button type="button" className="btn-primary" disabled={saving || testState !== "ok"} onClick={() => void save()}>Save music model</button>
+      </div>
+      {testMsg && <div className={`text-[12px] mt-1.5 ${testState === "ok" ? "text-ok" : "text-bad"}`} role={testState === "ok" ? "status" : "alert"}>{testMsg}</div>}
+      {audioUrl && <audio className="mt-2 w-full" controls src={audioUrl} data-testid="music-sample" />}
+      {saved && <div className="text-[12px] text-ok mt-1.5" role="status">{saved}</div>}
+    </div>
   );
 }
