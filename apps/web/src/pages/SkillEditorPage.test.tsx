@@ -346,7 +346,7 @@ it("lists what each version changed, newest first, and shows a picked one with i
     expect(picker().textContent).toBe("History");
     await act(async () => picker().click());
     expect(choices()).toHaveLength(2);
-    expect(choices()[0]!.textContent).toMatch(/^Changed the openingScarlet · .+ · v2Now$/);
+    expect(choices()[0]!.textContent).toMatch(/^Changed the openingAirWaves · .+ · v2Now$/);
     expect(choices()[1]!.textContent).toMatch(/^First versionDemo Editor · .+ · v1$/);
     expect(document.querySelectorAll(".preference-group").length).toBeGreaterThan(0);
     // While the skill is being edited, no version is picked.

@@ -229,19 +229,23 @@ function ProviderCard({ status, onChanged }: { status: ApiProviderStatus; onChan
                   </label>
                   <button type="button" className="btn-quiet" onClick={() => void loadModels()} disabled={modelsBusy}><Icon name="refresh" /> Reload</button>
                 </div>
-                <select
-                  className="field border border-line"
-                  size={Math.min(8, Math.max(3, shown.length))}
-                  aria-label="Choose a model"
-                  value={model}
-                  onChange={e => { setModel(e.target.value); resetFrom("model"); }}
-                >
+                <div role="listbox" aria-label="Choose a model" className="max-h-[220px] overflow-y-auto rounded-lg border border-line bg-bg p-1">
                   {shown.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}{m.label !== m.id ? ` — ${m.id}` : ""}{m.contextLength ? ` · ${formatContext(m.contextLength)}` : ""}{m.tools ? "" : " · no tools"}
-                    </option>
+                    <button
+                      key={m.id}
+                      type="button"
+                      role="option"
+                      aria-selected={m.id === model}
+                      data-model={m.id}
+                      onClick={() => { setModel(m.id); resetFrom("model"); }}
+                      className={`flex w-full items-baseline gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] ${m.id === model ? "bg-raised text-fg" : "text-muted hover:bg-raised/60 hover:text-fg"}`}
+                    >
+                      <span className="truncate">{m.label}</span>
+                      {m.label !== m.id && <span className="truncate font-mono text-[11px] text-dim">{m.id}</span>}
+                      <span className="ml-auto shrink-0 text-[11px] text-dim">{m.contextLength ? formatContext(m.contextLength) : ""}{m.tools ? "" : " · no tools"}</span>
+                    </button>
                   ))}
-                </select>
+                </div>
                 {!shown.length && <div className="text-[12px] text-muted">No models match.</div>}
                 {selected && !selected.tools && <div className="text-[12px] text-warn">This model doesn’t list tool calls, which AirWaves needs to edit. Test it before saving.</div>}
               </div>
