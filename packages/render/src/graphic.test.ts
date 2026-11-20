@@ -15,7 +15,7 @@ afterAll(async () => { await fs.rm(dir, { recursive: true, force: true }); });
 const PAGE = `<!doctype html><html><head><style>
 html,body{margin:0;width:100%;height:100%;background:transparent}
 .bar{position:absolute;left:10%;top:60%;width:40%;height:20%;background:#ff0000;animation:in .5s linear both}
-.word{position:absolute;left:5%;top:5%;color:#fff;font:20px "Scarlet Test Missing Face", sans-serif}
+.word{position:absolute;left:5%;top:5%;color:#fff;font:20px "AirWaves Test Missing Face", sans-serif}
 @keyframes in{from{transform:translateX(-200%)}to{transform:none}}
 </style></head><body><div class="bar"></div><div class="word">Hi</div></body></html>`;
 
@@ -89,7 +89,7 @@ describe.skipIf(!hasChrome())("drawing a graphic", () => {
     expect(result.frames).toBe(10);
     // A page with an animation is drawn at every frame.
     expect(result.drawn).toBe(10);
-    expect(result.missingFonts).toEqual([{ family: "Scarlet Test Missing Face", sample: "Hi" }]);
+    expect(result.missingFonts).toEqual([{ family: "AirWaves Test Missing Face", sample: "Hi" }]);
     const probe = await probeMedia(output);
     expect(probe).toMatchObject({ hasAlpha: true, width: 320, height: 180, fps: 10 });
     expect(probe.duration).toBeCloseTo(1, 1);

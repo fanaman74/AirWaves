@@ -292,7 +292,7 @@ it.skipIf(process.platform === "win32")("draws sheets without time labels and sa
     // A grid can't be read without its percents, and a sound picture without its words: each says why, with no path.
     const grid = extractFrame(file, 0.5, { width: 320, grid: { width: 320, height: 180 } });
     await expect(grid).rejects.toBeInstanceOf(exec.MissingFilterError);
-    await expect(grid).rejects.toThrow(/^This copy of FFmpeg can’t draw text, so Scarlet can’t label the grid’s lines/);
+    await expect(grid).rejects.toThrow(/^This copy of FFmpeg can’t draw text, so AirWaves can’t label the grid’s lines/);
     expect((await extractFrame(file, 0.5, { width: 320 })).subarray(0, 2)).toEqual(Buffer.from([255, 216]));
     const sound = soundPicture(file, { range: { start: 0, end: 1 } });
     await expect(sound).rejects.toBeInstanceOf(exec.MissingFilterError);

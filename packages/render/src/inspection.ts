@@ -71,7 +71,7 @@ export const activityFilter = activityFilterAt(ACTIVITY_THRESHOLD);
 
 /** Said with a sheet drawn without its time labels, because the FFmpeg in use can't draw text. */
 export const UNLABELLED_SHEET = "The pictures have no time labels because this copy of FFmpeg can’t draw text: `timestamps` gives each picture’s time, "
-  + "left to right and top to bottom. Installing FFmpeg with Scarlet’s setup instructions and restarting Scarlet brings the labels back.";
+  + "left to right and top to bottom. Installing FFmpeg with AirWaves’s setup instructions and restarting AirWaves brings the labels back.";
 
 /** Each picture with its time under it; without `labels`, the same layout with the strip left blank. */
 function tileSheet(count: number, labels: boolean) {

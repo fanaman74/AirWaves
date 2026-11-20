@@ -20,7 +20,7 @@ import type { Readable, Writable } from "node:stream";
 import { AbortError, fnum, resolveFfmpeg, runCapture } from "./exec.js";
 
 /**
- * The codec a graphic is written in: ProRes 4444 keeps the alpha, and every ffmpeg Scarlet runs reads it. The page's
+ * The codec a graphic is written in: ProRes 4444 keeps the alpha, and every ffmpeg AirWaves runs reads it. The page's
  * RGB becomes video with the BT.709 matrix the footage uses, and says so, so it is laid over the picture unshifted.
  */
 export const GRAPHIC_CODEC_ARGS = [
@@ -79,7 +79,7 @@ export class ChromeNotFound extends Error {
   }
 }
 
-/** The browser that draws graphics: an explicit path, then `SCARLET_CHROME` (the one Scarlet ships), then a standard install. */
+/** The browser that draws graphics: an explicit path, then `SCARLET_CHROME` (the one AirWaves ships), then a standard install. */
 export function findChrome(explicit?: string, env: NodeJS.ProcessEnv = process.env): string {
   const usable = (file: string) => { try { return statSync(file).isFile(); } catch { return false; } };
   for (const file of [explicit, env.SCARLET_CHROME]) {
