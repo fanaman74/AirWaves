@@ -11,7 +11,7 @@ import { MediaStatusLine } from "./MediaStatusLine";
 
 const unknownNotice = "Audio may be sent to OpenAI, depending on your transcription settings.";
 
-/** What fixes transcription that can't run: a setting Scarlet can change at once, or the Settings page that holds the choice. */
+/** What fixes transcription that can't run: a setting AirWaves can change at once, or the Settings page that holds the choice. */
 type TranscriptionFix = { label: string; to: string } | { label: string; turnOnLocal: true };
 
 export function useImportTranscription() {
@@ -29,7 +29,7 @@ export function useImportTranscription() {
       const provider = tr.provider;
       const unavailable = provider === "none" || transcriptionAvailable === false;
       const notice = unavailable ? `${transcriptionIssue ?? "Transcription is unavailable."} Audio will be imported without a transcript.`
-        : provider === "whispercpp" ? "Scarlet transcribes imported audio on this computer."
+        : provider === "whispercpp" ? "AirWaves transcribes imported audio on this computer."
         : "Audio from imported files is sent to OpenAI for transcription.";
       // OpenAI with no key: local transcription is one click away. A local runtime that can't run is set up in Settings.
       const fix: TranscriptionFix | undefined = !unavailable ? undefined
@@ -109,7 +109,7 @@ function ReplaceTranscript({ asset, retry, cloud, start }: { asset: MediaAsset; 
     {retry ? <button type="button" className="simple-link" onClick={() => setConfirming(true)}>Retry</button>
       : <RetranscribeIcon asset={asset} onClick={() => setConfirming(true)} />}
     {confirming && <ConfirmDialog open onClose={() => setConfirming(false)} title={`Re-transcribe “${asset.name}”?`} confirmLabel="Re-transcribe"
-      body={`Scarlet will use your transcription settings and replace this file’s saved words and timings when the new transcript is ready.${cloud ? " Its audio will be sent to OpenAI." : ""}`}
+      body={`AirWaves will use your transcription settings and replace this file’s saved words and timings when the new transcript is ready.${cloud ? " Its audio will be sent to OpenAI." : ""}`}
       onConfirm={start} />}
   </>;
 }

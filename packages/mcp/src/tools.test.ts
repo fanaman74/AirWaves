@@ -584,7 +584,7 @@ describe("change_review_cut", () => {
     const detail = "ffmpeg exited with code 1:\n/data/media/med_a.mov: Invalid data found when processing input";
     mock.state.extra = (req, res) => req.path === "/projects/prj_test/review-cut" ? reply(res, { state: "preparing", renderIds: ["rnd_bad"] })
       : req.path === "/projects/prj_test/renders/rnd_bad" ? reply(res, { render: { id: "rnd_bad", state: "failed",
-        error: "Scarlet can’t read “Interview” in this project’s files: export the logs from Settings → Advanced to report it.", errorDetail: detail } }) : false;
+        error: "AirWaves can’t read “Interview” in this project’s files: export the logs from Settings → Advanced to report it.", errorDetail: detail } }) : false;
     const c = await connect();
     try {
       const r = await call(c, "change_review_cut", { changeId: "chg_1" });
@@ -607,7 +607,7 @@ describe("source_audio", () => {
       expect(sent("/projects/prj_test/source-audio")[0]!.body).toEqual({ mediaId: "m2", from: 12, to: 16, voice: "me" });
       const outside = await call(c, "source_audio", { mediaId: "m2", from: 118, to: 124 });
       expect(outside.isError).toBe(true);
-      expect(textOf(outside)).toBe("Scarlet server error 400 (bad_request): Choose a window inside the recording.");
+      expect(textOf(outside)).toBe("AirWaves server error 400 (bad_request): Choose a window inside the recording.");
     } finally { await c.close(); }
   });
 });
@@ -684,7 +684,7 @@ describe("review notes", () => {
       expect(sent("/projects/prj_test/notes/n1/reply")[0]!.body).toEqual({ text: "Cut it to 0.4 s.", author: { type: "agent", id: "claude", name: "claude", model: "opus" } });
       const missing = await call(c, "note_reply", { noteId: "n9", text: "Done." });
       expect(missing.isError).toBe(true);
-      expect(textOf(missing)).toBe("Scarlet server error 404 (not_found): note");
+      expect(textOf(missing)).toBe("AirWaves server error 404 (not_found): note");
     } finally { await c.close(); }
   });
 
@@ -704,7 +704,7 @@ describe("tool annotations", () => {
   // run the others in parallel without asking, so a new tool is placed here or among the reads on purpose.
   const writes = ["timeline_propose", "timeline_first_cut", "timeline_crossfade_audio", "timeline_transition", "timeline_framing", "timeline_picture_sync", "captions_generate", "dialogue_apply_cuts", "dialogue_check_repeats", "dialogue_review_save",
     "dialogue_revise_cut", "edit_flag", "note_reply", "note_resolve", "render_request", "screen_area", "task_log", "task_question", "learning_suggest", "skill_save_from_change", "skill_save_edit", "asset_add", "export_otio",
-    "graphic_render", "style_guide_save", "shorts_plan"];
+    "graphic_render", "music_generate", "style_guide_save", "shorts_plan"];
   const every = EDITING_TOOL_GROUPS.flatMap(g => [...g.tools] as string[]);
 
   it("gives every tool an input schema a harness can convert: no array that lists an item per position", async () => {
@@ -732,7 +732,7 @@ describe("tool annotations", () => {
       // A read may be repeated; a write may not, and every edit stays reversible.
       expect(a).toMatchObject({ idempotentHint: a.readOnlyHint, destructiveHint: false, openWorldHint: false });
     }
-    // A name Scarlet doesn't know is never taken for a read.
+    // A name AirWaves doesn't know is never taken for a read.
     expect(toolAnnotations("timeline_delete_everything").readOnlyHint).toBe(false);
   });
 
@@ -805,7 +805,7 @@ describe("what goes to stderr when a read fails and the tool answers without it"
       const audit = JSON.parse(textOf(await ok(c, "timeline_join_audit")));
       // The result is unchanged: each join says it has no reading.
       expect(audit.audits.map((a: { verdict: string }) => a.verdict)).toEqual(Array(3).fill("check: no level reading for this join (waveform unavailable)"));
-      expect(logged()).toEqual(["[scarlet-mcp] failed to read the levels of m1 for a join audit: Scarlet server error 500 (engine_error): The waveform cache is locked."]);
+      expect(logged()).toEqual(["[scarlet-mcp] failed to read the levels of m1 for a join audit: AirWaves server error 500 (engine_error): The waveform cache is locked."]);
     } finally { await c.close(); }
   });
 
@@ -830,7 +830,7 @@ describe("what goes to stderr when a read fails and the tool answers without it"
     try {
       failing(req => req.path.endsWith("/media/m1/transcript"), "The transcript file is unreadable.");
       expect(JSON.parse(textOf(await ok(broken, "timeline_join_audit"))).audits).toHaveLength(1);
-      expect(logged()).toEqual(["[scarlet-mcp] failed to read the words of m1 for a join audit: Scarlet server error 500 (engine_error): The transcript file is unreadable."]);
+      expect(logged()).toEqual(["[scarlet-mcp] failed to read the words of m1 for a join audit: AirWaves server error 500 (engine_error): The transcript file is unreadable."]);
     } finally { await broken.close(); }
   });
 
@@ -877,10 +877,10 @@ describe("what goes to stderr when a read fails and the tool answers without it"
       const saved = JSON.parse((result.content[0] as { text: string }).text);
       expect(saved).toMatchObject({ continueFrom: "applied" });
       expect(saved).not.toHaveProperty("keptSilences");
-      expect(logged()).toEqual(["[scarlet-mcp] failed to place the kept silences on applied: Scarlet server error 500 (engine_error): The database is busy."]);
+      expect(logged()).toEqual(["[scarlet-mcp] failed to place the kept silences on applied: AirWaves server error 500 (engine_error): The database is busy."]);
       // The result says what it was answered without, so its silence about kept silences isn't read as none.
       expect(result.content.at(-1)).toEqual({ type: "text",
-        text: "Not measured: failed to place the kept silences on applied (Scarlet server error 500 (engine_error): The database is busy.)." });
+        text: "Not measured: failed to place the kept silences on applied (AirWaves server error 500 (engine_error): The database is busy.)." });
     } finally { await c.close(); }
   });
 
@@ -906,11 +906,11 @@ describe("what goes to stderr when a read fails and the tool answers without it"
         (async () => { await new Promise(r => setTimeout(r, 20)); return await ok(c, "notes_list", {}); })(),
       ]);
       expect(proposed.content.at(-1)).toEqual({ type: "text",
-        text: "Not measured: failed to measure the edges of ripple 0 (Scarlet server error 500 (engine_error): The waveform cache is locked.); "
-          + "failed to measure the edit's new clip edges (Scarlet server error 500 (engine_error): The waveform cache is locked.)." });
+        text: "Not measured: failed to measure the edges of ripple 0 (AirWaves server error 500 (engine_error): The waveform cache is locked.); "
+          + "failed to measure the edit's new clip edges (AirWaves server error 500 (engine_error): The waveform cache is locked.)." });
       expect(textOf(read)).not.toContain("Not measured");
       // The stderr line stays.
-      expect(logged()).toContain("[scarlet-mcp] failed to measure the edit's new clip edges: Scarlet server error 500 (engine_error): The waveform cache is locked.");
+      expect(logged()).toContain("[scarlet-mcp] failed to measure the edit's new clip edges: AirWaves server error 500 (engine_error): The waveform cache is locked.");
       // A call that measured everything ends with its own answer.
       mock.state.extra = undefined;
       const clean = await ok(c, "timeline_propose", { intent: "requested", fromVersion: "unmeasured", ops: [{ op: "rippleDelete", start: 2, end: 2.5 }],
@@ -936,7 +936,7 @@ describe("what goes to stderr when a read fails and the tool answers without it"
       // Without the measurement a silence simply has no picture reading.
       for (const s of first.silences) expect(s).not.toHaveProperty("picture");
       await ok(c, "dialogue_scan", { mediaId: "m1", from: first.nextFrom });
-      const missing = (route: string) => `Scarlet server error 404 (not_found): no mock route for POST /projects/prj_test/${route}`;
+      const missing = (route: string) => `AirWaves server error 404 (not_found): no mock route for POST /projects/prj_test/${route}`;
       expect(logged().filter(line => !line.includes("task event"))).toEqual([
         `[scarlet-mcp] failed to start the background dialogue scan of m1: ${missing("dialogue-scan")}`,
         `[scarlet-mcp] failed to read the saved dialogue pages of m1: ${missing("dialogue-checkpoints")}`,
@@ -961,7 +961,7 @@ describe("what goes to stderr when a read fails and the tool answers without it"
     const busy = await connect();
     try {
       await scan(busy);
-      expect(about("the edit")).toEqual(["[scarlet-mcp] failed to read the edit for the pictures through silences: Scarlet server error 500 (engine_error): The database is busy."]);
+      expect(about("the edit")).toEqual(["[scarlet-mcp] failed to read the edit for the pictures through silences: AirWaves server error 500 (engine_error): The database is busy."]);
     } finally { await busy.close(); }
   });
 
@@ -1000,7 +1000,7 @@ describe("what goes to stderr when a read fails and the tool answers without it"
     } finally { await withoutImages.close(); }
     expect(await inspect()).toEqual([]);
     transcriptStatus = 500;
-    expect(await inspect()).toEqual([`[scarlet-mcp] ${words}: Scarlet server error 500 (engine_error): The transcript could not be read.`]);
+    expect(await inspect()).toEqual([`[scarlet-mcp] ${words}: AirWaves server error 500 (engine_error): The transcript could not be read.`]);
   });
 
   it("notes a review that could not be prepared ahead, which the agent's own inspection then prepares", async () => {
@@ -1017,7 +1017,7 @@ describe("what goes to stderr when a read fails and the tool answers without it"
         cuts: [{ start: 2, end: 2.4, kind: "retake", decision: "review", reason: "Two takes." }] })));
       // The part is saved and the agent is pointed at its review all the same.
       expect(saved).toMatchObject({ continueFrom: "pf", changes: [{ id: "staged" }] });
-      const line = "[scarlet-mcp] failed to prepare the review of staged ahead: Scarlet server error 500 (engine_error): The database is busy.";
+      const line = "[scarlet-mcp] failed to prepare the review of staged ahead: AirWaves server error 500 (engine_error): The database is busy.";
       await vi.waitFor(() => expect(logged()).toContain(line), { timeout: 5000 });
     } finally { await c.close(); }
   });
@@ -1099,7 +1099,7 @@ describe("describeError and formatZodError", () => {
     expect(describeError("plain text")).toBe("plain text");
     // Details that are not a list of issues add nothing to an engine error.
     expect(describeError(new ScarletApiError(400, "validation_error", "request validation failed", { reason: "unknown" })))
-      .toBe("Scarlet server error 400 (validation_error): request validation failed");
+      .toBe("AirWaves server error 400 (validation_error): request validation failed");
   });
 });
 

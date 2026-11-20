@@ -8,7 +8,7 @@ import { showAreaFindings, showAreaRefusal, type RecordingAreas } from "./show-a
 import { fitSync, matchAudio, syncPoints, syncRate } from "./audio-sync.js";
 import { syncSummary, timelineSync, type PairSync } from "./timeline-sync.js";
 /**
- * The Scarlet MCP server: the tools an AI editor uses to read a project and
+ * The AirWaves MCP server: the tools an AI editor uses to read a project and
  * propose changes. Everything goes through a `ScarletClient`; the server can
  * be run over stdio (see cli.ts) or embedded in-process.
  */
@@ -96,6 +96,7 @@ import { transitionOps } from "./transition.js";
 import { MediaPreparing, describeError, errorResult, errorText, formatZodError, json, noteEvidenceMiss, notePreparing, noteUnmeasured, text, toolDiagnostics, toolRefusal, unavailable, unmeasured, unmeasuredLine, type ToolResult } from "./tool-result.js";
 import { keptEditsNote } from "./editor-kept.js";
 import { registerPerception } from "./perception-tools.js";
+import { registerMusic } from "./music-tools.js";
 import { registerGraphics } from "./graphics-tools.js";
 import { sourceRangeToTimeline, sourceToTimeline, timelineWords } from "./timeline-perception.js";
 import { PAUSE_FLOOR_SECONDS, partLeftovers } from "./dialogue-leftovers.js";
@@ -347,7 +348,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
   const pendingDetections = new Map<string, Promise<DialogueDetections>>();
   /** Dialogue analysis requests that failed in a row, per recording, and the last reason. */
   const dialogueFailures = new Map<string, { count: number; error: string }>();
-  /** Scarlet only offers WAV to a model whose harness delivers it. */
+  /** AirWaves only offers WAV to a model whose harness delivers it. */
   const hearing = caps.audio;
   const reviewPictures = caps.images;
   const authoring = ctx.task?.kind === "skill_from_change" ? ctx.task.context : undefined;
@@ -355,14 +356,14 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     { name: "scarlet", version: "0.1.4" },
     {
       instructions: authoring
-        ? "Scarlet exposes the approved change and timeline version, communication with the editor, and saving the requested skill."
+        ? "AirWaves exposes the approved change and timeline version, communication with the editor, and saving the requested skill."
         : ctx.task?.kind === "skill_edit"
-        ? "Scarlet exposes the tools for revising one of the editor’s skills; an empty MCP resource list is normal."
+        ? "AirWaves exposes the tools for revising one of the editor’s skills; an empty MCP resource list is normal."
         : ctx.task?.kind === "learning_check"
-        ? "Scarlet exposes the tools for reading the editor’s skills and offering a rule for one; an empty MCP resource list is normal."
+        ? "AirWaves exposes the tools for reading the editor’s skills and offering a rule for one; an empty MCP resource list is normal."
         : ctx.task?.kind === "area_check"
-        ? "Scarlet exposes the tools for looking at one frame of a recording and saving what of it viewers may see; an empty MCP resource list is normal."
-        : "Scarlet exposes project context and editing operations as tools; an empty MCP resource list is normal. project_get returns the current edit and the editor’s selection. Transcript and waveform tools prepare missing data on demand.",
+        ? "AirWaves exposes the tools for looking at one frame of a recording and saving what of it viewers may see; an empty MCP resource list is normal."
+        : "AirWaves exposes project context and editing operations as tools; an empty MCP resource list is normal. project_get returns the current edit and the editor’s selection. Transcript and waveform tools prepare missing data on demand.",
     },
   );
   let diagnosticSessionClosed = false;
@@ -401,7 +402,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
 
   /**
    * The version this agent last looked at. Edits are proposed against it, so
-   * if someone approves another change while the agent works, Scarlet can
+   * if someone approves another change while the agent works, AirWaves can
    * still merge these edits correctly instead of misplacing them.
    */
   let lastTimeline: Timeline | undefined;
@@ -483,7 +484,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     }
   }
 
-  /** A recording's saved transcript: ready, or how far along it is. Undefined when Scarlet can't say. */
+  /** A recording's saved transcript: ready, or how far along it is. Undefined when AirWaves can't say. */
   async function transcriptState(mediaId: string): Promise<{ ready: true } | { ready: false; note: string } | undefined> {
     try {
       const prepared = await client.prepareMedia(ctx.projectId, mediaId, "transcript");
@@ -517,7 +518,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
       if (await Promise.race([job, pending]) === "pending") {
         waitingOn(kind === "transcript" ? "transcript" : "sound", mediaId, job);
         const state = kind === "transcript" ? await transcriptState(mediaId) : undefined;
-        throw new MediaPreparing(`Scarlet is preparing the ${kind} for ${mediaId}${state && !state.ready ? ` (${state.note})` : ""}. Continue other work, then call this tool again to collect the result. No editor action is needed.`);
+        throw new MediaPreparing(`AirWaves is preparing the ${kind} for ${mediaId}${state && !state.ready ? ` (${state.note})` : ""}. Continue other work, then call this tool again to collect the result. No editor action is needed.`);
       }
     } catch (err) {
       if (!(err instanceof MediaPreparing)) preparations.delete(key);
@@ -605,14 +606,14 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
       const settled = settledThrough(mediaId);
       if (!words || through === undefined || settled > through) return words;
       if (Date.now() + 2000 > deadline) {
-        throw new MediaPreparing(`Scarlet is still placing the words of ${mediaId} on the audio: their times are final up to ${settled.toFixed(0)} s, and this needs them up to ${through.toFixed(0)} s. ` +
+        throw new MediaPreparing(`AirWaves is still placing the words of ${mediaId} on the audio: their times are final up to ${settled.toFixed(0)} s, and this needs them up to ${through.toFixed(0)} s. ` +
           "Alignment moves forward through the recording, so earlier passages can be checked and saved now. Call this tool again for the rest. No editor action is needed.");
       }
       await delay(2000, undefined, { ref: false });
     }
   }
   /**
-   * The word lists each recording's indices were shown to the model from, the latest last. While Scarlet places the
+   * The word lists each recording's indices were shown to the model from, the latest last. While AirWaves places the
    * words, the engine reads stretches with sound and no words again and can add words the transcript missed, which moves
    * every index after them. A reference resolved against another list than the one read would cut beside other words.
    * The model can hold indices from any list it was shown, so each is kept until it is told its indices moved and reads
@@ -651,7 +652,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
       : shown.find(s => s.print !== current.print && named(s.texts) !== named(current.texts));
     if (!other) return;
     staleWords.add(mediaId);
-    throw new Error(`The transcript of ${mediaId} changed since you read it: Scarlet placed its words on the audio and found words it had missed ` +
+    throw new Error(`The transcript of ${mediaId} changed since you read it: AirWaves placed its words on the audio and found words it had missed ` +
       `(${other.texts.length} words then, ${words.length} now), so word indices from that read name other words now. Nothing was placed or saved. ` +
       "Read the passage again (transcript_get, timeline_transcript or dialogue_scan) and give the indices it shows.");
   }
@@ -1284,7 +1285,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
 
   tool(
     "project_get",
-    "Get the project: settings (fps, width x height, aspect), every media asset (id, name, kind, duration s, fps, size, hasAudio, hasTranscript, provenance of generated assets, and for a graphic Scarlet drew the page it was drawn from, relative to the project's folder), the head version, the edit's duration, and a per-track summary. For an assigned task, editContext contains the editor’s recorded selection, change or cut index, and note IDs when supplied. Media ids are what transcript, waveform and clip tools take as mediaId. For clip-level detail use timeline_get.",
+    "Get the project: settings (fps, width x height, aspect), every media asset (id, name, kind, duration s, fps, size, hasAudio, hasTranscript, provenance of generated assets, and for a graphic AirWaves drew the page it was drawn from, relative to the project's folder), the head version, the edit's duration, and a per-track summary. For an assigned task, editContext contains the editor’s recorded selection, change or cut index, and note IDs when supplied. Media ids are what transcript, waveform and clip tools take as mediaId. For clip-level detail use timeline_get.",
     {},
     async () => {
       const detail = await client.workspace(ctx.projectId);
@@ -1331,7 +1332,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     if (result.state === "preparing" && batchSignal) throw new Error("The preview is still preparing. Retry this window.");
     if (result.state === "preparing") {
       notePreparing();
-      return text("Scarlet is preparing the inspection windows. Repeat this call to collect them. Render IDs: " + result.renderIds.join(", "));
+      return text("AirWaves is preparing the inspection windows. Repeat this call to collect them. Render IDs: " + result.renderIds.join(", "));
     }
     onReady?.(result.windows);
     const content: ToolResult["content"] = [];
@@ -1384,7 +1385,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     });
 
   // One call waits for the whole batch, a margin under the harness's tool deadline (toolWaitSeconds): 25 s for a
-  // client Scarlet didn't launch, as before.
+  // client AirWaves didn't launch, as before.
   const batches = new PictureBatches(preparePictures, { waitMs: toolWait(caps, 20) * 1000 });
   // The only close handler: a second assignment would replace this one.
   server.server.onclose = () => { diagnosticSessionClosed = true; batches.close(); reviews.close(); };
@@ -1472,10 +1473,10 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
   const givesAreas = !ctx.taskId || ctx.task?.kind === "area_check";
   tool(
     "screen_area",
-    "What of a recording's picture viewers may see. A screen recording usually holds more than the window being presented: the desktop, a taskbar, a recording app, a call beside it. An area is a box given on the frame at a SOURCE second, as [left, top, right, bottom] in percent of the picture: everything outside it stays out of the video. Scarlet finds the straight edges under the box on that frame and holds the area for every stretch of the recording where those edges are still in place, so one area serves a window for as long as it stays where it is, and comes back when the window does. The result lists each area with the source seconds it holds for (`holds`) and any side with no line under it on its frame (`noLine`: that side is not needed for the area to hold), and `unset`: the stretches no area holds for, with the seconds of each the current edit plays (`onPicture`) and a second to look at (`look`)." +
+    "What of a recording's picture viewers may see. A screen recording usually holds more than the window being presented: the desktop, a taskbar, a recording app, a call beside it. An area is a box given on the frame at a SOURCE second, as [left, top, right, bottom] in percent of the picture: everything outside it stays out of the video. AirWaves finds the straight edges under the box on that frame and holds the area for every stretch of the recording where those edges are still in place, so one area serves a window for as long as it stays where it is, and comes back when the window does. The result lists each area with the source seconds it holds for (`holds`) and any side with no line under it on its frame (`noLine`: that side is not needed for the area to hold), and `unset`: the stretches no area holds for, with the seconds of each the current edit plays (`onPicture`) and a second to look at (`look`)." +
       (givesAreas
         ? " `set` gives an area for the frame at `at`; one given again at the same second replaces the one there, and `remove` takes areas out by their `at`. A side given within a percent of a line in the picture is put on that line. The whole picture, [0, 0, 100, 100], is an area like any other, for a recording where all of it may show."
-        : " Areas come from a look at one full-size frame at a time, which Scarlet starts itself: where an edit frames part of a picture that has no area yet, it has that frame looked at before it checks the save, so a save can take longer the first time a recording is framed. `ask` has the frames at those source seconds looked at now, for a stretch you are about to frame or an area that is wrong for its footage (a frame is given to the area looked at nearest to it in time); it waits for the answers. A recording whose area is the whole picture, as a camera's is, needs no ask: all of it may show.") +
+        : " Areas come from a look at one full-size frame at a time, which AirWaves starts itself: where an edit frames part of a picture that has no area yet, it has that frame looked at before it checks the save, so a save can take longer the first time a recording is framed. `ask` has the frames at those source seconds looked at now, for a stretch you are about to frame or an area that is wrong for its footage (a frame is given to the area looked at nearest to it in time); it waits for the answers. A recording whose area is the whole picture, as a camera's is, needs no ask: all of it may show.") +
       (caps.images && givesAreas ? " With the result come pictures of the first few unset stretches the edit plays, at `look`, with percent lines drawn over them. `pictures` sets how many (default 4, 0 for none)." : "") +
       " Every save is checked against these: an edit that frames footage past its area is not saved, and its refusal names each place. timeline_framing keeps its frames inside the area on record when no `within` is given. A recording is read once for its edges; until that is done the result says so and `holds` are empty: call again.",
     {
@@ -1569,7 +1570,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     if (!words) return `Media ${mediaId} has no audio track or no transcribed speech. Use waveform_get to inspect its sound.`;
     showWords(mediaId, words);
     const settled = settledThrough(mediaId);
-    const estimates = Number.isFinite(settled) ? `Times after ${settled.toFixed(1)} s are estimates until Scarlet has placed those words on the audio. ` +
+    const estimates = Number.isFinite(settled) ? `Times after ${settled.toFixed(1)} s are estimates until AirWaves has placed those words on the audio. ` +
       "Placing them can add words the transcript missed, which moves the indices after them: a word reference from this read is then refused until you read again." : undefined;
     const inRange = (w: TranscriptWord, index: number) =>
       (from === undefined || w.end >= from) && (to === undefined || w.start <= to) &&
@@ -1950,7 +1951,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     if (failed && failed.count >= DIALOGUE_FAILURE_LIMIT && !pendingDetections.has(JSON.stringify([mediaId, from, to]))) {
       const transcript = await transcriptState(mediaId);
       if (transcript && !transcript.ready) {
-        // The run now waits on the transcript. If it ends first, Scarlet records that it ended without it.
+        // The run now waits on the transcript. If it ends first, AirWaves records that it ended without it.
         const key = `transcript/${mediaId}`;
         let job = preparations.get(key);
         if (!job) {
@@ -1961,8 +1962,8 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
         }
         waitingOn("transcript", mediaId, job);
         throw new MediaPreparing(`Dialogue analysis of ${asset.name} failed ${failed.count} times in a row (last: ${failed.error}) while its transcript is ${transcript.note}. ` +
-          "Scarlet won't request it again until the transcript is saved, so waiting here gains nothing. Save the edits you can decide without it and end your run, saying what is left. " +
-          "Scarlet records that the run ended without this transcript and offers the editor to finish the request once it is ready.");
+          "AirWaves won't request it again until the transcript is saved, so waiting here gains nothing. Save the edits you can decide without it and end your run, saying what is left. " +
+          "AirWaves records that the run ended without this transcript and offers the editor to finish the request once it is ready.");
       }
     }
     const timer = new AbortController();
@@ -2106,7 +2107,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
   }
   const scanBatches = new Map<string, DialogueScanBatch>();
   tool("dialogue_scan",
-    "Read a dialogue recording in pages (60 s pages overlapping by 2 s, source seconds). Start at the beginning of the requested range, also when resuming; read the page and any restoredPages, then call again with nextFrom until it is null. On a first dialogue cut, save decided cuts when a page returns saveCheckpoint before reading the next section. During a task Scarlet scans the whole range in the background, so later pages often return at once; a page still analyzing says so, and you can collect it after reviewing other material. Each page: passages (spoken text, with `words` = [first, last] transcript_get indices once the saved transcript's words are placed on the audio that far), repeatedTakes (attempts at the same line with the source times and continuation of each; evidence, not a decision), acousticRepeatedTakes (adjacent deliveries independently decoded from cached English speech, with approximate source times and continuation), fillers and fillerCandidates (each with the detectors that heard it: whisper = verbatim transcription, uhm = acoustic filler model; both agreeing is the strongest evidence), pauses (quiet interiors that could be removed, with the air either side), silences (every stretch of 1.5 s or more with no transcript word, whatever sounds in it: the words either side, voiceSeconds the voice detector fired inside it with no word, as typing or a breath does, and, where the current edit shows video through it, picture per video source: changedFrames of frames, the typical and the largest changed region in percent of the frame, and when the largest and the last change happen in this recording's seconds; `measuring` is ready on the next read of the page), unmatchedVoice (voice activity no transcript word explains: breaths, overlapping talk or missed words), speakerTurns (recording-local voice numbers; a number marks a distinct voice, and only confirmed input roles say which is the presenter), otherVoiceTurns (on a recording with a mix and two isolated inputs: each stretch of sound on the input the dialogue is not on, such as a remote voice or a system sound, with the words heard only there and meAlsoActive when the dialogue input sounded too), roomToneDbfs, and quietPhrases (transcribed words much quieter than the speech on both sides, with source seconds, fromWord/toWord, and the phrase and neighboring levels in dBFS). detectorIssue names incomplete evidence.",
+    "Read a dialogue recording in pages (60 s pages overlapping by 2 s, source seconds). Start at the beginning of the requested range, also when resuming; read the page and any restoredPages, then call again with nextFrom until it is null. On a first dialogue cut, save decided cuts when a page returns saveCheckpoint before reading the next section. During a task AirWaves scans the whole range in the background, so later pages often return at once; a page still analyzing says so, and you can collect it after reviewing other material. Each page: passages (spoken text, with `words` = [first, last] transcript_get indices once the saved transcript's words are placed on the audio that far), repeatedTakes (attempts at the same line with the source times and continuation of each; evidence, not a decision), acousticRepeatedTakes (adjacent deliveries independently decoded from cached English speech, with approximate source times and continuation), fillers and fillerCandidates (each with the detectors that heard it: whisper = verbatim transcription, uhm = acoustic filler model; both agreeing is the strongest evidence), pauses (quiet interiors that could be removed, with the air either side), silences (every stretch of 1.5 s or more with no transcript word, whatever sounds in it: the words either side, voiceSeconds the voice detector fired inside it with no word, as typing or a breath does, and, where the current edit shows video through it, picture per video source: changedFrames of frames, the typical and the largest changed region in percent of the frame, and when the largest and the last change happen in this recording's seconds; `measuring` is ready on the next read of the page), unmatchedVoice (voice activity no transcript word explains: breaths, overlapping talk or missed words), speakerTurns (recording-local voice numbers; a number marks a distinct voice, and only confirmed input roles say which is the presenter), otherVoiceTurns (on a recording with a mix and two isolated inputs: each stretch of sound on the input the dialogue is not on, such as a remote voice or a system sound, with the words heard only there and meAlsoActive when the dialogue input sounded too), roomToneDbfs, and quietPhrases (transcribed words much quieter than the speech on both sides, with source seconds, fromWord/toWord, and the phrase and neighboring levels in dBFS). detectorIssue names incomplete evidence.",
     { mediaId: z.string(), from: z.number().finite().nonnegative().default(0),
       until: z.number().finite().positive().optional().describe("Exclusive end of the requested source range. Defaults to the end of this recording."),
       noCutsReadyThrough: z.number().finite().nonnegative().optional().describe("The through value of a saveCheckpoint, only if this section has no settled cuts to save yet.") },
@@ -2175,15 +2176,15 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     toWord: z.number().int().nonnegative().optional().describe("Word reference: last removed word index"),
   };
   const PauseRef = {
-    afterWord: z.number().int().nonnegative().optional().describe("Pause reference, with mediaId: the transcript_get index of the word the pause follows. Scarlet trims the pause between it and the next word, both edges in the measured quiet."),
+    afterWord: z.number().int().nonnegative().optional().describe("Pause reference, with mediaId: the transcript_get index of the word the pause follows. AirWaves trims the pause between it and the next word, both edges in the measured quiet."),
     leave: z.number().finite().min(0.05).max(10).optional().describe(`Seconds of pause that should still play, word to word, as the editor hears it. Required with afterWord: how long a pause plays is yours to judge, by the delivery around it and the pace the skill asks for. Optional with fromWord/toWord: the pause the join plays, which is pace's after and before together when omitted (${PAUSE_BEAT} s by default). Optional with start/end: each edge that sits in measured quiet moves within that quiet so the join plays this pause, from the sound before it to the sound after, as on a word reference; an edge on sound is placed as without it. Leave it off where the quiet beside an edge is something to watch, such as a result appearing.`),
     voiceIn: z.number().finite().min(LEAST_VOICE_IN).max(2).optional().describe(`With a word or pause reference, or start/end: seconds of quiet between the cut and the next word, as the editor hears it, which is how soon the voice comes in once the picture cuts. pace's before when omitted (${AIR_BEFORE_SPEECH} s by default), and 0 puts the cut on the word's first sound, kept whole. A voice takes about 0.04 s more to reach speaking level, so 0.03 plays as about two frames from the cut to the voice. The rest of the pause plays before the cut. Yours to judge at each cut, by the delivery, what the line begins and the pace the skill and the editor ask for.`),
   };
   const paceInput = z.object({
     after: z.number().finite().min(0.01).max(2).describe("Seconds of room tone after the last kept word, as the editor hears it"),
     before: z.number().finite().min(0.01).max(2).describe("Seconds of room tone before speech resumes, as the editor hears it"),
-  }).optional().describe(`The room tone a join leaves either side when Scarlet places its edges in the quiet: the pause a word cut plays when it gives no leave, the quiet a leave keeps between the cut and the next word (the rest of it plays before the cut), and where an edge moved off sound settles. A pace for every join of this call, from the skill and the editor. Omitted: ${AIR_AFTER_SPEECH} s after and ${AIR_BEFORE_SPEECH} s before.`);
-  const unsureJoinsInput = z.enum(["ask", "cut"]).optional().describe("A cut you decided whose join Scarlet can't place cleanly: no measured quiet at an edge, an edge that has to move more than a few frames, both edges inside running speech, or a production aside with no silence at its edges. ask (the default) stages it for the editor with what Scarlet measured; cut applies it where Scarlet placed it and reports the evidence to you. Your skill says which.");
+  }).optional().describe(`The room tone a join leaves either side when AirWaves places its edges in the quiet: the pause a word cut plays when it gives no leave, the quiet a leave keeps between the cut and the next word (the rest of it plays before the cut), and where an edge moved off sound settles. A pace for every join of this call, from the skill and the editor. Omitted: ${AIR_AFTER_SPEECH} s after and ${AIR_BEFORE_SPEECH} s before.`);
+  const unsureJoinsInput = z.enum(["ask", "cut"]).optional().describe("A cut you decided whose join AirWaves can't place cleanly: no measured quiet at an edge, an edge that has to move more than a few frames, both edges inside running speech, or a production aside with no silence at its edges. ask (the default) stages it for the editor with what AirWaves measured; cut applies it where AirWaves placed it and reports the evidence to you. Your skill says which.");
   let checkedVersion: string | undefined;
   const checkedRepeats = new Map<string, RepeatEvidence>();
   const syncChecks = new Map<string, Promise<{ pairs: Array<PairSync & { outOfLineCount?: number }>; summary?: string } | undefined>>();
@@ -2216,7 +2217,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     }
     return job;
   }
-  // The silence length the model last asked the check for: the checks Scarlet runs after a save count by it too.
+  // The silence length the model last asked the check for: the checks AirWaves runs after a save count by it too.
   let silencesAsked: number | undefined;
   async function checkRepeats(version: string, keep?: Array<{ id: string; reason: string }>, offset?: number, asked?: number) {
     if (asked !== undefined) silencesAsked = asked;
@@ -2240,7 +2241,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
       silencesFrom: z.number().finite().min(0.3).max(30).optional().describe(`List in silences, and count in remaining, each wordless stretch at least this many seconds long. From the pace the skill asks for; ${SILENCE_LEFT_SECONDS} s when omitted.`) },
     async ({ version, keep, offset, silencesFrom }) => json(await checkRepeats(version, keep, offset, silencesFrom)));
 
-  const cutCoordinates = `To have Scarlet place the edges, give mediaId and the first and last removed word indices (fromWord/toWord), or mediaId and the word before a pause (afterWord, with leave: the seconds it should still play). Measured word edges leave the room tone of pace after kept speech and before it resumes, and a pause you give as leave plays before the cut but for pace's before (or the voiceIn you give). For edges you place yourself, give start/end in TIMELINE seconds. The edge check preserves that padding where those times are already quiet, unless you give leave: then an edge in quiet goes where that pause puts it.`;
+  const cutCoordinates = `To have AirWaves place the edges, give mediaId and the first and last removed word indices (fromWord/toWord), or mediaId and the word before a pause (afterWord, with leave: the seconds it should still play). Measured word edges leave the room tone of pace after kept speech and before it resumes, and a pause you give as leave plays before the cut but for pace's before (or the voiceIn you give). For edges you place yourself, give start/end in TIMELINE seconds. The edge check preserves that padding where those times are already quiet, unless you give leave: then an edge in quiet goes where that pause puts it.`;
   const crossfadeFrames = CrossfadeFrames.optional()
     .describe("Total audio-only overlap at the new dialogue joins, in project frames. Zero or omitted makes a straight cut.");
   const repeatedPhrase = z.string().trim().min(1);
@@ -2269,7 +2270,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
           // Edges placed beside the named words stand as placed, here as in dialogue_apply_cuts.
           const pages = joinPages();
           const checked = "dips" in resolved && !resolved.problems.length
-            ? { ...range, status: "unchanged" as const, reason: resolved.dips.length ? resolved.dips.join(" ") : "Scarlet placed both edges in the measured silence beside the words." }
+            ? { ...range, status: "unchanged" as const, reason: resolved.dips.length ? resolved.dips.join(" ") : "AirWaves placed both edges in the measured silence beside the words." }
             : checkDialogueJoin(tl, project, range, pages, "spoken" in resolved ? resolved.spoken : undefined, pace, "air" in resolved ? resolved.air : undefined);
           const played = frameAligned(checked, project.settings.fps);
           const nearbyWords = dialogueJoinWords(tl, project, played, pages);
@@ -2429,13 +2430,13 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
   }
 
   tool("dialogue_apply_cuts",
-    `Save your decisions on an assembled version: cut, review or keep ranges, sorted and nonoverlapping. ${cutCoordinates} Cut ranges apply together; review stages a range for the editor; keep or omission retains it. Scarlet measures each retake, filler, pause and quoted production edge. An edge on sound moves a few frames onto silence, or onto the low point between two words said in one breath, and applies; an edge between named words said straight through, with no low point, goes where the transcript parts them and applies; a larger move narrows the cut and stages it, unless unsureJoins is cut. An edge Scarlet can't move out of sound stays held, and its held reason says what the join plays, what the passage plays if the cut is kept and, for a range given in seconds, the nearest quiet or low point either side and the words moving there keeps or removes. A pause's edge moves onto the quiet beside it. A short piece between cuts with a transcript word at room-tone level returns quietKeptWord with nearby measured sound in source seconds. Footage between separate removals stays in the timeline. \`gate\` lists changes to the measured plan with their evidence. Its ranges describe placement before the engine rounds to project frames. The returned timelineEdits describe the saved edits. A cut whose optional quote doesn't verify, whose join would play words twice or a kept word too quietly, or that removes a restart and runs on past it, taking words at its edge that nothing either side of the join says again, or a pause trim whose range holds sound at speaking level that no word explains or whose pause holds words the transcript doesn't have, is left out with its evidence in \`notSaved\`, and the rest of the part saves. Save a long pass in parts and continue on \`continueFrom\`. For a first dialogue pass, send at most ${FIRST_CUT_BATCH_SIZE} nearby cut or review decisions as soon as they are ready, with any keep or protected ranges they depend on. The gate reports an applied cut whose edge sits within ${SPEECH_BESIDE_EDGE} s of the sound it removes, since the picture can show a word starting that the sound has not reached; whether that needs the editor is yours to judge. A retake placed by seconds is listed with removes and plays: the words it takes out and its join as the viewer hears it. What Scarlet changed on its own comes back with why: \`stagedForEditor\` (confident cuts that wait for the editor), \`onFrames\` (edges put on whole frames), \`droppedFromReview\` (an earlier part's staged cuts whose footage a later edit broke up) and \`heldCutsStay\` (cuts not saved because, sent with unsureJoins cut, they would have replaced a staged cut held for its join with other edges Scarlet couldn't place either). For a requested crossfade, \`joinCrossfades\` reports how many joins were faded and why any stayed straight. The result also lists what this part still plays, each thing once per pass, at \`at\` on continueFrom: keptSilences (2 s or more without words that no decision covers), keptPauses (the longest thirty of ${PAUSE_FLOOR_SECONDS} s or more, or from the length you give as pausesFrom, with the afterWord that trims an untouched one), repeatedWords (said twice in a row, with the pause the edit plays between them, atJoin when a cut made it; fromWord/toWord name the first) unexplainedSound (speaking-level sound the transcript has no word for, often what is left of a take beside a cut) and heardNotInTranscript (words the scan read in what this part still plays that the transcript has no word for, such as a false start or a repeat it tidied away: where and how long they play on the version the part continues on, the words, and the words round them as the scan read them; they have no word index, so a cut of them is given in timeline seconds). These are evidence, not decisions: a pause can be a beat, a repeat emphasis, a sound a breath. Ranges your previous part staged on that version join this part's review (carriedForward). Cuts already handed to the editor keep their passage and note (heldForReview). \`description\` is your one-sentence summary for the editor.`,
+    `Save your decisions on an assembled version: cut, review or keep ranges, sorted and nonoverlapping. ${cutCoordinates} Cut ranges apply together; review stages a range for the editor; keep or omission retains it. AirWaves measures each retake, filler, pause and quoted production edge. An edge on sound moves a few frames onto silence, or onto the low point between two words said in one breath, and applies; an edge between named words said straight through, with no low point, goes where the transcript parts them and applies; a larger move narrows the cut and stages it, unless unsureJoins is cut. An edge AirWaves can't move out of sound stays held, and its held reason says what the join plays, what the passage plays if the cut is kept and, for a range given in seconds, the nearest quiet or low point either side and the words moving there keeps or removes. A pause's edge moves onto the quiet beside it. A short piece between cuts with a transcript word at room-tone level returns quietKeptWord with nearby measured sound in source seconds. Footage between separate removals stays in the timeline. \`gate\` lists changes to the measured plan with their evidence. Its ranges describe placement before the engine rounds to project frames. The returned timelineEdits describe the saved edits. A cut whose optional quote doesn't verify, whose join would play words twice or a kept word too quietly, or that removes a restart and runs on past it, taking words at its edge that nothing either side of the join says again, or a pause trim whose range holds sound at speaking level that no word explains or whose pause holds words the transcript doesn't have, is left out with its evidence in \`notSaved\`, and the rest of the part saves. Save a long pass in parts and continue on \`continueFrom\`. For a first dialogue pass, send at most ${FIRST_CUT_BATCH_SIZE} nearby cut or review decisions as soon as they are ready, with any keep or protected ranges they depend on. The gate reports an applied cut whose edge sits within ${SPEECH_BESIDE_EDGE} s of the sound it removes, since the picture can show a word starting that the sound has not reached; whether that needs the editor is yours to judge. A retake placed by seconds is listed with removes and plays: the words it takes out and its join as the viewer hears it. What AirWaves changed on its own comes back with why: \`stagedForEditor\` (confident cuts that wait for the editor), \`onFrames\` (edges put on whole frames), \`droppedFromReview\` (an earlier part's staged cuts whose footage a later edit broke up) and \`heldCutsStay\` (cuts not saved because, sent with unsureJoins cut, they would have replaced a staged cut held for its join with other edges AirWaves couldn't place either). For a requested crossfade, \`joinCrossfades\` reports how many joins were faded and why any stayed straight. The result also lists what this part still plays, each thing once per pass, at \`at\` on continueFrom: keptSilences (2 s or more without words that no decision covers), keptPauses (the longest thirty of ${PAUSE_FLOOR_SECONDS} s or more, or from the length you give as pausesFrom, with the afterWord that trims an untouched one), repeatedWords (said twice in a row, with the pause the edit plays between them, atJoin when a cut made it; fromWord/toWord name the first) unexplainedSound (speaking-level sound the transcript has no word for, often what is left of a take beside a cut) and heardNotInTranscript (words the scan read in what this part still plays that the transcript has no word for, such as a false start or a repeat it tidied away: where and how long they play on the version the part continues on, the words, and the words round them as the scan read them; they have no word index, so a cut of them is given in timeline seconds). These are evidence, not decisions: a pause can be a beat, a repeat emphasis, a sound a breath. Ranges your previous part staged on that version join this part's review (carriedForward). Cuts already handed to the editor keep their passage and note (heldForReview). \`description\` is your one-sentence summary for the editor.`,
     { version: z.string(), description: z.string().min(1), crossfadeFrames, pace: paceInput, unsureJoins: unsureJoinsInput, noteIds: z.array(z.string()).optional(),
       range: z.object({ start: z.number().finite().nonnegative(), end: z.number().finite().positive() }).optional().describe("Requested TIMELINE range if only part of the edit is in scope"),
       only: z.enum(["pause", "filler", "retake", "coaching"]).optional().describe("For a request limited to one type of removal. Omit for a full dialogue pass."),
       pausesFrom: z.number().finite().min(0.1).max(10).optional().describe(`List in keptPauses the pauses this part still plays from this length in seconds, word to word (${PAUSE_FLOOR_SECONDS} s when omitted). Yours to set from the pace the skill and the editor ask for; omit to see the longest ones`),
       cuts: z.array(z.object({ ...WordRef, ...PauseRef, start: z.number().finite().nonnegative().optional(), end: z.number().finite().positive().optional(),
-        removeRepeat: z.object({ id: z.string(), occurrence: z.enum(["first", "second"]) }).optional().describe("For a retake, identify the occurrence heard by dialogue_check_repeats on this version. Scarlet places both edges using its measured words and waveform."),
+        removeRepeat: z.object({ id: z.string(), occurrence: z.enum(["first", "second"]) }).optional().describe("For a retake, identify the occurrence heard by dialogue_check_repeats on this version. AirWaves places both edges using its measured words and waveform."),
         kind: z.enum(["pause", "filler", "retake", "coaching"]), decision: z.enum(["cut", "review", "keep"]),
         resumeWith,
         keepRepeat: z.union([repeatedPhrase, z.array(repeatedPhrase).min(1)]).optional().describe("For speech cuts and pause trims, quote a word or phrase that deliberately repeats across the join or at the beginning or end of the kept take. Pass a list to keep several. An unacknowledged repeat comes back to you before the plan is saved."),
@@ -2592,7 +2593,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
         ...(quiet.length && { keptQuietPhrases: quiet }),
         ...(setAside && { notSaved: setAside }),
         next: result.changes.some(c => c.intent === "suggestion")
-          ? "Pending ranges are on the kept version. The editor sees a staged cut as a call only once it has your recommendation, so record them on this part before you read on: dialogue_review_inspect gives their context, up to four at once with count while Scarlet prepares the next ones, and dialogue_review_save records a recommendation. Recommendations carry into the review of your next part." : undefined });
+          ? "Pending ranges are on the kept version. The editor sees a staged cut as a call only once it has your recommendation, so record them on this part before you read on: dialogue_review_inspect gives their context, up to four at once with count while AirWaves prepares the next ones, and dialogue_review_save records a recommendation. Recommendations carry into the review of your next part." : undefined });
     });
 
   /** Inspections that read every view of a cut, including a measured join (or a cut with no join). */
@@ -2695,7 +2696,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
   }
 
   tool("dialogue_review_inspect",
-    "Inspect a staged dialogue cut in its original passage and preview. For each cut returns its first-pass reason, and held: what Scarlet measured when it held the cut, what its join plays and what keeping it plays. It also returns the words around it as [start, end, text, speaker or isolated input], original microphone levels (dBFS), voice activity, and timeline_join_audit's reading of the join or why the cut has none. The surviving speech is checked for a doubled word across the join or at the start or end of its kept take. partialWordRepeat identifies a cut-off word beside a whole occurrence in the saved audio, including faded handles. One call returns up to four consecutive cuts (count). Scarlet prepares the next ones while you read." +
+    "Inspect a staged dialogue cut in its original passage and preview. For each cut returns its first-pass reason, and held: what AirWaves measured when it held the cut, what its join plays and what keeping it plays. It also returns the words around it as [start, end, text, speaker or isolated input], original microphone levels (dBFS), voice activity, and timeline_join_audit's reading of the join or why the cut has none. The surviving speech is checked for a doubled word across the join or at the start or end of its kept take. partialWordRepeat identifies a cut-off word beside a whole occurrence in the saved audio, including faded handles. One call returns up to four consecutive cuts (count). AirWaves prepares the next ones while you read." +
     (reviewPictures ? " Includes synchronized screen and camera sheets and before/after frames for narrowed cuts. A longer removal shows an overview and windows for closer inspection. wholePicture returns activity sheets across all of them." : "") +
     " nearbyWords gives the words at both edges in TIMELINE seconds on the inspected original. Use those times in dialogue_revise_cut to move a splice, or save a recommendation for the current range with dialogue_review_save. If later edits conflict with the cut being revised, inspecting it returns its current passage and words for dialogue_revise_cut.",
     { changeId: z.string(), index: z.number().int().nonnegative(),
@@ -2835,7 +2836,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
     }
   }
 
-  tool("dialogue_revise_cut", "Move a staged dialogue cut. Once a call is with the editor, its range can change only on their request about that cut, and the revised cut goes back to them as a call with `reason` as its note: a doubt for them to listen for goes there, and needs no flag or review save. To trim the pause before a cut, give pauseAfterWord in seconds (0 for the end of the last kept word) instead of start and end. Scarlet locates that word, preserves the incoming edge and measures the word-to-join distance on the saved preview (outgoingPause.remainingSeconds): give the editor that measured time. For other moves give the full new range in TIMELINE seconds on the pass's fromVersion. It may extend past the old edges but must stay clear of neighboring staged cuts. If newer edits affect this passage, Scarlet returns the current version and its location when known. Inspect the current words with timeline_transcript or measure the new edges with dialogue_check_join, then pass that exact version and range to save on the current footage. If the requested result is clear, finish the revision. If it depends on which take the editor wants, task_question can ask that choice. To keep the current footage for the selected call, pass keep:true; when the passage has no current location, use its original range without version. The other cuts and decisions carry over. Measured nearby silence can adjust an edge. Write the reason for the editor in one short sentence. To move several cuts of one pass, list them as cuts in one call. Each moved cut's result has nearbyWords: the words either side of its saved edges as [timeline start, timeline end, text] on the version its times are on, the same reading dialogue_check_join returns, and removes and plays: the words it takes out and the join as the viewer hears it.",
+  tool("dialogue_revise_cut", "Move a staged dialogue cut. Once a call is with the editor, its range can change only on their request about that cut, and the revised cut goes back to them as a call with `reason` as its note: a doubt for them to listen for goes there, and needs no flag or review save. To trim the pause before a cut, give pauseAfterWord in seconds (0 for the end of the last kept word) instead of start and end. AirWaves locates that word, preserves the incoming edge and measures the word-to-join distance on the saved preview (outgoingPause.remainingSeconds): give the editor that measured time. For other moves give the full new range in TIMELINE seconds on the pass's fromVersion. It may extend past the old edges but must stay clear of neighboring staged cuts. If newer edits affect this passage, AirWaves returns the current version and its location when known. Inspect the current words with timeline_transcript or measure the new edges with dialogue_check_join, then pass that exact version and range to save on the current footage. If the requested result is clear, finish the revision. If it depends on which take the editor wants, task_question can ask that choice. To keep the current footage for the selected call, pass keep:true; when the passage has no current location, use its original range without version. The other cuts and decisions carry over. Measured nearby silence can adjust an edge. Write the reason for the editor in one short sentence. To move several cuts of one pass, list them as cuts in one call. Each moved cut's result has nearbyWords: the words either side of its saved edges as [timeline start, timeline end, text] on the version its times are on, the same reading dialogue_check_join returns, and removes and plays: the words it takes out and the join as the viewer hears it.",
     { changeId: z.string(), version: z.string().min(1).optional().describe("Exact version of an inspected current passage; omit for times on the pass's fromVersion"),
       index: z.number().int().nonnegative().optional(), start: z.number().finite().nonnegative().optional(), end: z.number().finite().nonnegative().optional(),
       crossfadeFrames: crossfadeFrames.describe("Total audio-only overlap in project frames for these revised cuts. Omit to keep the existing transition."),
@@ -2901,7 +2902,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
       // Revisions keep their slots. When a later part has carried the pass, the engine translates every
       // remaining request from its original pass, where the agent measured its ranges and indices.
       let current = change.id, revised: Awaited<ReturnType<typeof client.reviseStagedCut>>["change"] | undefined;
-      // The pass Scarlet made the first move on, when a revision had replaced the one named.
+      // The pass AirWaves made the first move on, when a revision had replaced the one named.
       let replaced: string | undefined;
       let carried = false;
       const results: Array<Record<string, unknown>> = [];
@@ -2943,7 +2944,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
               cutConflict = { changeId: location.data.changeId ?? changeId, index: location.data.index ?? move.index, version: currentVersion, range };
               const failure = { index: move.index, error: err.message, currentVersion, range,
                 next: range ? "Inspect the current passage with dialogue_review_inspect, frame_contact_sheet or dialogue_check_join, then save the intended range with this version. Ask only if the editor's preference would change the result."
-                  : "Scarlet could not identify a unique current location. Inspect the current transcript and the source placements with timeline_at. If a creative choice remains, ask about the takes." };
+                  : "AirWaves could not identify a unique current location. Inspect the current transcript and the source placements with timeline_at. If a creative choice remains, ask about the takes." };
               if (!cuts) return { ...json(failure), isError: true };
               results.push(failure);
               continue;
@@ -2993,7 +2994,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
         }
       }
       const pass = { changeId: revised.id, state: revised.state, fromVersion: revised.fromVersion, toVersion: revised.toVersion,
-        ...(replaced && { movedOn: replaced, note: `A revision had replaced ${changeId} with ${replaced} since this was asked. Scarlet made this move on ${replaced}, so the pass keeps that revision.` }) };
+        ...(replaced && { movedOn: replaced, note: `A revision had replaced ${changeId} with ${replaced} since this was asked. AirWaves made this move on ${replaced}, so the pass keeps that revision.` }) };
       return json(cuts ? { ...pass, moved: results } : { ...pass, ...results[0] });
     });
 
@@ -3055,7 +3056,7 @@ export function createScarletMcpServer(workspace: ScarletClient, ctx: ScarletMcp
 
   tool(
     "timeline_propose",
-    `Propose an edit to the timeline. Provide EITHER \`ops\` (a list of operations on the named base version) OR \`timeline\` (a full replacement timeline). Scarlet validates it, stores a new version, makes short before/after previews available when the editor opens the change. Directly requested edits apply automatically, onto the current video when it moved since the base version. An edit that meets footage changed since then is not applied: the result's \`notApplied\` says where, and the current version to make it on. Suggestions and alternatives wait for review. Write \`description\` for the editor in one short, plain sentence about what changed (e.g. "Cut the false start at 1:17 and the 1.4 s pause after it"). Pass \`noteIds\` when the change answers review notes. Every audible clip edge the edit makes is measured on its recording, whichever op makes it: one inside a sounding word, or through a sound it would leave a piece of, refuses the edit and gives the quiet second beside it. Audible clips that play the same moment of one recording in sync add up in the mix: an edit that plays a moment louder that way than its base version played it is refused with the clips, the stretch that got louder and both levels. Make the change it names, which turns down the copy the edit added or changed, and another when that one alone can't, over that stretch alone, or pass \`layeredSound\` when the editor asked to hear it layered. Returns the change id, state, affected timeline ranges, the new version id and a diff.
+    `Propose an edit to the timeline. Provide EITHER \`ops\` (a list of operations on the named base version) OR \`timeline\` (a full replacement timeline). AirWaves validates it, stores a new version, makes short before/after previews available when the editor opens the change. Directly requested edits apply automatically, onto the current video when it moved since the base version. An edit that meets footage changed since then is not applied: the result's \`notApplied\` says where, and the current version to make it on. Suggestions and alternatives wait for review. Write \`description\` for the editor in one short, plain sentence about what changed (e.g. "Cut the false start at 1:17 and the 1.4 s pause after it"). Pass \`noteIds\` when the change answers review notes. Every audible clip edge the edit makes is measured on its recording, whichever op makes it: one inside a sounding word, or through a sound it would leave a piece of, refuses the edit and gives the quiet second beside it. Audible clips that play the same moment of one recording in sync add up in the mix: an edit that plays a moment louder that way than its base version played it is refused with the clips, the stretch that got louder and both levels. Make the change it names, which turns down the copy the edit added or changed, and another when that one alone can't, over that stretch alone, or pass \`layeredSound\` when the editor asked to hear it layered. Returns the change id, state, affected timeline ranges, the new version id and a diff.
 
 ${OPS_DOC}`,
     {
@@ -3273,7 +3274,7 @@ ${OPS_DOC}`,
   let framed: Array<{ changeId: string; mediaId: string; trackId?: string; from: number; to: number }> = [];
   tool(
     "timeline_framing",
-    "Frame a recording's picture on an area of it over a stretch of the edit: a zoom in on a pane, a move from one subject to the next, a pull back out. Each framing names the area that must be seen (`show`) from a timeline second (`at`), as [left, top, right, bottom] in percent of the SOURCE picture: the units of screen_text's boxes" + (caps.images ? " and media_frame's grid" : "") + ". Scarlet places the tightest frame of the video's shape around it, so the picture always fills the video with no background beside it, and keeps the area clear of any picture laid over the recording, such as a camera inset. `within` is the area the frame may show, one window for example: the frame grows into it and goes past it only when it has to. The same `show`, `within` and inset place the same frame again, so a framing you resend unchanged stays as it was while you change others. `inset` moves the picture laid over the recording to another corner of the video from that framing on, at the size and margins it has, travelling with the frame's move; it stays there through `to` unless a later framing moves it again. `inset` as `clear` leaves the choice of corner to what is on screen: the picture's own corner when it sits on none of the frame's text there, else a corner where it sits on none, and the result says which (`inset`) or that no corner is clear (`noCornerClearOfText`). The picture moves to each frame over `over` seconds (default 1; 0 is a straight cut), eased as `ease` says (in and out by default), and holds until the next framing or `to`; a move runs on across the cuts that split the footage into clips. The first framing moves from the frame already there when the footage plays on from before it, and otherwise starts on its frame. Clips of the recording outside the stretch keep their framing. The result gives each frame as placed: `frame` in percent of the source, `zoom`, `sourcePixels` (source pixels per pixel of the video; under 1 the picture is enlarged past its own detail), `holds` seconds, `hidden` (percent of `show` that a cover or the frame's edge hides), `beyondWithin` (percent of the frame past `within`, by side) with `insideWithin` (the largest frame that stays inside it, and the percent of `show` that one hides), `covers` (other pictures over the video there, in percent of the video), `notOnPicture` when another picture fills the video there, and `text` where the recording's text has been read (screen_text reads it): the lines in `show`, their smallest and usual height in pixels of the video, any a cover sits on (`underCover`), and the corners where the cover would sit on none (`cornersClearOfText`); `textUnderCover` lists the framings that have such lines." + (caps.images ? ` With a picture of the video at each frame's settled moment, ${FRAMING_PICTURES} a call starting at \`picturesFrom\`.` : "") + " `preview` works all of this out and shows it without saving. A framing saved over a stretch this request already framed takes that edit's place in the editor's list, unless you give `timelineEdits`. For a crop with the background showing, an inset or a rotation, use timeline_propose's updateClip.",
+    "Frame a recording's picture on an area of it over a stretch of the edit: a zoom in on a pane, a move from one subject to the next, a pull back out. Each framing names the area that must be seen (`show`) from a timeline second (`at`), as [left, top, right, bottom] in percent of the SOURCE picture: the units of screen_text's boxes" + (caps.images ? " and media_frame's grid" : "") + ". AirWaves places the tightest frame of the video's shape around it, so the picture always fills the video with no background beside it, and keeps the area clear of any picture laid over the recording, such as a camera inset. `within` is the area the frame may show, one window for example: the frame grows into it and goes past it only when it has to. The same `show`, `within` and inset place the same frame again, so a framing you resend unchanged stays as it was while you change others. `inset` moves the picture laid over the recording to another corner of the video from that framing on, at the size and margins it has, travelling with the frame's move; it stays there through `to` unless a later framing moves it again. `inset` as `clear` leaves the choice of corner to what is on screen: the picture's own corner when it sits on none of the frame's text there, else a corner where it sits on none, and the result says which (`inset`) or that no corner is clear (`noCornerClearOfText`). The picture moves to each frame over `over` seconds (default 1; 0 is a straight cut), eased as `ease` says (in and out by default), and holds until the next framing or `to`; a move runs on across the cuts that split the footage into clips. The first framing moves from the frame already there when the footage plays on from before it, and otherwise starts on its frame. Clips of the recording outside the stretch keep their framing. The result gives each frame as placed: `frame` in percent of the source, `zoom`, `sourcePixels` (source pixels per pixel of the video; under 1 the picture is enlarged past its own detail), `holds` seconds, `hidden` (percent of `show` that a cover or the frame's edge hides), `beyondWithin` (percent of the frame past `within`, by side) with `insideWithin` (the largest frame that stays inside it, and the percent of `show` that one hides), `covers` (other pictures over the video there, in percent of the video), `notOnPicture` when another picture fills the video there, and `text` where the recording's text has been read (screen_text reads it): the lines in `show`, their smallest and usual height in pixels of the video, any a cover sits on (`underCover`), and the corners where the cover would sit on none (`cornersClearOfText`); `textUnderCover` lists the framings that have such lines." + (caps.images ? ` With a picture of the video at each frame's settled moment, ${FRAMING_PICTURES} a call starting at \`picturesFrom\`.` : "") + " `preview` works all of this out and shows it without saving. A framing saved over a stretch this request already framed takes that edit's place in the editor's list, unless you give `timelineEdits`. For a crop with the background showing, an inset or a rotation, use timeline_propose's updateClip.",
     {
       intent: intentInput,
       mediaId: z.string().describe("The recording whose picture to frame"),
@@ -3755,7 +3756,7 @@ ${OPS_DOC}`,
 
   tool(
     "asset_add",
-    "Upload an existing file from this task’s artifact directory (for example an animation, graphic or music bed) into the project's media so it can be placed on the timeline with addClip. `kind` is video|audio|image|graphic (guessed from the extension when omitted). `provenance` records how it was made (prompt/tool) so others can revise it. Returns the new mediaId and probed duration. Agents never upload finished videos; Scarlet renders the edit.",
+    "Upload an existing file from this task’s artifact directory (for example an animation, graphic or music bed) into the project's media so it can be placed on the timeline with addClip. `kind` is video|audio|image|graphic (guessed from the extension when omitted). `provenance` records how it was made (prompt/tool) so others can revise it. Returns the new mediaId and probed duration. Agents never upload finished videos; AirWaves renders the edit.",
     {
       path: z.string().describe("File inside the task artifact directory (relative or absolute path)"),
       kind: z.enum(["video", "audio", "image", "graphic"]).optional(),
@@ -3781,6 +3782,7 @@ ${OPS_DOC}`,
 
   registerGraphics({ tool, client, projectId: ctx.projectId, task: ctx.task, author: ctx.author, caps,
     readArtifact: async path => readArtifact(await artifactDir(), path), getProject: getHeader });
+  registerMusic({ tool, client, projectId: ctx.projectId });
 
   tool(
     "export_otio",
@@ -3814,8 +3816,8 @@ ${OPS_DOC}`,
     async ({ text: body, activity, excerpt, edits }) => {
       const { posted, error } = await postEvent({ type: "log", text: body, data: { kind: "editor_progress", ...(activity ? { activity } : {}), ...(edits?.length ? { edits, ...(excerpt ? { excerpt } : {}) } : {}) } });
       if (posted) return text("Logged.");
-      // A task whose update was lost or refused is still a Scarlet task. It hears what failed, and the request goes on without the update.
-      return text(error === undefined ? "Not running as a Scarlet task; message not posted."
+      // A task whose update was lost or refused is still a AirWaves task. It hears what failed, and the request goes on without the update.
+      return text(error === undefined ? "Not running as a AirWaves task; message not posted."
         : `This update didn't reach the editor: ${error}. Carry on with the request unless the task itself has ended.`);
     },
   );
@@ -3825,7 +3827,7 @@ ${OPS_DOC}`,
     "shorts_plan",
     "Save the moments you chose for this Make shorts request, one per short, in the order the shorts are numbered: the first is this project's. " +
       "Times are timeline seconds on the copied edit, the version every short started as. Each short is named for its title. " +
-      "Scarlet starts a run in each other short's project, given its moment, and moves the shorts you leave unused to the trash. Call it once, before you cut this project.",
+      "AirWaves starts a run in each other short's project, given its moment, and moves the shorts you leave unused to the trash. Call it once, before you cut this project.",
     {
       moments: z.array(z.object({
         start: z.number().finite().nonnegative(), end: z.number().finite().positive(),
@@ -3840,16 +3842,16 @@ ${OPS_DOC}`,
 
   tool(
     "task_question",
-    "Ask the editor a question when you cannot proceed without their decision (which take, what aspect ratio, whether to cut a section). Posting the question pauses the task; STOP working immediately after calling this and end your turn. Scarlet resumes the task with the editor's answer as your next message. Ask only when needed, and make the question specific with the options you see.",
+    "Ask the editor a question when you cannot proceed without their decision (which take, what aspect ratio, whether to cut a section). Posting the question pauses the task; STOP working immediately after calling this and end your turn. AirWaves resumes the task with the editor's answer as your next message. Ask only when needed, and make the question specific with the options you see.",
     { text: z.string().min(1) },
     async ({ text: body }) => {
       if (!ctx.taskId) {
-        return text("Not running as a Scarlet task, so nobody can answer. Make the most reasonable assumption, state it in your summary, and continue.");
+        return text("Not running as a AirWaves task, so nobody can answer. Make the most reasonable assumption, state it in your summary, and continue.");
       }
       const { waiting } = await client.postTaskQuestion(ctx.taskId, startedAt, body);
       return text(
         waiting
-          ? "Question posted to the editor. Stop now: do not call any more tools and end your turn with a one-line summary of what you have done so far. Scarlet resumes the task with the editor's answer."
+          ? "Question posted to the editor. Stop now: do not call any more tools and end your turn with a one-line summary of what you have done so far. AirWaves resumes the task with the editor's answer."
           : "This task attempt has already ended. Stop now.",
       );
     },
@@ -3879,7 +3881,7 @@ ${OPS_DOC}`,
     "Offer the editor a standing rule for one of their skills. It goes on a list they review when they choose, with what they said; nothing in the skill changes unless they approve it. Give the rule as one plain sentence that would read well in the skill, and the skill it belongs in, by id or exact name. In replaces, quote each passage of that skill the rule contradicts or overrides, word for word and one stretch of text each; the editor sees them beside the rule before deciding, and approving it replaces them. Leave replaces out when nothing in the skill says otherwise.",
     SuggestLearningRequest.shape,
     async ({ rule, skill, replaces }) => {
-      if (!ctx.taskId) return text("Not running as a Scarlet task, so there is no list to add this to.");
+      if (!ctx.taskId) return text("Not running as a AirWaves task, so there is no list to add this to.");
       const { learning, skill: saved } = await client.suggestLearning(ctx.projectId, ctx.taskId, { rule, skill, ...(replaces?.length && { replaces }) });
       return json({ learningId: learning.id, skill: saved.name, state: learning.state, ...(learning.replaces && { replaces: learning.replaces.length }) });
     },
@@ -3903,7 +3905,7 @@ ${OPS_DOC}`,
   if (task && editing) {
     tool(
       "skill_save_edit",
-      "Save your revision of the skill the editor asked you to change. Provide its one-line description and the complete Markdown instructions without frontmatter: this replaces both, so include what stays as well as what changed. Scarlet keeps the name and the earlier version.",
+      "Save your revision of the skill the editor asked you to change. Provide its one-line description and the complete Markdown instructions without frontmatter: this replaces both, so include what stays as well as what changed. AirWaves keeps the name and the earlier version.",
       TaskSkillDraft.shape,
       async ({ description, instructions }) => {
         const { skill } = await client.saveSkillEdit(ctx.projectId, task.id, { skillId: editing.skillId, hostId: editing.hostId, description, instructions });

@@ -1,4 +1,4 @@
-/** Claude receives task text only on stdin and can call only Scarlet MCP tools. */
+/** Claude receives task text only on stdin and can call only AirWaves MCP tools. */
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { writePrivateFile } from "../private-files.js";
@@ -8,7 +8,7 @@ import { addUsage, claudeUsage, usageWithModel } from "./usage.js";
 import type { AgentUsage, PlanStep } from "@scarlet/shared";
 
 /**
- * Claude Code's own to-do tools, which Scarlet reads the agent's plan from and never calls. TaskCreate adds one step
+ * Claude Code's own to-do tools, which AirWaves reads the agent's plan from and never calls. TaskCreate adds one step
  * and its result names the step's id; TaskUpdate changes one step by id. A Claude Code from before those has
  * TodoWrite, which takes the whole list. `--tools` takes the names a CLI knows and passes over the rest.
  */
@@ -16,8 +16,8 @@ const CLAUDE_PLAN_TOOLS = ["TaskCreate", "TaskUpdate", "TodoWrite"];
 const PLAN_READS = new Set(["TaskList", "TaskGet", "TodoRead"]);
 const STEP_STATE: Record<string, PlanStep["state"]> = { pending: "pending", in_progress: "in_progress", completed: "done" };
 
-/** Why a run whose Scarlet MCP server failed has failed: Claude Code carries on without it and calls the run a success. */
-const MCP_FAILED = "Scarlet's MCP server failed to start, so Claude Code had no editing tools.";
+/** Why a run whose AirWaves MCP server failed has failed: Claude Code carries on without it and calls the run a success. */
+const MCP_FAILED = "AirWaves's MCP server failed to start, so Claude Code had no editing tools.";
 
 /** The plan as Claude Code's to-do tools have left it, and their calls still waiting for a result. */
 interface ClaudePlanState {
@@ -29,7 +29,7 @@ interface ClaudePlanState {
 
 const str = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : undefined;
 
-/** Note a call to one of Claude Code's to-do tools. True when the call was one, so it isn't logged as a Scarlet tool. */
+/** Note a call to one of Claude Code's to-do tools. True when the call was one, so it isn't logged as a AirWaves tool. */
 function planCall(plan: ClaudePlanState, name: string, id: string, input: unknown): boolean {
   const args = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   if (name === "TaskCreate") plan.calls[id] = { create: str(args.subject) ?? str(args.description) ?? "" };
@@ -82,9 +82,9 @@ export interface ClaudeParseState {
   pendingQuestion?: { id: string; text: string };
   question?: string;
   questionPosted: boolean;
-  /** Set when the tool_result for the question arrived, or Scarlet's MCP server failed: the runner should stop the process. */
+  /** Set when the tool_result for the question arrived, or AirWaves's MCP server failed: the runner should stop the process. */
   shouldStop: boolean;
-  /** Scarlet's MCP server as the init line reported it ("connected", "failed", …), when it was listed. */
+  /** AirWaves's MCP server as the init line reported it ("connected", "failed", …), when it was listed. */
   mcpStatus?: string;
   sessionId?: string;
   /** The CLI opened a session. A resume that finds none fails before this. */
@@ -123,17 +123,17 @@ export function parseClaudeLine(line: string, st: ClaudeParseState): RunnerEvent
       const servers = (msg.mcp_servers as Array<{ name: string; status: string }> | undefined) ?? [];
       const scarlet = servers.find((s) => s.name === "scarlet");
       st.mcpStatus = scarlet?.status;
-      // This runner offers only Scarlet's tools, so nothing useful can follow.
+      // This runner offers only AirWaves's tools, so nothing useful can follow.
       if (scarlet?.status === "failed") st.shouldStop = true;
       if (typeof msg.model === "string" && msg.model) st.model = msg.model;
       events.push({
         type: "log",
-        text: `Claude Code session started${msg.model ? ` (${String(msg.model)})` : ""}${scarlet ? `; Scarlet MCP ${scarlet.status}` : "; Scarlet MCP server not listed"}`,
+        text: `Claude Code session started${msg.model ? ` (${String(msg.model)})` : ""}${scarlet ? `; AirWaves MCP ${scarlet.status}` : "; AirWaves MCP server not listed"}`,
         // The engine keeps the session id, so a run cut short by a quit can carry on in this session.
         data: { kind: "init", model: msg.model, mcp: servers, ...(st.sessionId && { sessionId: st.sessionId }) },
       });
       if (scarlet && scarlet.status !== "connected") {
-        events.push({ type: "error", text: `Scarlet MCP server status: ${scarlet.status}` });
+        events.push({ type: "error", text: `AirWaves MCP server status: ${scarlet.status}` });
       }
     } else if (msg.subtype === "compact_boundary") {
       // Claude Code compacted the session's context. The engine logs it and keeps it out of the chat.
@@ -242,7 +242,7 @@ export interface ClaudeCommand {
 }
 
 /**
- * `--bare` keeps the user's hooks, plugins and CLAUDE.md out of Scarlet runs, but
+ * `--bare` keeps the user's hooks, plugins and CLAUDE.md out of AirWaves runs, but
  * it reads only ANTHROPIC_API_KEY or a cloud provider, never a subscription login.
  */
 export function claudeCanRunBare(env: NodeJS.ProcessEnv): boolean {
@@ -308,7 +308,7 @@ export async function runClaude(opts: RunAgentOptions): Promise<RunAgentResult> 
   // Avoid nested-session refusal when the host itself runs under Claude Code.
   delete env.CLAUDECODE;
   delete env.CLAUDE_CODE_ENTRYPOINT;
-  // Scarlet's tools wait up to `toolWaitSeconds` (capabilities.ts) for evidence still being measured.
+  // AirWaves's tools wait up to `toolWaitSeconds` (capabilities.ts) for evidence still being measured.
   env.MCP_TOOL_TIMEOUT ??= "300000";
 
   const handle = spawnLines(cmd.file, cmd.args, {

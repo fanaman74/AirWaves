@@ -83,7 +83,7 @@ export function resolveLocalRuntime(ctx: Pick<Ctx, "paths" | "whisperCli" | "whi
   return { selected, active: selected === "custom" ? "custom" : "whispercpp", binary, model,
     adapterOwnsModel: settings.localModel === "custom" && !!customBinary && !model,
     separateWhisperLane: bundledBinary && bundledWhisperOnGpu(), gpuBinary: bundledBinary ? ctx.whisperGpu : undefined,
-    reason: presetIssue ? presetIssue + "Scarlet is using bundled Whisper." : undefined };
+    reason: presetIssue ? presetIssue + "AirWaves is using bundled Whisper." : undefined };
 }
 
 export async function resolvedBinary(binary: string) {

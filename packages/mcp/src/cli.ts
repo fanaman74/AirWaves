@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scarlet-mcp — run the Scarlet MCP server over stdio.
+ * scarlet-mcp — run the AirWaves MCP server over stdio.
  *
  *   scarlet-mcp --server http://localhost:4000 --token-file <path> --project <projectId>
  *               [--task <taskId>] [--agent claude|codex|gemini] [--model <m>] [--workdir <dir>]
@@ -82,7 +82,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     client.settings(), opts.task ? client.forProject(opts.project).task(opts.task, "none") : undefined,
   ]);
   const task = assignment?.task;
-  if (opts.task && assignment?.checksTaskAttempts !== true) throw new Error("Update the Scarlet engine to use task-scoped editing tools.");
+  if (opts.task && assignment?.checksTaskAttempts !== true) throw new Error("Update the AirWaves engine to use task-scoped editing tools.");
   const taskStartedAt = process.env.SCARLET_TASK_STARTED_AT ?? task?.startedAt;
   if (opts.task && (!task || task.id !== opts.task || task.projectId !== opts.project || !taskStartedAt ||
       task.startedAt !== taskStartedAt || !["claimed", "running"].includes(task.state)))

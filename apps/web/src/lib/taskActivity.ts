@@ -48,6 +48,7 @@ const toolActivity: Record<string, string> = {
   render_status: "Checking your video",
   asset_add: "Adding media",
   graphic_render: "Drawing a graphic",
+  music_generate: "Composing music",
   graphic_get: "Reading a graphic",
   style_guide_save: "Saving the style guide",
   attachment_read: "Reading an attached file",

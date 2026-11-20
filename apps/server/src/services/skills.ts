@@ -152,7 +152,7 @@ export function versionChange(before: string, after: string): string {
 
 /**
  * The skill's versions, each with a line that says what it changed: for the history on the skill's page. A version
- * Scarlet wrote is matched to the request that asked for it, the latest one that saved this skill after the version before.
+ * AirWaves wrote is matched to the request that asked for it, the latest one that saved this skill after the version before.
  */
 export function skillHistory(ctx: Ctx, skillId: string) {
   const versions = ctx.repos.skillVersions.list(skillId);
@@ -166,7 +166,7 @@ export function skillHistory(ctx: Ctx, skillId: string) {
       if (learning) return { ...v, note: learning.rule, from: "learning" as const };
       if (task) return { ...v, note: task.instruction, from: "request" as const };
     }
-    if (!before) return { ...v, note: v.author?.type === "scarlet" ? "Came with Scarlet" : "First version" };
+    if (!before) return { ...v, note: v.author?.type === "scarlet" ? "Came with AirWaves" : "First version" };
     const same = versions.slice(0, i - 1).findLast(earlier => earlier.content === v.content);
     return { ...v, note: same ? `Restored v${same.version}` : versionChange(before.content, v.content) };
   });
@@ -286,7 +286,7 @@ export function updateSkill(ctx: Ctx, user: User | null, existing: Skill, body: 
   if (dup) throw conflict("skill_exists", `a skill named "${next.name}" already exists`, { skillId: dup.id });
   const contentChanged = next.content !== existing.content;
   if (contentChanged) next.version = existing.version + 1;
-  // A skill Scarlet came with is the editor's own once they edit it. A later release leaves it alone.
+  // A skill AirWaves came with is the editor's own once they edit it. A later release leaves it alone.
   if (contentChanged && user && outOfBox(existing)) next.source = undefined;
   const parsed = Skill.parse(next);
   mirrorSkill(ctx, parsed);
@@ -305,7 +305,7 @@ export function updateSkill(ctx: Ctx, user: User | null, existing: Skill, body: 
 }
 
 export function deleteSkill(ctx: Ctx, skill: Skill, user?: User | null) {
-  // The entry for a skill Scarlet comes with names it, which is how seeding knows the editor deleted it and leaves it
+  // The entry for a skill AirWaves comes with names it, which is how seeding knows the editor deleted it and leaves it
   // deleted. One they had edited is theirs by then, and is known by its name.
   const stockSkill = skill.bundledName ?? (outOfBox(skill) || BUNDLED_SKILLS.some(s => s.folder === skill.name) ? skill.name : undefined);
   if (user) logActivity(ctx, { projectId: skill.projectId ?? null, actor: actorFor(user), type: "skill.deleted", summary: `${user.name} deleted the skill ${quote(skill.name)}`, data: { skillId: skill.id, stockSkill } });
@@ -347,10 +347,10 @@ const retiredGuideRevisions = new Set([
   "a74e1c5429365f6f04c0dcbc46d6352ec321cf54c1736be77625279bd6b3c67d",
 ]);
 
-// Workflows Scarlet no longer ships. An unedited copy leaves the library; one the editor changed stays theirs.
+// Workflows AirWaves no longer ships. An unedited copy leaves the library; one the editor changed stays theirs.
 const RETIRED_WORKFLOWS = ["render-verify", "screen-recording", "clean-dialogue", "edit-interview", "smooth-audio-cuts", "visual-pass", "cold-open"];
 
-// A seed directory can also supply personal workflows under these names. Only retire texts Scarlet shipped.
+// A seed directory can also supply personal workflows under these names. Only retire texts AirWaves shipped.
 const retiredWorkflowRevisions = new Set([
   // cold-open
   "ccd698f427e25c0a1687659f88f27e151957dea7abf039ba6d226f633757b2a1",
@@ -469,7 +469,7 @@ function contentHash(content: string) {
   return createHash("sha256").update(content.replace(/\r\n/g, "\n")).digest("hex");
 }
 
-/** A skill Scarlet came with that the editor hasn't edited. Editing its text makes it theirs (`updateSkill`). */
+/** A skill AirWaves came with that the editor hasn't edited. Editing its text makes it theirs (`updateSkill`). */
 function outOfBox(skill: Skill) {
   return skill.source === "bundled" || skill.source === "seed";
 }
@@ -512,7 +512,7 @@ export function retireMergedSkills(ctx: Ctx) {
 
 /**
  * The stock skills the editor deleted, by name. The activity log keeps every deletion for good, so it is the record
- * of them: Scarlet retiring a skill itself logs none.
+ * of them: AirWaves retiring a skill itself logs none.
  */
 function deletedStockSkills(ctx: Ctx): Set<string> {
   const deletions = ctx.repos.activity.select("type = 'skill.deleted' AND json_extract(json, '$.data.stockSkill') IS NOT NULL");
@@ -520,7 +520,7 @@ function deletedStockSkills(ctx: Ctx): Set<string> {
 }
 
 /**
- * Add the skills Scarlet comes with (the bundled set compiled into the engine binary). Each is an ordinary skill
+ * Add the skills AirWaves comes with (the bundled set compiled into the engine binary). Each is an ordinary skill
  * once added. A copy the editor hasn't edited takes the text this release ships; an edited one is theirs and is
  * left alone, as is any skill of their own that shares a name.
  */
@@ -556,7 +556,7 @@ export function seedSkillList(ctx: Ctx, list: Array<{ folder: string; content: s
           }
         }
         if (!outOfBox(existing) || (existing.content === content && existing.name === name)) return 0;
-        // A directory seed may have given this command its own instructions before Scarlet used the name.
+        // A directory seed may have given this command its own instructions before AirWaves used the name.
         if (publicDialogue && existing.name === name && existing.source === "seed" &&
             contentHash(existing.content) !== contentHash(content)) return 0;
         const description = existing.description === parseFrontmatter(existing.content).description ? fm.description : existing.description;

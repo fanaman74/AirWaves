@@ -234,7 +234,7 @@ it("rechecks another engine's settings after extraction and before sending audio
 it.each(["cancel", "provider"] as const)("aborts an in-flight upload after a peer changes %s", async action => {
   const { ctx, peer, project, request } = await cloudScanFixture();
   const task = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut",
-    state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+    state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
   let signal: AbortSignal | undefined;
   const upload = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, opts) => {
     signal = opts!.signal!;
@@ -254,7 +254,7 @@ it.each(["cancel", "provider"] as const)("aborts an in-flight upload after a pee
 it("goes on with a running edit's upload when a peer pauses the project, and stops one nobody asked for", async () => {
   const { ctx, peer, project, request } = await cloudScanFixture();
   const task = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut",
-    state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+    state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
   const uploads: Array<{ signal: AbortSignal; finish(): void }> = [];
   vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, opts) => new Promise((resolve, reject) => {
     const signal = opts!.signal!;
@@ -311,7 +311,7 @@ it("keeps reading for a running edit while the project's media work is paused, a
     return result;
   });
   const task = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut",
-    state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+    state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
   const headers = { Authorization: `Bearer ${accessToken(ctx)}`, "Content-Type": "application/json" };
   const request = (route: string, from: number, to: number, asked = true) => app.app.request(`/api/projects/${project.id}/dialogue-${route}`, {
     method: "POST", headers, body: JSON.stringify({ ...(asked && { taskId: task.id }), mediaId: media.id, from, to }) });
@@ -451,7 +451,7 @@ it("scans the requested range without a reader, shares foreground work and stops
     const result = { language: "en", segments: [] };
     const whisper = vi.spyOn(WhisperCppProvider.prototype, "transcribeWav").mockResolvedValue(result);
     const task = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut",
-      state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+      state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
     const request = (route: string, from: number, to: number) => app.app.request(`/api/projects/${project.id}/dialogue-${route}`, {
       method: "POST", headers: { Authorization: `Bearer ${accessToken(ctx)}`, "Content-Type": "application/json" },
       body: JSON.stringify({ taskId: task.id, mediaId: media.id, from, to }),
@@ -522,7 +522,7 @@ it("starts the editor's transcript of a scanned source once per pass", async () 
     vi.spyOn(UhmDetector.prototype, "detect").mockResolvedValue([]);
     vi.spyOn(WhisperCppProvider.prototype, "transcribeWav").mockResolvedValue({ language: "en", segments: [] });
     const task = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut",
-      state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+      state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
     const scan = (from: number) => app.app.request(`/api/projects/${project.id}/dialogue-scan`, {
       method: "POST", headers: { Authorization: `Bearer ${accessToken(ctx)}`, "Content-Type": "application/json" },
       body: JSON.stringify({ taskId: task.id, mediaId: media.id, from, to: from + 60 }),
@@ -564,7 +564,7 @@ it("scans for a request sent about a point and for a revision as it does for a w
       body: JSON.stringify({ taskId, mediaId: media.id, from: 0, to: 60 }),
     });
     const running = (kind: "note" | "revise" | "skill_edit" | "skill_from_change") => createTask(ctx, { projectId: project.id, kind, agent: "api",
-      instruction: "Tighten the pauses here", state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+      instruction: "Tighten the pauses here", state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
 
     // The message box sends a request about a point as a note, and a call sent back is a revision.
     for (const kind of ["note", "revise"] as const) {

@@ -187,6 +187,9 @@ importers:
 
   apps/agent:
     dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.32.2
+        version: 1.32.2(zod@4.6.6(patch_hash=39e8741de3511d78c8baeb77cf7feb2071938232aae58be30d6de8c0e8568126))
       '@scarlet/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp

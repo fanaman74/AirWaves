@@ -69,7 +69,7 @@ export function MicButton({ onResult, onStart, onRecording, onError, disabled, d
 
   const unsupported = rec.state === "unsupported";
   const isDisabled = disabled || unsupported;
-  const title = unsupported ? "Scarlet can’t record audio on this computer" : disabled ? disabledReason : rec.recording ? "Stop recording" : followHold ? `${label} (hold V)` : label;
+  const title = unsupported ? "AirWaves can’t record audio on this computer" : disabled ? disabledReason : rec.recording ? "Stop recording" : followHold ? `${label} (hold V)` : label;
 
   return (
     <div className="flex items-center gap-2">

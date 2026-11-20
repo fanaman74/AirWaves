@@ -5,7 +5,9 @@
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": { "scarlet-agent": "./dist/cli.js" },
+  "bin": {
+    "scarlet-agent": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/cli.ts",
@@ -14,6 +16,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@scarlet/mcp": "workspace:*",
     "@scarlet/shared": "workspace:*",
     "ws": "^8.18.0",

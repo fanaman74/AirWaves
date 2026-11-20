@@ -30,9 +30,9 @@ export function ReleaseUpdateNotice({ channel }: { channel: ReleaseChannel }) {
     try { await desktop.openUrl(url); }
     catch { setOpenFailed(true); }
   }
-  return <aside className="update-control update-corner" aria-label="Scarlet update" aria-live="polite">
-    <button type="button" className="update-button" onClick={() => void openDownload(update.url)} title={`Open the download page for Scarlet ${update.version}`}>
-      <span className="update-button-dot" aria-hidden="true" />Get Scarlet {update.version}
+  return <aside className="update-control update-corner" aria-label="AirWaves update" aria-live="polite">
+    <button type="button" className="update-button" onClick={() => void openDownload(update.url)} title={`Open the download page for AirWaves ${update.version}`}>
+      <span className="update-button-dot" aria-hidden="true" />Get AirWaves {update.version}
     </button>
     {openFailed && <span className="update-button-error" role="alert">Couldn’t open the download page. Try again.</span>}
   </aside>;

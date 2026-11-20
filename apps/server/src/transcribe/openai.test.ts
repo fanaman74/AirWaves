@@ -150,12 +150,12 @@ describe("OpenAI transcription", () => {
     await expect(provider().transcribe({ path: "talk.mov", duration: 30, tmpDir: dir })).rejects.toMatchObject({ message: said });
   });
 
-  it("says Scarlet couldn't reach OpenAI when the request never got there", async () => {
+  it("says AirWaves couldn't reach OpenAI when the request never got there", async () => {
     decodes(30);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed", { cause: new Error("getaddrinfo ENOTFOUND api.openai.com") })));
     const logged: string[] = [];
     await expect(provider({ log: line => logged.push(line) }).transcribe({ path: "talk.mov", duration: 30, tmpDir: dir }))
-      .rejects.toThrow("Scarlet couldn’t reach OpenAI: check your internet connection, then try again.");
+      .rejects.toThrow("AirWaves couldn’t reach OpenAI: check your internet connection, then try again.");
     expect(logged).toEqual(["[transcribe] couldn’t reach OpenAI: TypeError: fetch failed (Error: getaddrinfo ENOTFOUND api.openai.com)"]);
   });
 

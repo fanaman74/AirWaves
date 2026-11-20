@@ -1,4 +1,4 @@
-// Scarlet's waveform cache has one bucket per 20 ms. Compare landmarks across
+// AirWaves's waveform cache has one bucket per 20 ms. Compare landmarks across
 // the recordings with every possible offset on the other source clock.
 export const syncRate = 50;
 

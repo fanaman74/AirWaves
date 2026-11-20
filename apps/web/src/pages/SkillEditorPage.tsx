@@ -87,7 +87,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
   const pageNow = useRef("");
   pageNow.current = JSON.stringify([name, description, body, enabled]);
   // The conversation beside the skill: each change the editor asked for in words, and what came of it, in the order
-  // asked. Scarlet saves each revision as a new version.
+  // asked. AirWaves saves each revision as a new version.
   const [edits, setEdits] = useState<Task[]>([]);
   const edit = edits.at(-1);
   const setEdit = (task: Task) => setEdits(all => all.some(t => t.id === task.id) ? all.map(t => t.id === task.id ? task : t) : [...all, task]);
@@ -100,8 +100,8 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
   const { effective, unavailableReason } = useAgentAvailability();
   const working = !!edit && !FINISHED.includes(edit.state);
   const question = edit?.state === "waiting_for_user" ? edit.question : null;
-  // The message box takes a new request only while the page shows the skill as saved, which is what Scarlet revises:
-  // the skill to edit, or its newest version with what it changed marked. It takes none while Scarlet has one. An
+  // The message box takes a new request only while the page shows the skill as saved, which is what AirWaves revises:
+  // the skill to edit, or its newest version with what it changed marked. It takes none while AirWaves has one. An
   // answer goes to the request that asked, whichever version shows.
   const boxOff = !question && (working || (viewVersion !== "current" && viewVersion !== loaded?.skill.version));
 
@@ -304,7 +304,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
     const revised = res.skill.version !== savedVersionNow.current;
     show(res);
     useSkillsStore.getState().apply(res.skill);
-    // A version Scarlet saved opens as the history shows it, with what it changed marked, until the editor leaves
+    // A version AirWaves saved opens as the history shows it, with what it changed marked, until the editor leaves
     // the page or presses Done. Another request revises it from there.
     setViewVersion(revised ? res.skill.version : "current");
     setEdit(task);
@@ -384,7 +384,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
     try {
       if (question && edit) setEdit((await api.answerTask(edit.id, text)).task);
       else {
-        // Scarlet revises the saved skill, so what's on the page is saved first.
+        // AirWaves revises the saved skill, so what's on the page is saved first.
         if (unsaved && !(await save())) return;
         setEdit((await api.editSkill(skillId, { prompt: text, ...effective! })).task);
       }
@@ -439,7 +439,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
         {/* Delete is plain beside Save, and red only under the pointer: the dialog it opens is where the red is. */}
         {!isNew && (
           <button className="btn-quiet hover:text-bad" onClick={() => setConfirmDelete(true)} disabled={working}
-            title={working ? "Wait for Scarlet to finish revising this skill." : undefined}>
+            title={working ? "Wait for AirWaves to finish revising this skill." : undefined}>
             Delete
           </button>
         )}
@@ -452,13 +452,13 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
 
       <div className="skill-editor-body">
         {!isNew && (
-          <aside className="skill-chat" aria-label="Ask Scarlet to change this skill">
+          <aside className="skill-chat" aria-label="Ask AirWaves to change this skill">
             {/* Each request reads as one does in a project's chat, from the same pieces: the editor's words in a band
-                with where the request stands at its right, then Scarlet's lines under the band. */}
+                with where the request stands at its right, then AirWaves's lines under the band. */}
             <div className="simple-chat" ref={thread}>
               {edits.map(e => {
                 const asking = e.state === "waiting_for_user", active = !FINISHED.includes(e.state);
-                // A dot while Scarlet asks, a word once it stopped early, nothing once it's done. Stop follows while Scarlet has the request.
+                // A dot while AirWaves asks, a word once it stopped early, nothing once it's done. Stop follows while AirWaves has the request.
                 const standing = asking ? <span className="unit-dot" aria-hidden /> : e.state === "cancelled" ? <span className="unit-word">Stopped</span>
                   : e.state === "failed" ? <span className="unit-word">Couldn’t finish</span> : null;
                 return <div key={e.id} className="unit">
@@ -485,8 +485,8 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
                 <div className="composer-box">
                   <div className="composer-row">
                     <SkillCommandInput inputRef={box} value={ask} skills={[]} plain id={askId} disabled={boxOff}
-                      ariaLabel={question ? "Answer Scarlet" : "Tell Scarlet what to change in this skill"}
-                      placeholder={question ? "Answer Scarlet…" : "Tell Scarlet what to change…"}
+                      ariaLabel={question ? "Answer AirWaves" : "Tell AirWaves what to change in this skill"}
+                      placeholder={question ? "Answer AirWaves…" : "Tell AirWaves what to change…"}
                       onChange={text => { setAsk(text); setAskErr(null); }} onSubmit={() => void send()} />
                     {sending && <Spinner className="size-3.5 shrink-0" />}
                     {typed && <button ref={sendButton} type="button" className="btn-primary composer-send shrink-0" aria-label="Send" title="Send"
@@ -532,7 +532,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
             {find.controls}
           </div>
           {isNew && <p id="skill-style-help" className="px-4 pt-3 text-[13px] leading-5 text-muted">
-            A skill tells Scarlet how you like to edit your videos. Describe what to keep, cut, or change in your own words.
+            A skill tells AirWaves how you like to edit your videos. Describe what to keep, cut, or change in your own words.
           </p>}
           {shownVersion ? <div ref={changesPane} className="flex-1 min-h-0 w-full overflow-y-auto bg-bg p-3 font-mono text-[12.5px] leading-5 skill-version-text max-md:min-h-[250px]"
             aria-label={`Skill markdown, v${picked!.version}`}>
@@ -563,7 +563,7 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         title={`Delete skill “${loaded?.skill.name}”?`}
-        body="Scarlet stops using it immediately. Version history is removed."
+        body="AirWaves stops using it immediately. Version history is removed."
         confirmLabel="Delete"
         danger
         onConfirm={async () => {
@@ -582,17 +582,17 @@ export function SkillEditorPage({ onReturnToEdit }: { onReturnToEdit?: () => voi
 /** How many versions the history lists before "Show N older versions". */
 const LATEST_VERSIONS = 8;
 
-/** Who saved a version: "You", a teammate by name, or Scarlet, with what asked it to when Scarlet wrote it. */
+/** Who saved a version: "You", a teammate by name, or AirWaves, with what asked it to when AirWaves wrote it. */
 function savedBy(v: SkillVersion, me?: string): string {
   if (!v.author) return "";
   if (v.author.type === "human") return v.author.id === me ? "You" : v.author.name;
-  return v.from === "request" ? "Scarlet, from your request" : v.from === "learning" ? "Scarlet, from Learnings" : "Scarlet";
+  return v.from === "request" ? "AirWaves, from your request" : v.from === "learning" ? "AirWaves, from Learnings" : "AirWaves";
 }
 
 /** The line over a picked version: whose change it is, and when. */
 function changedIn(v: SkillVersion, me?: string): string {
   const who = savedBy(v, me);
-  const [name, from] = who.startsWith("Scarlet, ") ? ["Scarlet", who.slice("Scarlet, ".length)] : [who === "You" ? "you" : who, ""];
+  const [name, from] = who.startsWith("AirWaves, ") ? ["AirWaves", who.slice("AirWaves, ".length)] : [who === "You" ? "you" : who, ""];
   const when = v.createdAt ? ` · ${dayName(v.createdAt)}, ${clockTime(v.createdAt)}` : "";
   if (v.version === 1) return `v1, the first version${when}`;
   return `What ${name || "was"} changed in v${v.version}${from ? `, ${from}` : ""}${when}`;

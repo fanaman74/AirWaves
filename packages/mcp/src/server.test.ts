@@ -142,9 +142,9 @@ describe("tool errors", () => {
   it("tells the agent which fields the engine rejected", () => {
     const err = new ScarletApiError(400, "validation_error", "request validation failed",
       [{ code: "custom", path: ["cuts", 3], message: "A repaired range must be staged inside its originally proposed removal." }]);
-    expect(describeError(err)).toBe("Scarlet server error 400 (validation_error): request validation failed\n"
+    expect(describeError(err)).toBe("AirWaves server error 400 (validation_error): request validation failed\n"
       + "- cuts.3: A repaired range must be staged inside its originally proposed removal.");
-    expect(describeError(new ScarletApiError(409, "cut_changed", "The edit changed."))).toBe("Scarlet server error 409 (cut_changed): The edit changed.");
+    expect(describeError(new ScarletApiError(409, "cut_changed", "The edit changed."))).toBe("AirWaves server error 409 (cut_changed): The edit changed.");
   });
 });
 
@@ -156,7 +156,7 @@ describe("tools/list", () => {
     } finally { await codex.close(); }
     expect((await client.listTools()).tools.map(t => t.name)).not.toContain("asset_add");
   });
-  it("registers every Scarlet tool with a description", async () => {
+  it("registers every AirWaves tool with a description", async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
     // Claude's harness does not deliver audio, so nothing offers WAV, and has no file tools, so nothing imports from the
@@ -1383,7 +1383,7 @@ describe("transcript tools", () => {
     }
   });
 
-  it("reads the requested waveform range once Scarlet has prepared it", async () => {
+  it("reads the requested waveform range once AirWaves has prepared it", async () => {
     let prepared = false;
     mock.state.extra = (req, res) => {
       if (req.path.endsWith("/media/m2/prepare")) {
@@ -1541,9 +1541,9 @@ describe("task events", () => {
     vi.mocked(console.error).mockImplementation(() => {});
     try {
       const lost = await client.callTool({ name: "task_log", arguments: { text: "reading transcript" } }) as CallToolResult;
-      expect(textOf(lost)).toContain("Scarlet server error 500 (internal): database is locked");
+      expect(textOf(lost)).toContain("AirWaves server error 500 (internal): database is locked");
       expect(textOf(lost)).toContain("didn't reach the editor");
-      expect(textOf(lost)).not.toContain("Not running as a Scarlet task");
+      expect(textOf(lost)).not.toContain("Not running as a AirWaves task");
       // The request goes on without the update, so this is not a tool error.
       expect(lost.isError).toBeFalsy();
       expect(mock.state.events).toHaveLength(0);
@@ -1553,7 +1553,7 @@ describe("task events", () => {
     const alone = await connect(undefined);
     try {
       const unposted = await alone.callTool({ name: "task_log", arguments: { text: "reading transcript" } }) as CallToolResult;
-      expect(textOf(unposted)).toBe("Not running as a Scarlet task; message not posted.");
+      expect(textOf(unposted)).toBe("Not running as a AirWaves task; message not posted.");
     } finally { await alone.close(); }
   });
   it("task_question without a task tells the agent to assume and continue", async () => {
@@ -1755,7 +1755,7 @@ describe("skills_list and misc", () => {
   it("server errors come back as readable tool errors", async () => {
     const r = (await client.callTool({ name: "change_get", arguments: { changeId: "nope" } })) as CallToolResult;
     expect(r.isError).toBe(true);
-    expect(textOf(r)).toContain("Scarlet server error 404");
+    expect(textOf(r)).toContain("AirWaves server error 404");
   });
 });
 
@@ -1783,7 +1783,7 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("Save as you go.");
     expect(buildSystemPrompt({ project: { project: mock.state.project, timeline: tl }, task: { kind: "edit", instruction: "Trim", agent: "codex", context: {} }, skills: [] }))
       .not.toContain("Time limit");
-    expect(prompt).toContain("# You are editing a video in Scarlet");
+    expect(prompt).toContain("# You are editing a video in AirWaves");
     expect(prompt).toContain("Too long a pause at 1:17");
     expect(prompt).toContain("1:17.00");
     expect(prompt).toContain("Clip ids under the playhead: c1");
@@ -1945,7 +1945,7 @@ it("stops requesting dialogue analysis after repeated failures while the transcr
       res.end(JSON.stringify(transcriptReady ? { state: "ready" } : { state: "processing", taskId: "tsk_transcribe" }));
     } else if (req.path.endsWith("/tasks/tsk_transcribe")) {
       res.end(JSON.stringify({ task: { id: "tsk_transcribe", projectId: "prj_test", kind: "transcribe", agent: "api", instruction: "Transcribe",
-        state: transcriptReady ? "done" : "running", createdBy: { type: "scarlet", name: "Scarlet" }, progress: { stage: "aligning", fraction: 0.33, remainingSeconds: 2220 } }, events: [] }));
+        state: transcriptReady ? "done" : "running", createdBy: { type: "scarlet", name: "AirWaves" }, progress: { stage: "aligning", fraction: 0.33, remainingSeconds: 2220 } }, events: [] }));
     } else return false;
     return true;
   };
@@ -1953,7 +1953,7 @@ it("stops requesting dialogue analysis after repeated failures while the transcr
   const detections = () => mock.requests.filter(r => r.path.endsWith("/dialogue-detections")).length;
   const scan = async () => textOf(await editor.callTool({ name: "dialogue_scan", arguments: { mediaId: "m1", from: 0, until: 6 } }));
   try {
-    // Each failure still returns the page with what Scarlet could measure.
+    // Each failure still returns the page with what AirWaves could measure.
     for (let i = 0; i < 2; i++) expect(JSON.parse(await scan()).detectorIssue).toContain("UND_ERR_HEADERS_TIMEOUT");
     expect(detections()).toBe(2);
     const blocked = await scan();
@@ -1961,7 +1961,7 @@ it("stops requesting dialogue analysis after repeated failures while the transcr
     expect(blocked).toContain("aligning words, 33% done, about 37 min left");
     expect(blocked).toContain("end your run");
     expect(detections()).toBe(2);
-    // The run is now waiting on the transcript, so Scarlet can tell if it ends without it.
+    // The run is now waiting on the transcript, so AirWaves can tell if it ends without it.
     await expect.poll(() => mock.state.events.filter(e => e.data?.kind === "media_wait").map(e => e.data)).toEqual([{ kind: "media_wait", wait: "transcript", mediaId: "m1" }]);
     // Once the transcript is saved, the next page asks again.
     transcriptReady = true;
@@ -2654,9 +2654,9 @@ it("moves the staged cut being revised past its old edges and steers the other e
     expect(firstJson(moved as CallToolResult)).not.toHaveProperty("movedOn");
     // The engine's saved ranges couldn't be read (the mock has no cut-review route), and the result says so after its answer.
     expect((moved as CallToolResult).content.at(-1)).toEqual({ type: "text",
-      text: "Not measured: failed to read the ranges saved for pass2 (Scarlet server error 404 (not_found): no mock route for POST /projects/prj_test/changes/pass2/cut-review)." });
+      text: "Not measured: failed to read the ranges saved for pass2 (AirWaves server error 404 (not_found): no mock route for POST /projects/prj_test/changes/pass2/cut-review)." });
     expect(mock.state.events.at(-1)).toMatchObject({ type: "change", data: { changeId: "pass2" } });
-    // A revision had replaced the pass named since the request was sent: Scarlet made the move on the pass that waits, and says so.
+    // A revision had replaced the pass named since the request was sent: AirWaves made the move on the pass that waits, and says so.
     const plain = mock.state.extra;
     mock.state.extra = (req, res) => {
       if (req.path !== "/projects/prj_test/changes/pass/staged-cuts/1") return plain!(req, res);
@@ -3720,7 +3720,7 @@ it("counts a silence as decided when its keep names words or its range is protec
     // Kept on purpose by naming the words either side of it: it stays whole, and nothing is reported.
     const named = await apply({ ...pause, decision: "keep", mediaId: "m1", fromWord: 1, toWord: 2 }, cut);
     expect(named.keptSilences).toBeUndefined();
-    // Marked for removal but protected for what the picture does: Scarlet keeps it, and it is decided.
+    // Marked for removal but protected for what the picture does: AirWaves keeps it, and it is decided.
     const guarded = await apply({ ...pause, start: 1.6, end: 4.8, decision: "cut", picture: "protect" }, cut);
     expect(guarded.keptSilences).toBeUndefined();
     const mine = expect.objectContaining({ start: 6.1, end: 6.8, review: false, summary: cut.summary, reason: cut.reason });
@@ -4024,7 +4024,7 @@ it("cuts by word reference: edges go in the measured gaps, and every gate decisi
   try {
     const page = textOf(await editor.callTool({ name: "timeline_transcript", arguments: { version: tl.version, from: 2.4, to: 3, detail: "words" } }) as CallToolResult);
     expect(page).toContain("0 joins.\nmediaId m1\n2.50-2.70 #4 Um,");
-    // Remove “welcome back. Um,” (#2–#4) without any dialogue scan: Scarlet measures the gaps itself.
+    // Remove “welcome back. Um,” (#2–#4) without any dialogue scan: AirWaves measures the gaps itself.
     const ref = { mediaId: "m1", fromWord: 2, toWord: 4 };
     const check = JSON.parse(textOf(await editor.callTool({ name: "dialogue_check_join", arguments: { version: tl.version, ...ref } }) as CallToolResult));
     // “everyone” ends at 1.0 and “welcome” starts at 1.1: a 0.1 s gap splits 80/20. The retake leaves 0.05 s before the second “welcome”, on the nearest frame.
@@ -4067,7 +4067,7 @@ it("cuts by word reference: edges go in the measured gaps, and every gate decisi
     expect(saved.cuts[0]).not.toHaveProperty("check");
     expect(JSON.parse(textOf(applied)).gate.decisions).toEqual([{ cut: 0, kind: "retake", words: "welcome back. Um,", asked: "cut", outcome: "cut",
       range: [1.07, 3.57], evidence: expect.stringContaining("the removed sound starts") }]);
-    // Without measured silence beside the words, the edge falls back to word timings and Scarlet stages the cut, saying why.
+    // Without measured silence beside the words, the edge falls back to word timings and AirWaves stages the cut, saying why.
     mock.state.waveform = (mediaId, from, to, points) => ({ mediaId, from, to, peaks: Array(points).fill(.2), rms: Array(points).fill(.2),
       speechActivity: [{ start: from, end: to }] });
     const deaf = await connect();
@@ -4291,7 +4291,7 @@ it("returns a long list of checked joins whole enough to arrive: quiet joins giv
     return { segments: [{ id: keptSide ? "kept" : "s", start: from, end: to, text: heard.map(w => w.text).join(" "), words: heard }], acoustic: [] };
   });
   // Each removal takes one word out, from the room tone before it to the room tone after. Every tenth starts inside
-  // the word before instead, so Scarlet has to move that edge.
+  // the word before instead, so AirWaves has to move that edge.
   const cut = (k: number) => ({ start: k % 10 === 5 ? k + .15 : k + .317, end: k + .65 });
   const check = async (cuts: object[]) => {
     const r = await editor.callTool({ name: "dialogue_check_join", arguments: { version: tl.version, cuts } }) as CallToolResult;
@@ -4482,12 +4482,12 @@ it("reads a transcript whose words are still being placed on the audio, and hold
     const read = textOf(await editor.callTool({ name: "transcript_get", arguments: { mediaId: "m1", fromWord: 4, toWord: 4 } }) as CallToolResult);
     expect(read).toContain("#4 2.20-2.40 Um,");
     // Placing the words can add ones the transcript missed (a reread of a stretch without words), so indices aren't promised.
-    expect(read).toContain("Times after 1.0 s are estimates until Scarlet has placed those words on the audio. Placing them can add words the transcript missed");
+    expect(read).toContain("Times after 1.0 s are estimates until AirWaves has placed those words on the audio. Placing them can add words the transcript missed");
     // An edge beside “Um,” needs the final times of it and the word after, so neither a check nor a save uses the estimates.
     const ref = { mediaId: "m1", fromWord: 2, toWord: 4 };
     const cut = { ...ref, kind: "retake", decision: "cut", reason: "The second take is cleaner." };
     const held = textOf(await editor.callTool({ name: "dialogue_check_join", arguments: { version: tl.version, ...ref } }) as CallToolResult);
-    expect(held).toContain("Scarlet is still placing the words of m1 on the audio: their times are final up to 1 s, and this needs them up to 6 s.");
+    expect(held).toContain("AirWaves is still placing the words of m1 on the audio: their times are final up to 1 s, and this needs them up to 6 s.");
     const unsaved = await editor.callTool({ name: "dialogue_apply_cuts", arguments: { version: tl.version, description: "Remove the first attempt", cuts: [cut] } }) as CallToolResult;
     expect(textOf(unsaved)).toContain("still placing the words of m1");
     expect(mock.requests.some(r => r.path.endsWith("/dialogue-cuts"))).toBe(false);
@@ -4667,10 +4667,10 @@ it("holds an edit whose edges need words still being placed, instead of saving i
     // Past the first second the word times are estimates, so neither check can say whether an edge is inside a word yet.
     const ripple = await editor.callTool({ name: "timeline_propose", arguments: { intent: "requested", fromVersion: tl.version,
       description: "Cut the filler", ops: [{ op: "rippleDelete", start: 2, end: 3.4 }] } }) as CallToolResult;
-    expect(textOf(ripple)).toContain("Scarlet is still placing the words of m1 on the audio");
+    expect(textOf(ripple)).toContain("AirWaves is still placing the words of m1 on the audio");
     const assembly = await editor.callTool({ name: "timeline_first_cut", arguments: { mediaId: "m1", intent: "requested", description: "First cut",
       keep: [{ start: 0, end: 1.7 }, { start: 3.5, end: 5.5 }] } }) as CallToolResult;
-    expect(textOf(assembly)).toContain("Scarlet is still placing the words of m1 on the audio");
+    expect(textOf(assembly)).toContain("AirWaves is still placing the words of m1 on the audio");
     expect(saves()).toBe(before);
   } finally {
     Object.assign(mock.state, original);
@@ -4722,7 +4722,7 @@ it("holds captions until the words they are timed from are placed on the audio",
   try {
     // A cue keeps the times it is saved with, and nothing places them again. Past the first second these are estimates.
     const held = await generate();
-    expect(textOf(held)).toContain("Scarlet is still placing the words of m1 on the audio: their times are final up to 1 s, and this needs them up to 7 s.");
+    expect(textOf(held)).toContain("AirWaves is still placing the words of m1 on the audio: their times are final up to 1 s, and this needs them up to 7 s.");
     expect(held.isError).toBeFalsy();
     expect(saved).toEqual([]);
     // Alignment finishes, and the same call times each cue from where the recording has its words.

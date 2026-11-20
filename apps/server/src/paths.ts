@@ -3,7 +3,7 @@ import { homedir, tmpdir } from "node:os";
 import { join, parse, resolve } from "node:path";
 import { restrictWindowsAccess } from "./privateStorage.js";
 
-const chooseLibrary = "Choose an empty directory or an existing Scarlet library for --data so its files can be made private.";
+const chooseLibrary = "Choose an empty directory or an existing AirWaves library for --data so its files can be made private.";
 
 function canTightenLibraryPermissions(path: string) {
   const root = realpathSync(path);
@@ -28,7 +28,7 @@ function canTightenLibraryPermissions(path: string) {
 
 function ensureDirectory(path: string) {
   mkdirSync(path, { recursive: true, mode: 0o700 });
-  if (!lstatSync(path).isDirectory()) throw new Error("Expected a directory inside the Scarlet library.");
+  if (!lstatSync(path).isDirectory()) throw new Error("Expected a directory inside the AirWaves library.");
 }
 
 /** Project storage layout under the --data directory. */

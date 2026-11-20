@@ -113,9 +113,9 @@ const voicePhase: Record<SpeakerProgress["phase"], string> = {
 };
 
 /**
- * Scarlet's words in the chat: two lines at most. A longer reply opens in full on a click and folds again on the
+ * AirWaves's words in the chat: two lines at most. A longer reply opens in full on a click and folds again on the
  * next, as a card's note does: there is no button, only the pointer changes over it, and the reply ends in an ellipsis
- * while it's folded. However much Scarlet writes, a request stays a few lines tall.
+ * while it's folded. However much AirWaves writes, a request stays a few lines tall.
  */
 export function Said({ text, lead, className, children }: { text: string; lead?: ReactNode; className?: string; children?: ReactNode }) {
   const ref = useRef<HTMLParagraphElement>(null);
@@ -139,17 +139,17 @@ export function Said({ text, lead, className, children }: { text: string; lead?:
 /**
  * One request in the chat, under its heading. A long pass and a one-line revision use the same rows:
  *
- * - While it works, for as long as it works: first the one sentence Scarlet said before it began, on what the whole
+ * - While it works, for as long as it works: first the one sentence AirWaves said before it began, on what the whole
  *   request will come to. It is written once and stays as it is; a run that said none has none. Then one line, with a
- *   turning ring before it, that says what Scarlet is doing this moment (`runNow`): the latest call it made, in plain
+ *   turning ring before it, that says what AirWaves is doing this moment (`runNow`): the latest call it made, in plain
  *   words, or its own latest sentence. The line changes every few seconds and nothing else is there: no stages, no
  *   plan, no list of what it did, and no percent but one: while the recordings are transcribed it says how far along
  *   they are. Its words shimmer. With no heading above it, Stop ends the line.
- * - When Scarlet asks something, or a request waits its turn: one row saying so, with its one action. A block whose
+ * - When AirWaves asks something, or a request waits its turn: one row saying so, with its one action. A block whose
  *   heading already says where it stands (`banded`) leaves a question to the heading: its dot, the question and Answer.
- *   With no heading, the row opens the steps Scarlet took before it asked.
+ *   With no heading, the row opens the steps AirWaves took before it asked.
  * - When a run stops early: the row that says what it saved, with its one action.
- * - `say`: Scarlet's words, when it has any for the editor.
+ * - `say`: AirWaves's words, when it has any for the editor.
  * - `result`: what the request made. A run with nothing listed gets one row of its own: what it amounts to.
  *   A finished request is its heading with its final metrics, and what it made.
  */
@@ -160,7 +160,7 @@ interface RunBundleProps {
   /** The number a call of the waiting pass goes by in the window, when the window has numbered it. */
   callNumber?(changeId: string, cutIndex: number): number | undefined;
   finalChange?: Change;
-  /** Scarlet's words for the editor: a reply, a question, or why it stopped. */
+  /** AirWaves's words for the editor: a reply, a question, or why it stopped. */
   say?: ReactNode;
   /** Those words already say what the request came to, so a run that has ended, finished or stopped early, with nothing to list or open adds no row that says it again, cut short. */
   told?: boolean;
@@ -168,7 +168,7 @@ interface RunBundleProps {
   result?(aside: ReactNode): ReactNode;
   /** What a request about one cut or edit did there, in place of a count of everything it saved. */
   summary?: string;
-  /** The request sits under the row of the cut it is about, and that row is what it saved, with Scarlet's note on it. */
+  /** The request sits under the row of the cut it is about, and that row is what it saved, with AirWaves's note on it. */
   listedAbove?: boolean;
   /** The block's heading says how the run ended ("Stopped"), so its rows don't say it again. */
   banded?: boolean;
@@ -180,7 +180,7 @@ interface RunBundleProps {
   /** Pick a stopped or failed run up again. */
   recovery?: { label: string; run(): void };
   onStop?(): void;
-  /** Edit actions for Scarlet's own request, which has no heading. */
+  /** Edit actions for AirWaves's own request, which has no heading. */
   actions?: ReactNode;
   /** Resume a run that ended without its transcripts, now that they're ready. */
   onResume?(): void;
@@ -284,17 +284,17 @@ function WorkingRun({ task, events: all, changes, callNumber, say, result, onSto
     const progress = transcriptsProgress(tasks ?? [], media ?? [], ids);
     return progress && progress.stage !== "queued" ? transcriptionProgressLabel(progress) : undefined;
   }, [doing, events, tasks, media]);
-  // A run cut short, by Scarlet closing or restarting or by a pause, carries on under a new task. Until that attempt
-  // makes its first call the line says so: the editor who just reopened Scarlet sees the edit wasn't started over.
+  // A run cut short, by AirWaves closing or restarting or by a pause, carries on under a new task. Until that attempt
+  // makes its first call the line says so: the editor who just reopened AirWaves sees the edit wasn't started over.
   const pickingUp = !!task.resumeRootId && !rerun && !voice && (!doing || doing === STARTING);
   const words = transcripts ? `Transcribing the recordings · ${transcripts}`
     : pickingUp ? PICKING_UP
     : doing ?? (voice ? voicePhase[voice.phase] : task.state === "claimed" ? STARTING : WORKING);
-  return <div className="req" data-state="working" aria-label="Scarlet’s work" aria-busy>
+  return <div className="req" data-state="working" aria-label="AirWaves’s work" aria-busy>
     {aim && <div className="req-said req-lead"><Said className="req-say" text={aim.text} /></div>}
     <div className="req-row req-now">
       <StepMark state="working" />
-      {/* The words shimmer while Scarlet works. A narrow chat shortens them to two lines; hovering says them whole. */}
+      {/* The words shimmer while AirWaves works. A narrow chat shortens them to two lines; hovering says them whole. */}
       <span role="status" title={words} className="req-now-text working-text">{words}</span>
       {(actions || onStop) && <div className="req-right">{actions || <button type="button" className="simple-link run-stop" onClick={onStop}>Stop</button>}</div>}
     </div>
@@ -320,7 +320,7 @@ function WaitingRun({ task, events, changes, say, result, banded, paused, onStop
   // and Answer say it. Nor has a paused request: its heading says Paused.
   const line = !(banded && (asking || (waiting && paused)));
   const opens = asking && shown.length > 0;
-  return <div className="req" data-state={asking ? "asking" : "working"} aria-label="Scarlet’s work" aria-busy={!asking}>
+  return <div className="req" data-state={asking ? "asking" : "working"} aria-label="AirWaves’s work" aria-busy={!asking}>
     {line && <div className="req-row req-status">
       <button type="button" className="req-toggle" aria-expanded={opens ? open : undefined} disabled={!opens}
         title={opens ? open ? "Hide the details" : "Show the details" : undefined} onClick={() => setOpen(!open)}>
@@ -350,16 +350,16 @@ function FinishedRun({ task, finalChange, say, told, result, recovery, summary, 
   const rows = result?.(aside);
   const action = !paused && recovery && <button type="button" className="simple-link req-recover" onClick={recovery.run}>{recovery.label}</button>;
   const made = summary ?? (state ? stoppedSummary(task, finalChange) : runSummary(task, finalChange));
-  // Scarlet's note on one cut reads on up to two lines; a count stays on one.
+  // AirWaves's note on one cut reads on up to two lines; a count stays on one.
   const madeClass = `req-summary${state ? "" : " run-summary"}${summary ? " is-note" : ""}`;
   // A run that stopped with nothing saved has nothing to show on the timeline: "Nothing saved" is words, not a way in.
-  // Nor has one whose version couldn't be prepared: Scarlet's words say so, and no row names the edit under them.
+  // Nor has one whose version couldn't be prepared: AirWaves's words say so, and no row names the edit under them.
   // Nor has a request that changed nothing and said why: its row would be the first words of that reply, said again.
   const opens = ((state || (told && !summary)) && !finalChange) || finalChange?.state === "failed" ? undefined : onOpen;
   // A run paused for its transcripts that saved nothing has its row about the transcripts, and none that says "Nothing
   // saved". The tokens it used, when those show, end that row: they don't bring the second one back.
   const waits = paused && !finalChange && !summary && !rows;
-  // Under the row of the cut it saved, that row is what the run made, in Scarlet's note, and opens it. A row here would
+  // Under the row of the cut it saved, that row is what the run made, in AirWaves's note, and opens it. A row here would
   // say the note a second time, right under it (2026-11-10). It stays only for the tokens, when those show.
   const madeAbove = !!listedAbove && !!finalChange && finalChange.state !== "failed";
   // The row that says what the run saved is there, and it opens nothing: the action sits on it, after its words.
@@ -421,7 +421,7 @@ function tidy(lines: RunLine[]): RunLine[] {
  * and one action. Finish when ready resumes the run by itself once they're saved; with them ready already, Finish edit
  * resumes it now. While no transcript is being made there is nothing to wait for, so the action is the one that gets it
  * going, in the words its Media row uses: Retry after one that stopped, Transcribe where none was made. The run then
- * finishes when the transcript is ready. Where Scarlet can't start one, the press says why at the end of the request's
+ * finishes when the transcript is ready. Where AirWaves can't start one, the press says why at the end of the request's
  * block, as any press that failed does. `aside` ends the row: the tokens the run used.
  */
 function TranscriptWait({ task, onResume, onWait, aside }: { task: Task; onResume?(): void; onWait?(on: boolean): void; aside?: ReactNode }) {
@@ -465,7 +465,7 @@ function StepMark({ state }: { state: "done" | "working" }) {
   </span>;
 }
 
-/** The steps so far: what Scarlet did, each with its mark and no time beside it. Its own updates read in full. */
+/** The steps so far: what AirWaves did, each with its mark and no time beside it. Its own updates read in full. */
 function RunList({ lines }: { lines: RunLine[] }) {
   return <div className="req-steps run-list">
     {lines.map((line, i) => <div key={i} className={`req-step run-row is-${line.kind}${line.live ? " run-live" : ""}`}>

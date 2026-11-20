@@ -40,10 +40,10 @@ it("shows a build under way with how far along it is, then becomes the button th
       return [...tip.firstElementChild!.children].map(line => line.textContent);
     };
     expect(hint()).toEqual(["Updating to build bbbbbbb", on,
-      "Scarlet is building it in the background. Keep working: this becomes Restart to update when it’s ready."]);
+      "AirWaves is building it in the background. Keep working: this becomes Restart to update when it’s ready."]);
     // It moves on between the updater's reports, at the pace this part took last time.
     await act(async () => vi.advanceTimersByTimeAsync(120_000).then(() => undefined));
-    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("Updating Scarlet, 50% built");
+    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("Updating AirWaves, 50% built");
     // A part that runs long waits at its end. The figure never reaches 100 by itself.
     await act(async () => vi.advanceTimersByTimeAsync(600_000).then(() => undefined));
     expect(container.querySelector(".update-button-figure")!.textContent).toBe("80%");
@@ -51,7 +51,7 @@ it("shows a build under way with how far along it is, then becomes the button th
     // The first build is ready. A new head starts updating while this window stays open.
     status.mockResolvedValue({ ready: commit, building: null });
     await poll();
-    expect(hint()).toEqual(["Build bbbbbbb is ready", on, "Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off."]);
+    expect(hint()).toEqual(["Build bbbbbbb is ready", on, "Restarting installs it and brings you back here. An edit AirWaves is working on picks up where it left off."]);
     const newer = { ...building, revision: "c".repeat(40), done: 0, stepStarted: Date.now() / 1000 + 5 };
     status.mockResolvedValue({ ready: commit, building: newer });
     await poll();
@@ -74,7 +74,7 @@ it("shows a build under way with how far along it is, then becomes the button th
     expect(button.textContent).toBe("Restart to update");
     expect(button.closest(".update-corner")).not.toBeNull();
     expect(container.querySelector("[role=status]")).toBeNull();
-    expect(hint()).toEqual(["Build ccccccc is ready", on, "Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off."]);
+    expect(hint()).toEqual(["Build ccccccc is ready", on, "Restarting installs it and brings you back here. An edit AirWaves is working on picks up where it left off."]);
     window.addEventListener("beforeunload", dirty);
     await act(async () => button.click());
     expect(restart).not.toHaveBeenCalled();
@@ -131,7 +131,7 @@ it("reopens the project that was on screen, forgets it at the library, and never
     history.replaceState(null, "", "/");
     restoreLastProject();
     expect(location.pathname).toBe("/");
-    // The project finished opening, then Scarlet quit.
+    // The project finished opening, then AirWaves quit.
     rememberProject("prj_open");
     restoreLastProject();
     expect(location.pathname).toBe("/p/prj_open");

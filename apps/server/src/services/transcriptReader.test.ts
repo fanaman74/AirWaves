@@ -100,7 +100,7 @@ it("releases an event-based status wait on cancellation and reads peer-owned wor
   try {
     const project = ctx.repos.projects.insert(createProject("Wait"));
     const task = createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", instruction: "Transcribe",
-      state: "running", context: { mediaId: "mic" }, createdBy: { type: "scarlet", name: "Scarlet" } });
+      state: "running", context: { mediaId: "mic" }, createdBy: { type: "scarlet", name: "AirWaves" } });
     const client = new ScarletClient({ baseUrl: "https://status.local", token: accessToken(ctx), fetch: (url, init) => app.request(url, init) });
     expect(await client.waitForTranscription(task.id)).toMatchObject({ task: { state: "running" } });
     ctx.transcriptions.set(task.id, { controller: new AbortController(), done: Promise.resolve(null) });

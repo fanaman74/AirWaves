@@ -17,7 +17,7 @@ const COUNTS = [1, 2, 3, 4, 5].map(value => ({ value, label: value === 1 ? "1" :
 
 /**
  * Make shorts, from the ⋯ menu: what the editor wants, in a form, since it makes new projects. Each short is a project
- * of its own, starting as this video's finished edit on the chosen shape. The first opens at once, with Scarlet at work
+ * of its own, starting as this video's finished edit on the chosen shape. The first opens at once, with AirWaves at work
  * on it; this video isn't changed.
  */
 export function MakeShortsSheet({ onClose }: { onClose(): void }) {

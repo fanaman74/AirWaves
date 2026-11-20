@@ -87,7 +87,7 @@ export function runnerSpec(file: string, args: string[], env: NodeJS.ProcessEnv)
   const target = join(root, entry);
   if (/\.exe$/i.test(target)) return { file: target, args, verbatim: false };
   if (!/\.[cm]?js$/i.test(target)) throw new Error("Unsupported npm agent executable");
-  // A packaged engine's execPath launches Scarlet itself. npm's JS entry needs Node.
+  // A packaged engine's execPath launches AirWaves itself. npm's JS entry needs Node.
   let node = process.execPath;
   if (isSea()) {
     const dirs = [dirname(file), ...(env.PATH ?? env.Path ?? "").split(delimiter)];
@@ -223,7 +223,7 @@ export async function resolveCli(name: string, override?: string, env: NodeJS.Pr
   return p;
 }
 
-/** Absolute path of the Scarlet MCP stdio server (packages/mcp/dist/cli.js). */
+/** Absolute path of the AirWaves MCP stdio server (packages/mcp/dist/cli.js). */
 export function resolveMcpCliPath(env: NodeJS.ProcessEnv = process.env): string {
   if (env.SCARLET_MCP_CLI) return env.SCARLET_MCP_CLI;
   // The package only exports an "import" condition, so resolve as ESM first.

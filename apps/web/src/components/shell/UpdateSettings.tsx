@@ -14,18 +14,18 @@ export function UpdateSettings() {
       const source = updateSource();
       if (source === "release") {
         const newest = await desktop.checkForRelease();
-        setMessage(newest ? `Version ${newest} is available. Scarlet is getting it ready.` : "Scarlet is up to date.");
+        setMessage(newest ? `Version ${newest} is available. AirWaves is getting it ready.` : "AirWaves is up to date.");
         refreshUpdateStatus();
         return;
       }
       if (!source && __SCARLET_RELEASE_CHANNEL__) {
         const found = await checkPublishedUpdate(__SCARLET_RELEASE_CHANNEL__);
         setUpdate(found);
-        setMessage(found ? `Scarlet ${found.version} is available.` : "Scarlet is up to date.");
+        setMessage(found ? `AirWaves ${found.version} is available.` : "AirWaves is up to date.");
         return;
       }
       const latest = await desktop.latestUpdateRevision();
-      if (latest === __SCARLET_REVISION__) setMessage("Scarlet is up to date.");
+      if (latest === __SCARLET_REVISION__) setMessage("AirWaves is up to date.");
       else if (__SCARLET_REVISION__) setMessage(`An update is available. Latest build: ${latest.slice(0, 7)}.`);
       else setMessage(`Latest build: ${latest.slice(0, 7)}. This build’s revision is unknown.`);
     } catch (error) {

@@ -44,7 +44,7 @@ it("turns a run's events into short updates and one line per finished step", () 
 
 it("takes what the request will come to from the agent's first words, only when it said them before it began", () => {
   const aim = "I’ll take the retakes and dead air out and bring you any cut I’m unsure of.";
-  const host = [log(0, "Starting the editing agent."), log(1, "Claude Code session started (opus); Scarlet MCP connected", { kind: "init" })];
+  const host = [log(0, "Starting the editing agent."), log(1, "Claude Code session started (opus); AirWaves MCP connected", { kind: "init" })];
   // Said as a message, ahead of its first tool call: the first sentence is the aim, and `note` is the update it makes in runItems.
   const spoken = [...host, log(2, `${aim} First I’ll read the project.`), tool(3, "project_get")];
   expect(runAim(spoken)).toEqual({ text: aim, note: `${aim} First I’ll read the project.` });

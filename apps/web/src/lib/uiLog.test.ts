@@ -38,14 +38,14 @@ it("logs a press by the control's name and where it sits", () => {
 });
 
 it("logs the keys that act and never what is typed", () => {
-  document.body.innerHTML = '<textarea aria-label="Talk to Scarlet"></textarea><div id="stage"></div>';
+  document.body.innerHTML = '<textarea aria-label="Talk to AirWaves"></textarea><div id="stage"></div>';
   fresh();
   const box = document.querySelector("textarea")!;
   for (const key of ["s", "e", "c", "r", "e", "t"]) box.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
   box.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", metaKey: true, bubbles: true }));
   document.querySelector("#stage")!.dispatchEvent(new KeyboardEvent("keydown", { key: "k", bubbles: true }));
   expect(written()).toEqual([
-    expect.stringMatching(/^\[action\] .* key key=cmd\+Enter in="Talk to Scarlet"$/),
+    expect.stringMatching(/^\[action\] .* key key=cmd\+Enter in="Talk to AirWaves"$/),
     expect.stringMatching(/^\[action\] .* key key=k$/),
   ]);
 });

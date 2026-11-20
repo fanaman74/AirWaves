@@ -68,7 +68,7 @@ export async function storageProjects(ctx: Ctx): Promise<StorageProject[]> {
 export function validateSelection(ctx: Ctx, selected: StorageSelection) {
   const current = ctx.db.prepare("SELECT deleted_at FROM projects WHERE id=?").get(selected.id) as { deleted_at: string | null } | undefined;
   if (!current || current.deleted_at !== selected.deletedAt) throw conflict("storage_changed", "The project changed. Rescan storage.");
-  if (projectBusy(ctx, selected.id)) throw conflict("storage_busy", "Scarlet is working. Try again after the current jobs finish.");
+  if (projectBusy(ctx, selected.id)) throw conflict("storage_busy", "AirWaves is working. Try again after the current jobs finish.");
   checkedProjectDir(ctx, selected.id);
   if (!selected.deletedAt && missingSource(ctx, selected.id)) {
     throw conflict("storage_source_missing", "Reconnect missing project media before clearing its cache.");

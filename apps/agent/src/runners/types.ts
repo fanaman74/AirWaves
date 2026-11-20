@@ -45,6 +45,8 @@ export interface RunAgentOptions {
   /** Override the CLI executable (tests, or a non-PATH install). */
   bin?: string;
   env?: NodeJS.ProcessEnv;
+  /** AirWaves API providers: the editor's saved key (and default model) for `agent`. */
+  apiKey?: string;
 }
 
 export interface RunAgentResult {
@@ -81,7 +83,7 @@ export const COMPACTED = { type: "log", text: "Context compacted", data: { kind:
 /** Five times the longest silence measured across real editing runs (1.9 minutes). */
 export const DEFAULT_STALL_MS = 10 * 60 * 1000;
 
-/** Matches the Scarlet question tool however the CLI namespaces it (mcp__scarlet__task_question, scarlet__task_question, scarlet:task_question, task_question). */
+/** Matches the AirWaves question tool however the CLI namespaces it (mcp__scarlet__task_question, scarlet__task_question, scarlet:task_question, task_question). */
 export function isQuestionTool(name: string | undefined): boolean {
   return name === "mcp_scarlet_task_question" || (!!name && /(^|__|\.|\/|:)task_question$/.test(name));
 }

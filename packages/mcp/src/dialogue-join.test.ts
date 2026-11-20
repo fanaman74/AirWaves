@@ -535,7 +535,7 @@ describe("native retake boundaries", () => {
     // The page with the most around an instant, as a word reference picks it.
     const at = (pages: JoinPage[]) => (t: number) => pages.filter(p => p.start <= t && p.end >= t)
       .sort((a, b) => Math.min(t - b.start, b.end - t) - Math.min(t - a.start, a.end - t))[0]?.edges;
-    // Eight seconds of silence either side of “two three”. Without a scan Scarlet reads five seconds around the middle
+    // Eight seconds of silence either side of “two three”. Without a scan AirWaves reads five seconds around the middle
     // of each gap, and neither reading reaches the kept word: each shows the pause from its own first moment to its last.
     const spoken = [{ start: 1, end: 1.4, text: "one" }, { start: 9.4, end: 9.8, text: "two" }, { start: 10.2, end: 10.6, text: "three" }, { start: 18.6, end: 19, text: "four" }];
     const middles = [read(3, 8, spoken), read(12, 17, spoken)];

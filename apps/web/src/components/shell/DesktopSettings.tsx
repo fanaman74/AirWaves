@@ -1,5 +1,5 @@
 /**
- * Settings sections that only exist inside the Scarlet desktop app.
+ * Settings sections that only exist inside the AirWaves desktop app.
  *
  * General shows what an editor cares about: where they are signed in. The technical bits (engine process, folders,
  * logs, host id, MCP command) live in DesktopDiagnostics on the Advanced tab, under ExportLogs.
@@ -58,7 +58,7 @@ export function DesktopAgents({ onConnected }: { onConnected?: () => void }) {
     <div className={onConnected ? "" : "card p-5"} id="hosts">
       {!onConnected && <SectionTitle>Sign in</SectionTitle>}
       <p className="text-[13px] text-muted mb-4">Choose Claude Code, Codex or Gemini. Install it if needed, then sign in with your subscription.</p>
-      {engine?.state === "error" && <InlineError>Scarlet hit a problem starting up. Try quitting and reopening the app.</InlineError>}
+      {engine?.state === "error" && <InlineError>AirWaves hit a problem starting up. Try quitting and reopening the app.</InlineError>}
       {host?.error && <InlineError>{host.error}</InlineError>}
       {!host ? (
         <Loading />
@@ -97,7 +97,7 @@ export function DesktopDiagnostics() {
         right={
           engine && (
             <span className="text-dim text-[11.5px]">
-              Scarlet {engine.version} · {engine.engineKind === "sidecar" ? "bundled engine" : engine.engineKind === "dev" ? "dev engine (node)" : engine.engineKind ?? ""}
+              AirWaves {engine.version} · {engine.engineKind === "sidecar" ? "bundled engine" : engine.engineKind === "dev" ? "dev engine (node)" : engine.engineKind ?? ""}
             </span>
           )
         }

@@ -8,7 +8,7 @@ import { unauthorized } from "./errors.js";
 import { restrictWindowsAccess } from "./privateStorage.js";
 
 /**
- * Scarlet is single-user: there is one local user, created on first start, and
+ * AirWaves is single-user: there is one local user, created on first start, and
  * no login. Requests still carry a bearer token so that nothing else on the
  * machine or network can drive the server; the token is handed to the desktop
  * app through its engine startup handshake.

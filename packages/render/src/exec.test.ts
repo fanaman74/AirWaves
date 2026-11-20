@@ -77,7 +77,7 @@ it.skipIf(process.platform !== "darwin")("prefers each Mac helper executable to 
 it("explains how to install a missing media tool while preserving other startup failures", async () => {
   const dir = await mkdtemp(join(tmpdir(), "scarlet-missing-media-"));
   try {
-    await expect(runCapture(join(dir, "ffprobe"), ["-version"])).rejects.toThrow(/ffprobe.*restart Scarlet/i);
+    await expect(runCapture(join(dir, "ffprobe"), ["-version"])).rejects.toThrow(/ffprobe.*restart AirWaves/i);
     await expect(runCapture(join(dir, "unrelated-tool"), [])).rejects.toThrow(/ENOENT/);
     expect(mediaToolLaunchError("ffprobe", { code: "EACCES" } as NodeJS.ErrnoException, "permission denied")).toBe("permission denied");
   } finally {
@@ -292,8 +292,8 @@ describe("what a build offers", () => {
 
   it("says in plain words what an FFmpeg without text drawing stops and how to install one that has it", () => {
     const mac = missingTextFilterMessage("draw the video’s captions", "darwin");
-    expect(mac).toBe("This copy of FFmpeg can’t draw text, so Scarlet can’t draw the video’s captions. "
-      + "Run the FFmpeg setup helper linked in the Scarlet download instructions. Then restart Scarlet and try again.");
+    expect(mac).toBe("This copy of FFmpeg can’t draw text, so AirWaves can’t draw the video’s captions. "
+      + "Run the FFmpeg setup helper linked in the AirWaves download instructions. Then restart AirWaves and try again.");
     expect(missingTextFilterMessage("draw the video’s captions", "win32")).toContain("winget install --id Gyan.FFmpeg.Essentials --exact.");
     expect(missingTextFilterMessage("draw the video’s captions", "linux")).toContain("libfreetype");
   });
@@ -307,15 +307,15 @@ describe("what a build offers", () => {
       expect(await hasDrawtext(bin)).toBe(false);
       const refused = requireDrawtext("draw the video’s captions", bin);
       await expect(refused).rejects.toBeInstanceOf(MissingFilterError);
-      await expect(refused).rejects.toThrow(/^This copy of FFmpeg can’t draw text, so Scarlet can’t draw the video’s captions\./);
+      await expect(refused).rejects.toThrow(/^This copy of FFmpeg can’t draw text, so AirWaves can’t draw the video’s captions\./);
       await expect(refused).rejects.not.toThrow(dir);
       expect(await hasDrawtext()).toBe(true);
       await expect(requireDrawtext("draw the video’s captions")).resolves.toBeUndefined();
       // Whatever stops a binary from running is the render's own error to report.
       expect(await hasDrawtext(join(dir, "missing"))).toBe(true);
-      // A list Scarlet can't read a filter from doesn't block captions.
+      // A list AirWaves can't read a filter from doesn't block captions.
       const unreadable = join(dir, "ffmpeg-new-format");
-      await writeFile(unreadable, "#!/bin/sh\necho 'Filters: (a layout Scarlet does not know)'\n", { mode: 0o755 });
+      await writeFile(unreadable, "#!/bin/sh\necho 'Filters: (a layout AirWaves does not know)'\n", { mode: 0o755 });
       expect(await hasDrawtext(unreadable)).toBe(true);
     } finally { await rm(dir, { recursive: true, force: true }); }
   });

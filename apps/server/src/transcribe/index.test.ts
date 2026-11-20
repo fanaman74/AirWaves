@@ -127,8 +127,8 @@ describe("choosing a transcription provider", () => {
 
     // The provider fails with its own error once the engine is shutting down: the reason given is the shutdown.
     const closing = engine({ provider: "whispercpp" }, { whisperCli: "/app/whisper-cli" });
-    vi.spyOn(ffmpeg, "run").mockImplementation(async () => { closing.shutdown.abort(new Error("Scarlet is closing.")); throw new Error("whisper-cli was killed"); });
-    await expect(getTranscriptionProvider(closing.ctx)!.transcribe({ path: window, tmpDir: dir, dialogueWindow: {} })).rejects.toThrow("Scarlet is closing.");
+    vi.spyOn(ffmpeg, "run").mockImplementation(async () => { closing.shutdown.abort(new Error("AirWaves is closing.")); throw new Error("whisper-cli was killed"); });
+    await expect(getTranscriptionProvider(closing.ctx)!.transcribe({ path: window, tmpDir: dir, dialogueWindow: {} })).rejects.toThrow("AirWaves is closing.");
 
     // The caller's own signal stops it too, and a failure that is nobody's stop keeps its own error.
     const stop = new AbortController();
@@ -206,7 +206,7 @@ describe("choosing a transcription provider", () => {
   });
 
   it("says in plain words that a recording couldn't be transcribed when ffmpeg or whisper-cli fails on it, and logs what they said", async () => {
-    const plain = "Scarlet couldn’t transcribe this recording: export the logs from Settings → Advanced to report it.";
+    const plain = "AirWaves couldn’t transcribe this recording: export the logs from Settings → Advanced to report it.";
     const local = engine({ provider: "whispercpp" }, { whisperCli: "/app/whisper-cli" });
     vi.spyOn(ffmpeg, "run").mockRejectedValue(new ffmpeg.FfmpegError("/app/whisper-cli exited with code 3: error: failed to read audio data as wav", [], "error: failed to read audio data as wav"));
     await expect(getTranscriptionProvider(local.ctx)!.transcribe({ path: window, tmpDir: dir, dialogueWindow: {} })).rejects.toMatchObject({ message: plain });

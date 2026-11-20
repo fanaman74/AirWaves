@@ -3,7 +3,7 @@ import "./boot-splash.css";
 
 /**
  * The window is starting until its first page can show whole: the library once the project list has its first answer,
- * the project Scarlet reopens once it is on screen. Whichever of them still waits shows the startup screen for it.
+ * the project AirWaves reopens once it is on screen. Whichever of them still waits shows the startup screen for it.
  */
 export const startup = { done: false };
 
@@ -51,7 +51,7 @@ export function BootSplash({ line }: { line?: string }) {
       style={{ "--since": `${(-since / 1000).toFixed(3)}s` } as React.CSSProperties}>
       <div className="boot-glow" aria-hidden />
       <section className="boot-stage">
-        <div className="boot-wordmark" aria-hidden>Scarlet</div>
+        <div className="boot-wordmark" aria-hidden>AirWaves</div>
 
         <div className="boot-editor" aria-hidden>
           <div className="boot-track">

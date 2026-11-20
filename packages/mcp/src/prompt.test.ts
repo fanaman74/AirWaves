@@ -42,11 +42,11 @@ describe("the prompt for revising a skill", () => {
   it("is about the skill alone: its description and instructions as they stand, then what an editing agent is told", () => {
     const prompt = buildSystemPrompt({ project: "A project the task only borrows.", editSkill: skill(), skills: [skill({ id: "other", name: "other-skill", content: "Other brief." })],
       task: { kind: "skill_edit", instruction: "Keep the laughs, cut the coughs.", agent: "claude", context: { skillId: "skl_house" } } });
-    expect(prompt.startsWith("# You are revising a skill in Scarlet")).toBe(true);
+    expect(prompt.startsWith("# You are revising a skill in AirWaves")).toBe(true);
     expect(prompt).toContain("# The skill: house-style\n\n## Description\n\nAgents read this line to decide when the skill applies.\n\nOur house rules for interviews.\n\n## Instructions\n\n# House style\n\nNever cut laughter.");
-    // The header is Scarlet's to keep, so the model never sees it.
+    // The header is AirWaves's to keep, so the model never sees it.
     expect(prompt).not.toContain("name: house-style\n");
-    // Scarlet's own guide closes the prompt, for reference.
+    // AirWaves's own guide closes the prompt, for reference.
     expect(prompt.endsWith(SCARLET_INTRO)).toBe(true);
     // No project and no other skill is in it.
     expect(prompt).not.toContain("A project the task only borrows.");
@@ -85,16 +85,16 @@ describe("the prompt for reading a request for a standing rule", () => {
   const check = { said: "Any time I’m on camera, go full screen.", usedSkills: [], earlier: [], rules: [],
     skills: [{ id: "skl_house", name: "house-style", description: " Our house rules for interviews. " }, { id: "skl_bare", name: "bare", description: "" }] };
 
-  it("is about the request alone: what it was about, what came before, the editor's skills and the rules Scarlet has", () => {
+  it("is about the request alone: what it was about, what came before, the editor's skills and the rules AirWaves has", () => {
     const prompt = buildSystemPrompt({ project: "A project the task only borrows.", skills: [skill()], learningCheck: { ...check,
-      about: "They said it about one cut Scarlet made at 2:05.", usedSkills: ["frame-screen"],
+      about: "They said it about one cut AirWaves made at 2:05.", usedSkills: ["frame-screen"],
       earlier: [{ said: "Tighten the intro." }, { said: "cut tail frames", about: "a cut first-cut-dialogue made", elsewhere: true }],
       rules: [{ rule: "Never cut laughter.", skill: "house-style", state: "saved" }, { rule: "Keep the cold open.", skill: "bare", state: "offered" }] } });
-    expect(prompt.startsWith("# You are listening for standing rules in Scarlet")).toBe(true);
-    expect(prompt).toContain("# The request\n\nThey said it about one cut Scarlet made at 2:05.\n\nThey chose this skill for it: frame-screen.\n\n" +
+    expect(prompt.startsWith("# You are listening for standing rules in AirWaves")).toBe(true);
+    expect(prompt).toContain("# The request\n\nThey said it about one cut AirWaves made at 2:05.\n\nThey chose this skill for it: frame-screen.\n\n" +
       "What they asked before, oldest first:\n- “Tighten the intro.”\n- “cut tail frames” (about a cut first-cut-dialogue made) (in another video)");
     expect(prompt).toContain("# The editor’s skills\n\n- house-style (skl_house): Our house rules for interviews.\n- bare (skl_bare): no description");
-    expect(prompt).toContain("# Rules Scarlet already has\n\n- “Never cut laughter.” (saved in house-style)\n- “Keep the cold open.” (offered for bare)");
+    expect(prompt).toContain("# Rules AirWaves already has\n\n- “Never cut laughter.” (saved in house-style)\n- “Keep the cold open.” (offered for bare)");
     // The editor's words are the run's instruction, so the prompt doesn't repeat them. It carries no project, no skill's
     // instructions and nothing about editing.
     for (const absent of [check.said, "A project the task only borrows.", "Never cut laughter.\n", "# House style", SCARLET_INTRO, PLAN_STEPS]) expect(prompt).not.toContain(absent);
@@ -109,10 +109,10 @@ describe("the prompt for reading a request for a standing rule", () => {
     expect(prompt).toContain("write the principle behind what they said, not its instances: no words, names, times or moments from this video or the requests");
   });
 
-  it("says when the request is the project's first, and leaves out the rules when Scarlet has none", () => {
+  it("says when the request is the project's first, and leaves out the rules when AirWaves has none", () => {
     const prompt = buildSystemPrompt({ project: "", skills: [], learningCheck: check });
     expect(prompt).toContain("# The request\n\nIt is the first thing they asked.\n\n# The editor’s skills");
-    expect(prompt).not.toContain("# Rules Scarlet already has");
+    expect(prompt).not.toContain("# Rules AirWaves already has");
   });
 });
 
@@ -179,12 +179,12 @@ describe("an editing prompt", () => {
   it("asks for a reason for every edit and puts the summary in the chat", () => {
     const prompt = buildSystemPrompt({ ...base, task: task({}) });
     expect(prompt).toContain("Always save why you made each edit, even when the editor asked for the exact change.");
-    expect(prompt).toContain("Scarlet shows the short summary of what changed in the chat and the reason on the card above the timeline.");
+    expect(prompt).toContain("AirWaves shows the short summary of what changed in the chat and the reason on the card above the timeline.");
   });
 
   it("points a revision at the staged cut or the edit the editor chose", () => {
     const resumed = { ...task({ changeId: "chg_3", cutIndex: 4 }), cutConflict: { version: "changed", range: { start: 11.25, end: 12 } } };
-    expect(buildSystemPrompt({ ...base, task: resumed })).toContain("On version changed, Scarlet located the passage at 11.25–12 timeline seconds.");
+    expect(buildSystemPrompt({ ...base, task: resumed })).toContain("On version changed, AirWaves located the passage at 11.25–12 timeline seconds.");
     const staged = buildSystemPrompt({ ...base, task: task({ changeId: "chg_3", cutIndex: 4, reviewAllCuts: true }) });
     expect(staged).toContain("- Change being revised: chg_3");
     expect(staged).toContain("- Staged cut being revised: index 4 of chg_3.");
@@ -195,9 +195,9 @@ describe("an editing prompt", () => {
     const edit = buildSystemPrompt({ ...base, task: task({ changeId: "chg_3", editIndex: 0 }) });
     expect(edit).toContain("- Selected edit index: 0");
     expect(edit).not.toContain("Staged cut being revised");
-    // With the change at hand, the edit comes with what Scarlet told the editor about it: its name, its number in their
+    // With the change at hand, the edit comes with what AirWaves told the editor about it: its name, its number in their
     // list, what it did, why and what to check on it. They are answering those words.
-    const change = { id: "chg_3", state: "approved", description: "Frame the games", fromVersion: "ver_1", toVersion: "ver_2", ranges: [], ops: [], author: { type: "agent", name: "Scarlet" },
+    const change = { id: "chg_3", state: "approved", description: "Frame the games", fromVersion: "ver_1", toVersion: "ver_2", ranges: [], ops: [], author: { type: "agent", name: "AirWaves" },
       timelineEdits: [{ label: "Frame the watch", range: { start: 10, end: 20 } },
         { label: " Frame the Fall Guys game ", range: { start: 181, end: 260 }, summary: "Screen zooms to the game window. ",
           reason: " The score was too small to read as you called it out. ", check: "A Windows dialog sits over the game from 4:17" }] } as unknown as Change;
@@ -206,7 +206,7 @@ describe("an editing prompt", () => {
     expect(told).toContain(`- What you told the editor this edit did: "Screen zooms to the game window."`);
     expect(told).toContain(`- Why you made this edit: "The score was too small to read as you called it out."`);
     expect(told).toContain(`- What you asked the editor to check on this edit: "A Windows dialog sits over the game from 4:17"`);
-    // An edit Scarlet said nothing more about is its name alone, and another change's edits are never borrowed.
+    // An edit AirWaves said nothing more about is its name alone, and another change's edits are never borrowed.
     const plain = buildSystemPrompt({ ...base, change: { change }, task: task({ changeId: "chg_3", editIndex: 0 }) });
     expect(plain).toContain(`- Selected edit index: 0, "Frame the watch"`);
     expect(plain).not.toMatch(/What you told the editor|Why you made this edit|What you asked the editor/);
@@ -238,9 +238,9 @@ describe("an editing prompt", () => {
   it("asks for the agent's steps only when the caller says the run has its harness's to-do tool", () => {
     const caps = { images: true, audio: false, files: false };
     const asked = buildSystemPrompt({ ...base, task: task({}), capabilities: { ...caps, plan: true } });
-    // Straight after Scarlet's contract, which asks for the opening sentence the steps follow.
+    // Straight after AirWaves's contract, which asks for the opening sentence the steps follow.
     expect(asked).toContain(`${SCARLET_INTRO}\n\n${PLAN_STEPS}`);
-    expect(PLAN_STEPS).toContain("before your first Scarlet tool call, lay out the steps you will take with your to-do tool");
+    expect(PLAN_STEPS).toContain("before your first AirWaves tool call, lay out the steps you will take with your to-do tool");
     // Without the tool there is nothing to lay them out with. A harness's default says what it can do, not how this run
     // was launched, so a caller that names no capabilities isn't asked either, whatever the agent.
     expect(buildSystemPrompt({ ...base, task: task({}), capabilities: { ...caps, plan: false } })).not.toContain("# Your steps");
@@ -261,4 +261,11 @@ describe("stripFrontmatter", () => {
     expect(stripFrontmatter("Body\n---\nnot: frontmatter\n---\n")).toBe("Body\n---\nnot: frontmatter\n---\n");
     expect(stripFrontmatter("---\nnever closed")).toBe("---\nnever closed");
   });
+});
+
+it("starts with the editor's own instructions when Settings → Instructions has them", () => {
+  const own = buildSystemPrompt({ project: "A project.", skills: [], intro: "# My house rules\nAlways keep it under a minute." });
+  expect(own.startsWith("# My house rules")).toBe(true);
+  expect(own).not.toContain("# You are editing a video in AirWaves");
+  expect(buildSystemPrompt({ project: "A project.", skills: [], intro: "  " })).toContain("# You are editing a video in AirWaves");
 });

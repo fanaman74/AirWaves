@@ -63,7 +63,7 @@ it("builds the one prompt every host uses, with answers in the system prompt for
   const first = (await api<TaskPrompt>("GET", `/tasks/${task.id}/prompt?workDir=${encodeURIComponent(workDir)}`)).body;
   expect(first.instruction).toBe("Tighten the intro");
   expect(first.resumeSession).toBeUndefined();
-  expect(first.systemPrompt).toContain("# You are editing a video in Scarlet");
+  expect(first.systemPrompt).toContain("# You are editing a video in AirWaves");
   // Claude runs without file tools, so the prompt leaves out the artifact directory; Codex can write there.
   expect(first.systemPrompt).not.toContain("Your task artifact directory");
   const codex = await claimed("codex");
@@ -203,7 +203,7 @@ it("shows a learning check the editor's recent corrections across videos, each w
   const seen = learningCheckContext(app.ctx, check);
   // The revision names no skill of its own: the cut's is the pass's, and it is said with what the request was about.
   expect(seen.usedSkills).toEqual([]);
-  expect(seen.about).toBe(`They said it about one cut Scarlet made with ${skill.name} at 0:30.`);
+  expect(seen.about).toBe(`They said it about one cut AirWaves made with ${skill.name} at 0:30.`);
   // A bare skill name says nothing; the corrections before it are listed from any video, oldest first.
   expect(seen.earlier).toEqual([
     { said: "cut tail frames", about: `a cut ${skill.name} made`, elsewhere: true },
@@ -240,7 +240,7 @@ it("records the agent's plan each time its harness changes it, and nothing else"
   expect(body.task).toMatchObject({ state: "running", changeIds: [], question: null });
   expect(taskPlan(body.events)).toEqual(steps("done", "in_progress", "pending"));
 
-  // Steps Scarlet can't read are refused, so the chat never shows a list it made up.
+  // Steps AirWaves can't read are refused, so the chat never shows a list it made up.
   for (const bad of [undefined, { steps: "three" }, { steps: [{ text: "Step 1", state: "started" }] }, { steps: [{ text: " ", state: "pending" }] }]) {
     const refused = await post(bad);
     expect([refused.status, refused.body.error?.code]).toEqual([400, "invalid_plan"]);
@@ -261,13 +261,13 @@ it("records the agent's plan each time its harness changes it, and nothing else"
 
 it("launches no run with a to-do tool unless SCARLET_AGENT_CAPS turns one on, and then never a pass or a request about one cut", async () => {
   const told = async (task: Task) => (await api<TaskPrompt>("GET", `/tasks/${task.id}/prompt`)).body;
-  // The chat shows what Scarlet is doing this moment, not a plan, so no harness is given its to-do tool or asked for steps.
+  // The chat shows what AirWaves is doing this moment, not a plan, so no harness is given its to-do tool or asked for steps.
   for (const agent of ["claude", "codex"] as const) {
     const prompt = await told(await claimed(agent));
     expect(prompt.plan, agent).toBeUndefined();
     expect(prompt.systemPrompt, agent).not.toContain("# Your steps");
   }
-  // Turned on where the engine runs, a request with no stages of Scarlet's is launched with it and asked to lay out its steps.
+  // Turned on where the engine runs, a request with no stages of AirWaves's is launched with it and asked to lay out its steps.
   app.ctx.options.env = { SCARLET_AGENT_CAPS: '{"plan":true}' };
   expect((await told(await claimed("codex"))).plan).toBe(true);
   const edit = await claimed();
@@ -411,7 +411,7 @@ it("changes a waiting request's words, holding it from starting while they're op
   await api("POST", `/tasks/${first.id}/hold`, { on: true });
   app.ctx.repos.tasks.put({ ...app.ctx.repos.tasks.get(first.id)!, rewordingUntil: new Date(Date.now() - 1000).toISOString() });
   expect((await claim())?.id).toBe(first.id);
-  // A request Scarlet began has no words left to change.
+  // A request AirWaves began has no words left to change.
   expect((await api("POST", `/tasks/${first.id}/hold`, { on: true })).status).toBe(409);
   expect((await api("POST", `/tasks/${first.id}/reword`, { text: "Cut the intro" })).status).toBe(409);
 
@@ -430,9 +430,9 @@ it("changes a waiting request's words, holding it from starting while they're op
   const checks = app.ctx.repos.tasks.select("kind = 'learning_check' AND json_extract(json, '$.context.checksTaskId') = ?", [followUp.id], "created_at ASC, rowid ASC");
   expect(checks.map(c => [c.instruction, c.state])).toEqual([["Make it shorter", "cancelled"], ["Make it half as long", "queued"]]);
   expect((await api("POST", `/tasks/${followUp.id}/reword`, { text: "  " })).status).toBe(400);
-  // A request Scarlet made itself is told more than the words shown for it, so they aren't the editor's to change.
+  // A request AirWaves made itself is told more than the words shown for it, so they aren't the editor's to change.
   const own = createTask(app.ctx, { projectId: project.id, kind: "revise", agent: "claude", instruction: "Redo this change on the current edit: \"Add label\".",
-    context: { threadId: first.id, message: "Redo on the current edit" }, createdBy: { type: "scarlet", name: "Scarlet" } });
+    context: { threadId: first.id, message: "Redo on the current edit" }, createdBy: { type: "scarlet", name: "AirWaves" } });
   expect((await api("POST", `/tasks/${own.id}/hold`, { on: true })).status).toBe(409);
   expect((await api("POST", `/tasks/${own.id}/reword`, { text: "Do something else" })).status).toBe(409);
   expect(app.ctx.repos.tasks.get(own.id)!.instruction).toBe("Redo this change on the current edit: \"Add label\".");
@@ -503,9 +503,9 @@ it("says what quitting would stop, in every project: the edits under way and wai
   expect(await underWay()).toEqual({ edits: 0, queued: 1, exports: 0 });
 });
 
-it("counts a skill Scarlet writes or revises as under way, and not the learning check beside a request", async () => {
+it("counts a skill AirWaves writes or revises as under way, and not the learning check beside a request", async () => {
   const underWay = async () => (await api<{ edits: number; queued: number; exports: number }>("GET", "/under-way")).body;
-  const scarlet = { type: "scarlet", name: "Scarlet" } as const;
+  const scarlet = { type: "scarlet", name: "AirWaves" } as const;
   // A learning check reads one message and starts again by itself. The request it reads is counted already.
   createTask(app.ctx, { projectId: project.id, kind: "learning_check", agent: "claude", instruction: "Tighten the intro", state: "running", createdBy: scarlet });
   expect(await underWay()).toEqual({ edits: 0, queued: 0, exports: 0 });
@@ -545,7 +545,7 @@ it("reads a message for a rule again when a quit cut the read short, and keeps a
   const [, second] = checks();
   expect(second).toMatchObject({ id: ended.retryTaskId, state: "queued", instruction: "Always cut the ums", context: { checksTaskId: asked.id } });
   expect(second!.resumeRootId).toBeUndefined();
-  // One that lost its worker while Scarlet stayed open isn't read again: the next message is.
+  // One that lost its worker while AirWaves stayed open isn't read again: the next message is.
   expect((await cutShort(second!.id, true)).retryTaskId).toBeUndefined();
   expect(checks()).toHaveLength(2);
 
@@ -555,9 +555,9 @@ it("reads a message for a rule again when a quit cut the read short, and keeps a
   expect(resumed).toMatchObject({ state: "queued", resumeRootId: asked.id, startsBeforeCalls: true });
 });
 
-it("resumes a run its engine's crash cut short, until crashes keep cutting it short, and a run Scarlet quit on every time", async () => {
+it("resumes a run its engine's crash cut short, until crashes keep cutting it short, and a run AirWaves quit on every time", async () => {
   const { body: { host } } = await api<{ host: { id: string } }>("POST", "/hosts/register", { name: "test", platform: "test", agents: [{ id: "claude", installed: true }] });
-  // Each attempt is claimed and cut short; the next is the attempt Scarlet resumed it as, if any.
+  // Each attempt is claimed and cut short; the next is the attempt AirWaves resumed it as, if any.
   const cutShort = async (task: Task, engineLost: boolean) => {
     const { body: { task: claimed } } = await api<{ task: Task }>("POST", `/hosts/${host.id}/claim`, { taskId: task.id });
     await api("POST", `/tasks/${task.id}/complete`, { state: "cancelled", interrupted: true, ifStartedAt: claimed.startedAt, ...(engineLost && { engineLost }) });
@@ -573,7 +573,7 @@ it("resumes a run its engine's crash cut short, until crashes keep cutting it sh
     attempt = await cutShort(attempt!, true);
     expect(!!attempt).toBe(expected);
   }
-  // Scarlet quitting never costs the editor a pass, however often.
+  // AirWaves quitting never costs the editor a pass, however often.
   attempt = await ask("Add captions");
   for (let quits = 0; quits < 4; quits++) {
     attempt = await cutShort(attempt!, false);
@@ -584,7 +584,7 @@ it("resumes a run its engine's crash cut short, until crashes keep cutting it sh
 it("finds a run's attempts among its own project's tasks, not by reading every project's", async () => {
   const run = await claimed("claude", "Mark the chapters");
   const prepare = vi.spyOn(app.ctx.db, "prepare");
-  // The run saves an edit, the editor stops it, and Scarlet resumes it; the resumed attempt saves again and finishes.
+  // The run saves an edit, the editor stops it, and AirWaves resumes it; the resumed attempt saves again and finishes.
   const save = async (task: Task, id: string) => {
     const headers = { Authorization: `Bearer ${accessToken(app.ctx)}`, "Content-Type": "application/json", [TASK_HEADER]: task.id, [ATTEMPT_HEADER]: task.startedAt! };
     const res = await app.app.request(`/api/projects/${task.projectId}/changes`, { method: "POST", headers, body: JSON.stringify({ intent: "requested", skipRender: true,

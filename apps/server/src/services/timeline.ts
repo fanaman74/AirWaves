@@ -66,7 +66,7 @@ export function ensureProjectHead(ctx: Ctx, projectId: string): Omit<Project, "m
 
   const empty = storeVersion(ctx, projectId, emptyTimeline(projectId), {
     parent: null,
-    author: { type: "scarlet", name: "Scarlet" },
+    author: { type: "scarlet", name: "AirWaves" },
     description: "Empty timeline",
   });
   ctx.repos.projects.initializeHead(projectId, project.head, empty.version);

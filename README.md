@@ -1,23 +1,26 @@
 <p align="center">
-  <img src="apps/desktop/src-tauri/icons/128x128.png" width="72" height="72" alt="Scarlet icon">
+  <img src="apps/desktop/src-tauri/icons/128x128.png" width="72" height="72" alt="AirWaves icon">
 </p>
 
-<h1 align="center">Scarlet</h1>
-
-<p align="center">
-  <strong>Open-source AI video editor for macOS, Windows, and Linux.</strong><br>
-  Tell Claude Code or Codex what to change—by voice, in writing, or by drawing on a frame—and hear the edit on your timeline in seconds. Your original footage stays untouched.
-</p>
+<h1 align="center">AirWaves</h1>
 
 <p align="center">
-  <a href="https://github.com/Forward-Future/scarlet-releases/releases"><strong>Download Early Access (macOS &amp; Windows)</strong></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/Forward-Future/scarlet-releases/releases?q=Ubuntu">Ubuntu 24.04 x86-64 Preview</a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/Forward-Future/scarlet/releases">Stable Releases</a>
-  &nbsp;·&nbsp;
-  <a href="skills/README.md">Editing Workflows</a>
+  <strong>AI video editor for macOS, Windows and Linux, with bring-your-own-key AI providers.</strong><br>
+  Tell an AI what to change, by voice or in writing, and hear the edit on your timeline. Edit with Claude Code, Codex or the Gemini CLI, or directly with your own Google Gemini (AI Studio) or OpenRouter API key. Your original footage stays untouched.
 </p>
+
+> AirWaves is based on [Scarlet](https://github.com/Forward-Future/scarlet) by Matthew Berman and the Scarlet contributors, used under the MIT License (see [LICENSE](LICENSE)). Internal package names (`@scarlet/*`) and environment variables (`SCARLET_*`) are kept from upstream.
+
+## AI providers (bring your own key)
+
+Open **Settings → AI providers** and, for Google Gemini (AI Studio) or OpenRouter:
+
+1. **Enter your API key** and press **Test key**. Get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) or [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+2. **Pick a model** from the provider's own list (filtered to models that support tool calls, which editing needs).
+3. **Test the model.** AirWaves sends a short prompt that needs a tool call, and shows the reply and time.
+4. **Save.** The provider appears in the model picker beside the command-line agents, and requests run through it directly.
+
+Keys are stored in `providers.json` in your library folder with owner-only permissions; the interface only ever shows a masked key. Under the hood, the agent host runs its own tool-calling loop (`apps/agent/src/runners/api.ts`) over AirWaves' MCP editing tools, using each provider's OpenAI-compatible chat endpoint. For testing or a gateway, `AIRWAVES_OPENROUTER_BASE_URL` / `AIRWAVES_AISTUDIO_BASE_URL` override the endpoint.
 
 <p align="center">
   <img src="assets/scarlet-workspace.png" width="100%" alt="Scarlet native desktop workspace showing the AI editing conversation on the left, studio interview playback with an open cut review card in the center, and the video thumbnail and waveform timeline below.">

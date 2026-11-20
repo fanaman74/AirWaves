@@ -4,13 +4,13 @@ import { pendingMediaWaits, taskActivityLabel, toolName, waitingFor } from "./ta
 import { noteText } from "./taskRun";
 
 /**
- * What Scarlet is doing this moment, in a few plain words: the one line a working request shows under its heading.
+ * What AirWaves is doing this moment, in a few plain words: the one line a working request shows under its heading.
  *
- * It is the latest thing the run did, so it changes every few seconds while Scarlet works: a call on the project said
- * as the work it is ("Reading the dialogue at 12:34", "Checking how 4 joins sound", "Listening to Cut 2"), or Scarlet's
+ * It is the latest thing the run did, so it changes every few seconds while AirWaves works: a call on the project said
+ * as the work it is ("Reading the dialogue at 12:34", "Checking how 4 joins sound", "Listening to Cut 2"), or AirWaves's
  * own latest sentence when that came after. Counts the engine keeps in the background, such as the pages of a scan or
- * how far the checked joins reach, say nothing Scarlet is doing and are passed over, and so is a saved edit: it is a
- * result, and the call that made it said what Scarlet was doing. `aim` is what Scarlet opened with (`runAim`'s `note`), which
+ * how far the checked joins reach, say nothing AirWaves is doing and are passed over, and so is a saved edit: it is a
+ * result, and the call that made it said what AirWaves was doing. `aim` is what AirWaves opened with (`runAim`'s `note`), which
  * reads once above this line and is not repeated on it.
  *
  * On 2026-11-10 a dialogue pass made over 100 calls in its first 9 minutes and wrote 4 sentences, so its stages read
@@ -32,7 +32,7 @@ export function runNow(events: readonly TaskEvent[], aim?: string, callNumber?: 
           if (said) return said;
           continue;
         }
-        // A rule Scarlet picked up is offered in Learnings, and nothing about it is in the chat.
+        // A rule AirWaves picked up is offered in Learnings, and nothing about it is in the chat.
         if (name === "learning_suggest") continue;
         const wait = waitingFor(event, waits);
         if (wait) return taskActivityLabel(event, waits);
@@ -66,10 +66,10 @@ export function runNow(events: readonly TaskEvent[], aim?: string, callNumber?: 
 /** What a run says before its first call. */
 export const STARTING = "Getting started";
 
-/** The number of the call Scarlet made about a pass's cut, when it has asked the editor about that cut. */
+/** The number of the call AirWaves made about a pass's cut, when it has asked the editor about that cut. */
 export type CallNumber = (changeId: unknown, index: number) => number | undefined;
 
-/** Scarlet's own words, unless they are what it opened with, which reads above this line (`runAim`'s `note`). */
+/** AirWaves's own words, unless they are what it opened with, which reads above this line (`runAim`'s `note`). */
 function spoken(text: string, aim?: string) {
   const said = noteText(text);
   return said && said !== aim ? said : undefined;
@@ -137,7 +137,7 @@ function toolWords(name: string, raw: unknown, callNumber?: CallNumber): string 
       const n = num(field(input, "count")) ?? 1;
       if (index === undefined) return "Listening to a flagged cut";
       if (n > 1 && !field(input, "wholePicture")) return `Listening to ${n} flagged cuts`;
-      // "Cut 2" is a call's number, the one on its card and its dot. A cut Scarlet hasn't asked about has none.
+      // "Cut 2" is a call's number, the one on its card and its dot. A cut AirWaves hasn't asked about has none.
       const call = callNumber?.(field(input, "changeId"), index);
       return call ? `Listening to Cut ${call}` : "Listening to a flagged cut";
     }

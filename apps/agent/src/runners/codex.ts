@@ -260,7 +260,7 @@ function codexConfig(opts: Pick<RunAgentOptions, "mcp" | "plan">, executable: st
     "-c", 'mcp_servers.scarlet.default_tools_approval_mode="approve"',
     "-c", "mcp_servers.scarlet.required=true",
     "-c", "mcp_servers.scarlet.startup_timeout_sec=60",
-    // Scarlet's tools wait up to `toolWaitSeconds` (capabilities.ts) for evidence still being measured.
+    // AirWaves's tools wait up to `toolWaitSeconds` (capabilities.ts) for evidence still being measured.
     "-c", "mcp_servers.scarlet.tool_timeout_sec=300",
     "-c",
     `mcp_servers.scarlet.command=${tomlString(toToml(opts.mcp.command))}`,
@@ -298,7 +298,7 @@ async function isolatedCodexHome(cwd: string, env: NodeJS.ProcessEnv): Promise<{
   const home = codexHomeDir(cwd);
   try {
     await privateDirectory(home);
-    // Only Scarlet writes configuration here. Codex's own state (its threads and their database) stays.
+    // Only AirWaves writes configuration here. Codex's own state (its threads and their database) stays.
     for (const config of ["config.toml", "managed_config.toml"]) {
       if (await lstat(join(home, config)).catch(() => undefined)) return { reason: "isolation_unavailable" };
     }
@@ -482,7 +482,7 @@ async function runCodexServer(opts: RunAgentOptions, env: NodeJS.ProcessEnv, bin
       if (method) {
         if (id !== undefined) {
           // This client never authorizes Codex's built-in approval or input requests.
-          send({ id, error: { code: -32601, message: "This request is unavailable in Scarlet" } });
+          send({ id, error: { code: -32601, message: "This request is unavailable in AirWaves" } });
           return;
         }
         const params = object(message.params);
@@ -531,7 +531,7 @@ async function runCodexServer(opts: RunAgentOptions, env: NodeJS.ProcessEnv, bin
       }
     },
   });
-  send({ id: 1, method: "initialize", params: { clientInfo: { name: "scarlet", title: "Scarlet", version: "0.1.0" },
+  send({ id: 1, method: "initialize", params: { clientInfo: { name: "scarlet", title: "AirWaves", version: "0.1.0" },
     capabilities: { experimentalApi: true, requestAttestation: false } } });
   const outcome = await handle.done;
   clearTimeout(stopTimer);

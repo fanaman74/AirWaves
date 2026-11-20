@@ -114,7 +114,7 @@ export class RecordingSpeakers {
    * `priority`: a dialogue pass is waiting for this recording, so it goes ahead of analyses nobody waits for, and a
    * pause of the project's media work doesn't stop it: the editor asked for that pass, and pausing the caching isn't
    * stopping it. That holds for an analysis the pass joined too, such as the one begun with the recording's
-   * transcript. One nobody waits for stops with the pause, like the rest of the work Scarlet does unasked.
+   * transcript. One nobody waits for stops with the pause, like the rest of the work AirWaves does unasked.
    */
   async turns(ctx: Ctx, projectId: string, media: MediaAsset, decoded?: DecodedRecording, priority = false): Promise<SpeakerTurn[]> {
     if (priority) this.passWaits.set(media.id, (this.passWaits.get(media.id) ?? 0) + 1);
@@ -210,7 +210,7 @@ export class RecordingSpeakers {
             // can't read fails there too: that error is thrown, and the next recording tries the GPU runtime again.
             const onCpu = await diarize(true);
             this.gpuFailed = true;
-            ctx.log("[speakers] That analysis finished on the CPU, so speaker analysis uses the CPU until Scarlet restarts.");
+            ctx.log("[speakers] That analysis finished on the CPU, so speaker analysis uses the CPU until AirWaves restarts.");
             return onCpu;
           }
         });

@@ -33,7 +33,7 @@ export interface ProjectData {
   media: MediaAsset[];
   changes: Change[];
   notes: Note[];
-  /** Rules Scarlet picked up from requests here, each until the editor has approved or declined it and it is saved. */
+  /** Rules AirWaves picked up from requests here, each until the editor has approved or declined it and it is saved. */
   learnings?: Learning[];
   renders: Render[];
   fullRenderKeys?: FullRenderKeys;
@@ -122,7 +122,7 @@ interface ProjectState {
 
   transcribe(mediaId: string): Promise<Task>;
   upsertMedia(projectId: string, media: MediaAsset): void;
-  /** Take a file Scarlet couldn't read out of the project. The engine refuses one the video or its history uses. */
+  /** Take a file AirWaves couldn't read out of the project. The engine refuses one the video or its history uses. */
   removeMedia(mediaId: string): Promise<void>;
   loadActivity(more?: boolean): Promise<void>;
 }
@@ -359,7 +359,7 @@ export const useProjectStore = create<ProjectState>((set, get, store) => {
     }, wait) };
   };
   /**
-   * Reading the open project anew failed, and nothing on screen says so or offers Retry. Until it is read, what Scarlet
+   * Reading the open project anew failed, and nothing on screen says so or offers Retry. Until it is read, what AirWaves
    * did while the socket was down is missing and a run that finished reads as working, so the store tries again by
    * itself, a few times and no more.
    */
@@ -513,7 +513,7 @@ export const useProjectStore = create<ProjectState>((set, get, store) => {
           if (request === projectLoad) patch(id, () => ({ reviewStatus: needsHistory ? "error" : undefined, reviewError: errorMessage(error) }));
           readAgainLater(id, request, tries);
         }
-        // A reload follows a reconnect. Whatever Scarlet did while the socket was down is in no event the window got,
+        // A reload follows a reconnect. Whatever AirWaves did while the socket was down is in no event the window got,
         // and a read of a run's steps that was out when the reload began is dropped, so each run's steps the pages
         // asked for are read again.
         if (request !== projectLoad || !same || askedEvents?.project !== id) return;
@@ -865,7 +865,7 @@ export const useProjectStore = create<ProjectState>((set, get, store) => {
       return taskAnswered(api.answerTask(taskId, text, skillIds));
     },
     async holdForRewording(taskId, on) {
-      // Letting go of a hold lets Scarlet start the request, and so does saving its new words. The socket may have it
+      // Letting go of a hold lets AirWaves start the request, and so does saving its new words. The socket may have it
       // claimed before this answer says "queued": that answer must not put a running request back in the tray.
       return taskAnswered(api.holdForRewording(taskId, on));
     },

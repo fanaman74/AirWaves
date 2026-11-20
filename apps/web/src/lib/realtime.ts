@@ -30,7 +30,7 @@ const CONNECTING = 0;
 /** Failed tries, about fifteen seconds of them, before the window says it is offline instead of reconnecting. */
 const OFFLINE_AFTER = 5;
 /**
- * What the window says while the socket is down. Scarlet keeps trying the whole time, so the waits between tries read
+ * What the window says while the socket is down. AirWaves keeps trying the whole time, so the waits between tries read
  * as reconnecting too, not as offline with a blink of reconnecting at each try. Once it has failed for a while it
  * says offline and stays there until a try gets through.
  */

@@ -15,6 +15,8 @@ export const EDITING_TOOL_GROUPS = [
     tools: ["task_log", "task_question", "skills_list", "learning_suggest", "skill_save_from_change", "skill_save_edit", "shorts_plan"] },
   { title: "Motion graphics", description: "Draw graphics from web pages, and read the files and style guide the editor gave.",
     tools: ["graphic_render", "graphic_get", "style_guide_save", "attachment_read"] },
+  { title: "Music", description: "Generate a music track from a description with your OpenRouter key (Google Lyria) and add it to the media.",
+    tools: ["music_generate"] },
   { title: "Frame inspection", description: "Examine a source frame or several moments from an edit together.",
     tools: ["media_frame", "frame_contact_sheet", "frame_contact_sheet_batch", "screen_area"] },
   { title: "Edit comparison", description: "Listen to source audio or compare both sides of a proposed edit.",

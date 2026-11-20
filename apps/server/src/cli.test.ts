@@ -95,7 +95,7 @@ it("prints its usage for help, and refuses a command it doesn't have", async () 
 it("refuses to serve the editor, which lives in the desktop app", async () => {
   await engine("--web");
   await vi.waitFor(() => expect(process.exitCode).toBe(2));
-  expect(err).toEqual(["The engine serves the API only. Open the Scarlet desktop app to edit a project."]);
+  expect(err).toEqual(["The engine serves the API only. Open the AirWaves desktop app to edit a project."]);
   expect(added("SIGTERM")).toEqual([]);
 });
 
@@ -150,7 +150,7 @@ it("serves on its own from the environment's port and library, says where, and s
   process.env.SCARLET_PORT = "0";
   process.env.SCARLET_DATA = directory;
   await engine("serve");
-  await vi.waitFor(() => expect(out.some(line => line.startsWith("Scarlet engine listening on 127.0.0.1:"))).toBe(true), { timeout: 20_000 });
+  await vi.waitFor(() => expect(out.some(line => line.startsWith("AirWaves engine listening on 127.0.0.1:"))).toBe(true), { timeout: 20_000 });
   expect(out.filter(line => line.startsWith("  "))).toEqual([
     `  data:          ${resolve(directory)}`,
     expect.stringMatching(/^ {2}transcription: \w+$/),

@@ -104,7 +104,7 @@ describe("buildThreads", () => {
     expect(threadConversation(thread(), []).entries).toMatchObject([{ kind: "request", text: "Keep the sponsor read." }]);
   });
 
-  it("shows a reply to a note once, as Scarlet's, and never as a second message from the editor", () => {
+  it("shows a reply to a note once, as AirWaves's, and never as a second message from the editor", () => {
     const tasks = [
       task("ask", "done", { instruction: "Tighten the pause", changeIds: ["c1"], summary: "Cut 0.8 s" }),
       task("redo", "done", { kind: "revise", instruction: "Cut a bit more", context: { changeId: "c1", noteIds: ["fb"] }, changeIds: ["c2"], createdAt: at(3) }),
@@ -158,8 +158,8 @@ describe("buildThreads", () => {
     expect(threads.find(t => t.id === "r")?.latest?.id).toBe("r");
   });
 
-  it("treats a sent-back change as working until the redo arrives, and says why in Scarlet's words under the request that made it", () => {
-    const redo = (state: Task["state"], extra: Partial<Task> = {}) => task("redo", state, { kind: "revise", createdBy: { type: "scarlet", name: "Scarlet" },
+  it("treats a sent-back change as working until the redo arrives, and says why in AirWaves's words under the request that made it", () => {
+    const redo = (state: Task["state"], extra: Partial<Task> = {}) => task("redo", state, { kind: "revise", createdBy: { type: "scarlet", name: "AirWaves" },
       context: { changeId: "c", threadId: "c", message: "Redo on the current edit" }, ...extra });
     const asked = task("asked", "done", { changeIds: ["c"], context: { threadId: "c", message: "Zoom in on the demo" } });
     const sentBack = change("c", "revising", { threadId: "c", taskId: "asked", error: "Sent back: overlaps" });
@@ -167,13 +167,13 @@ describe("buildThreads", () => {
       .flatMap(e => e.kind === "agent" || e.kind === "system" ? [[e.kind, e.taskId, e.text]] : []);
     const [th] = buildThreads({ tasks: [asked, redo("running")], changes: [sentBack], notes: [] });
     expect(th!.status).toBe("working");
-    // One line, Scarlet's, in the request that made the suggestion: not the engine's reason, its name for the task, or
+    // One line, AirWaves's, in the request that made the suggestion: not the engine's reason, its name for the task, or
     // "the agent". It says what is true of the redo: waiting its turn, then under way.
     const waits = "The video changed while this suggestion was waiting. I’ll redo it on the video as it is now.";
     const redoing = "The video changed while this suggestion was waiting. I’m redoing it on the video as it is now.";
     expect(said([asked, redo("queued")])).toEqual([["agent", "asked", waits]]);
     expect(said([asked, redo("running")])).toEqual([["agent", "asked", redoing]]);
-    // In line again after Scarlet began it, after a question, it is still under way.
+    // In line again after AirWaves began it, after a question, it is still under way.
     expect(said([asked, redo("queued", { startedAt: at(3) })])).toEqual([["agent", "asked", redoing]]);
     // A suggestion no request made says it too, as a line that belongs to no request.
     expect(said([redo("queued")], [{ ...sentBack, taskId: undefined }])).toEqual([["agent", undefined, waits]]);
@@ -211,7 +211,7 @@ it("says why the host stopped a run and offers Resume, keeping what it saved", (
   };
   const stalled = task("stalled", "failed", { interrupted: true, error: "stalled: the agent wrote nothing for 10 minutes" });
   expect(notice(stalled)).toMatchObject({ tone: "warn", action: { taskId: stalled.id, label: "Resume agent" },
-    text: "Scarlet went quiet for 10 minutes, so the edit was stopped. What it saved is kept." });
+    text: "AirWaves went quiet for 10 minutes, so the edit was stopped. What it saved is kept." });
   const capped = task("capped", "failed", { interrupted: true, error: "timed out after 90 minutes, the limit for one agent run" });
   expect(notice(capped)).toMatchObject({ text: "The edit reached its 90-minute limit. What it saved is kept.", action: { label: "Resume agent" } });
   // Hosts used to stop every run at 45 minutes and record only "timed out". Those runs resume too.
@@ -259,12 +259,12 @@ it("keeps the interruption notice without offering Resume after a manual follow-
   const cut = change("cut", "approved", { taskId: original.id });
   const [thread] = buildThreads({ tasks: [original, followUp], changes: [cut], notes: [] });
   const { entries } = threadConversation(thread!, []);
-  expect(entries).toContainEqual(expect.objectContaining({ kind: "system", text: "Scarlet was interrupted after saving changes." }));
+  expect(entries).toContainEqual(expect.objectContaining({ kind: "system", text: "AirWaves was interrupted after saving changes." }));
   expect(entries.some(e => e.kind === "system" && e.action)).toBe(false);
 });
 
 it("says an alternative the editor didn't choose wasn't applied, with the engine's reason, and never that they skipped or rejected it", () => {
-  // Scarlet offered two alternatives and the editor applied the first. The engine puts the other away as the editor's
+  // AirWaves offered two alternatives and the editor applied the first. The engine puts the other away as the editor's
   // decision, with its reason (approveChange in apps/server/src/services/changes.ts).
   const asked = task("ask", "done", { changeIds: ["a", "b"] });
   const editor = { type: "human" as const, id: "u", name: "Matt" };

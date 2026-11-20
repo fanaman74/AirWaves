@@ -5,14 +5,14 @@ import { MediaAsset } from "@scarlet/timeline";
  * Imports the editor asked for that haven't finished, kept on this computer so a quit doesn't drop the files
  * still waiting or the one being copied. `source` is an absolute path or an http(s) link. `setsFormat` marks a
  * new project's first files, whose first video gives the project its format. `started` says whether its copy had
- * begun: only such a file can have reached the project before a quit. An entry saved by an older Scarlet has none.
+ * begun: only such a file can have reached the project before a quit. An entry saved by an older AirWaves has none.
  */
 export interface PendingImport { projectId: string; source: string; at: string; setsFormat?: boolean; started?: boolean; importId?: string; interrupted?: boolean;
-  /** How often the engine went away under this file's copy. One saved by an older Scarlet as interrupted has 1. */
+  /** How often the engine went away under this file's copy. One saved by an older AirWaves as interrupted has 1. */
   interruptions?: number }
 
 /**
- * How often a copy is begun again after the engine went away under it. Quitting Scarlet is one such time, and so is
+ * How often a copy is begun again after the engine went away under it. Quitting AirWaves is one such time, and so is
  * every restart of the engine, so one is too few: a second quit during the same long copy dropped the file unsaid.
  * A file that takes the engine down every time still stops here.
  */
@@ -75,7 +75,7 @@ export function markImportStarted(projectId: string, source: string) {
   return importId;
 }
 
-/** Keep an interrupted copy to begin again, including after Scarlet itself restarts, until it has been cut off too often. */
+/** Keep an interrupted copy to begin again, including after AirWaves itself restarts, until it has been cut off too often. */
 export function retryInterruptedImport(projectId: string, source: string) {
   const list = read();
   const entry = list.find(i => i.projectId === projectId && i.source === source);

@@ -14,7 +14,7 @@ import { Icon } from "../ui/primitives";
 import { useAgentAvailability } from "../agent/AgentChip";
 import type { AgentContext } from "../../stores/ui";
 
-/** What Scarlet is asked to do when the editor rejects an edit the engine can't put back itself. One × is one edit. */
+/** What AirWaves is asked to do when the editor rejects an edit the engine can't put back itself. One × is one edit. */
 export function rejectInstruction(target: Pick<AgentContext, "editNumber" | "label">) {
   const which = [target.editNumber && `edit ${target.editNumber}`, target.label && `“${target.label}”`].filter(Boolean).join(", ");
   return `The editor rejected ${which || "this edit"}. Put back exactly what it changed and leave every other edit as it is.`;
@@ -27,10 +27,10 @@ export type RejectedEdit = Parameters<ReturnType<typeof useProjectStore.getState
  * Reject an applied edit: a small × after Keep on its card, named "Reject edit" on hover, as a call's × skips it.
  * Wherever the engine knows exactly what the edit changed it goes back there, at once and with no model: a cut's
  * footage, a look an edit gave its clips, a whole request's only edit (`edits`, located on the version `editsOn`). An
- * edit the engine can't put back itself, or one a later edit changed, is a request to Scarlet to put back just that
+ * edit the engine can't put back itself, or one a later edit changed, is a request to AirWaves to put back just that
  * edit, with the same agent and the same target as typing it would. On a moment's card it is the edit the card is
  * named for, never the whole moment. The editor pressed the × and wrote nothing, so that request reads "Reject edit" under its edit's
- * tag, in the chat and in the queue; what Scarlet is asked to do is the instruction, which is for the agent.
+ * tag, in the chat and in the queue; what AirWaves is asked to do is the instruction, which is for the agent.
  */
 export function RejectEdit({ projectId, thread, target, edits, editsOn, onEngine, onSent }: { projectId: string; thread: Thread; target: AgentContext;
   edits?: RejectedEdit[]; editsOn?: string;
@@ -58,7 +58,7 @@ export function RejectEdit({ projectId, thread, target, edits, editsOn, onEngine
           return;
         } catch (e) {
           onEngine?.(false);
-          // The engine says when an edit isn't its to put back, or the video moved on meanwhile: Scarlet is asked then.
+          // The engine says when an edit isn't its to put back, or the video moved on meanwhile: AirWaves is asked then.
           if (!(e instanceof ScarletApiError) || e.status !== 409) throw e;
         }
       }
@@ -186,10 +186,10 @@ export function useReviewed(projectId: string, thread: Thread | undefined) {
 const PENDING_TASK = new Set(["queued", "claimed", "running", "waiting_for_user"]);
 
 /**
- * Whether a request about an edit is queued or running: the editor asked Scarlet to revise or undo it, so the edit
+ * Whether a request about an edit is queued or running: the editor asked AirWaves to revise or undo it, so the edit
  * no longer waits for them. Once the request finishes, its new version carries its own flag; if it fails, the edit
- * needs a look again. It answers with where that request stands, so a row can tell Scarlet at work from a request
- * still waiting its turn: the one Scarlet is on, when there are several.
+ * needs a look again. It answers with where that request stands, so a row can tell AirWaves at work from a request
+ * still waiting its turn: the one AirWaves is on, when there are several.
  */
 export function useRevising(thread: Thread | undefined) {
   return useMemo(() => {
@@ -285,14 +285,14 @@ export function ThreadEdits({ projectId, thread, edits, rejected = noEdits, show
       // A revision on its way takes the edit off the editor's list until it comes back. Its row says so whether or not
       // the editor had kept the edit: the edit they kept is on its way out (2026-11-10).
       const revisingNow = revising(edit), isRevising = !!revisingNow;
-      // Scarlet is on that revision now, so the row's word moves. One waiting its turn sits still.
+      // AirWaves is on that revision now, so the row's word moves. One waiting its turn sits still.
       const busy = revisingNow === "claimed" || revisingNow === "running";
       const version = edit.previous.length ? edit.previous.length + 1 : 0;
       // A cut says how much came out; any other edit says what it did, or in how many places.
       const value = places > 1 ? `${places} places` : removedLabel(edit) ?? editRowWord(edit);
       const check = places > 1 ? needs > 0 : !!edit.check && !isRevising;
       const title = (edit.reason && edit.summary) || edit.label;
-      // One that came back revised with no reason from Scarlet says so on its row until it is kept: its card has no
+      // One that came back revised with no reason from AirWaves says so on its row until it is kept: its card has no
       // sentence for that.
       const revised = edit.check === REVISED_CHECK && !reviewed(edit) && !isRevising;
       return <Fragment key={editKey(edit)}><li><button type="button" ref={on ? opened : undefined} aria-current={on || undefined} data-log-control="open-edit" data-log-label="Edit"
@@ -300,7 +300,7 @@ export function ThreadEdits({ projectId, thread, edits, rejected = noEdits, show
         // the edit over, instead of playing the video.
         className={on ? "simple-edit is-on" : "simple-edit"} onClick={e => { if (e.detail) e.currentTarget.blur(); onPlay(edit); }}
         onPointerEnter={() => onHover?.(edit)} onPointerLeave={() => onHover?.()}
-        // Why an edit asks for a look is on its card, in Scarlet's sentence. Its row keeps to the amber number and says
+        // Why an edit asks for a look is on its card, in AirWaves's sentence. Its row keeps to the amber number and says
         // the reason on hover, as a pass's row does.
         title={revised || edit.reason ? undefined : edit.check}
         aria-label={`Edit ${n}: ${title}${places > 1 ? `, ${places} places` : ""}${isRevising ? ", revising" : isKept ? ", kept" : check ? ", check" : ""}`}>
@@ -327,7 +327,7 @@ function sharedLineage(versions: VersionSummary[], head: string | null) {
 }
 
 /**
- * The thread's one action: review the edits Scarlet flagged that haven't been kept. Unflagged edits are done, so
+ * The thread's one action: review the edits AirWaves flagged that haven't been kept. Unflagged edits are done, so
  * there's nothing to press once the flagged ones are reviewed. Undo and filing the thread live in its menu.
  */
 export function ThreadAction({ projectId, thread, edits, onPlay, menuOnly, menu = true }: { projectId: string; thread: Thread; edits: ListedEdit[]; onPlay(ref: EditRef): void;

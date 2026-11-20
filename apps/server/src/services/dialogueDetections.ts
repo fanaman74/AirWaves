@@ -119,7 +119,7 @@ export function dialogueDetector(ctx: Ctx) {
    * What stops a page besides its transcription settings. A page a running edit asked for goes on while the project's
    * media work is paused: the editor asked for that edit, and pausing the caching isn't stopping it. It ends when the
    * edit does, or when the project goes to Trash. A page no edit asked for stops with the pause, like the rest of the
-   * work Scarlet does unasked.
+   * work AirWaves does unasked.
    */
   const stops = (projectId: string, edit?: ScanEdit) => edit ? ctx.projectSignal(projectId) : ctx.mediaSignal(projectId);
   function sourceFile(projectId: string, media: MediaAsset, to: number) {
@@ -142,7 +142,7 @@ export function dialogueDetector(ctx: Ctx) {
     }
   }
   async function source(projectId: string, media: MediaAsset, to: number, settings: ServerSettings["transcription"]) {
-    if (settings.provider === "none") throw conflict("transcription_unavailable", "Transcription isn't available in this build of Scarlet.");
+    if (settings.provider === "none") throw conflict("transcription_unavailable", "Transcription isn't available in this build of AirWaves.");
     const file = sourceFile(projectId, media, to);
     // Bump the format for changes to the bundled models, prompt, VAD or detection algorithm.
     const runtime = settings.provider === "whispercpp" ? resolveLocalRuntime(ctx, settings) : undefined;

@@ -20,20 +20,20 @@ it("says the latest call on the project as the work it is, with where in the rec
   expect(said(tool("dialogue_check_join", { cuts: [{}] }))).toBe("Checking how the join sounds");
   expect(said(tool("dialogue_check_join", { cuts: [{}, {}, {}] }))).toBe("Checking how 3 joins sound");
   expect(said(tool("dialogue_apply_cuts", { range: { start: 0, end: 155 }, cuts: [{}, {}, {}, {}] }))).toBe("Saving 4 cuts in 0:00–2:35");
-  // A cut is named by its call's number, the one on its card. One Scarlet hasn't asked about has no number to say.
+  // A cut is named by its call's number, the one on its card. One AirWaves hasn't asked about has no number to say.
   expect(said(tool("dialogue_review_inspect", { index: 4, count: 4 }))).toBe("Listening to 4 flagged cuts");
   expect(said(tool("dialogue_review_inspect", { index: 4, count: 4, wholePicture: true }))).toBe("Listening to a flagged cut");
   expect(runNow([tool("dialogue_review_inspect", { changeId: "chg", index: 57 })], undefined, (id, index) => id === "chg" && index === 57 ? 2 : undefined)).toBe("Listening to Cut 2");
-  // A call with no words of its own here reads as it does elsewhere; one Scarlet can't name says nothing.
+  // A call with no words of its own here reads as it does elsewhere; one AirWaves can't name says nothing.
   expect(said(tool("captions_generate"))).toBe("Making captions");
   expect(said(tool("export_otio"))).toBe("Exporting timeline");
   expect(said(tool("custom_tool"))).toBeUndefined();
-  // The whole video is the video, never the edit. A rule Scarlet picked up is offered in Learnings, not said in the chat.
+  // The whole video is the video, never the edit. A rule AirWaves picked up is offered in Learnings, not said in the chat.
   expect(said(tool("timeline_transcript"))).toBe("Reading the video’s words");
   expect(runNow([tool("audio_sync"), tool("learning_suggest")])).toBe("Lining up the recordings");
 });
 
-it("puts Scarlet's own latest sentence on the line, but not the one it opened with, and passes over the engine's background counts", () => {
+it("puts AirWaves's own latest sentence on the line, but not the one it opened with, and passes over the engine's background counts", () => {
   const aim = "I’ll tighten the takes.";
   expect(runNow([log("Starting the editing agent."), log(aim)], aim)).toBeUndefined();
   expect(runNow([log(aim), tool("project_get"), log("The opening is saved.")], aim)).toBe("The opening is saved.");
@@ -46,7 +46,7 @@ it("puts Scarlet's own latest sentence on the line, but not the one it opened wi
   expect(runNow(behind)).toBe("Checking how 2 joins sound");
 });
 
-it("says when Scarlet starts, thinks, waits or reconnects", () => {
+it("says when AirWaves starts, thinks, waits or reconnects", () => {
   expect(runNow([log("Codex session started", { kind: "init" })])).toBe("Getting started");
   expect(runNow([tool("project_get"), log("", { kind: "reasoning" })])).toBe("Thinking");
   expect(runNow([log("Reconnecting… 2/5", { kind: "connection" })])).toBe("Reconnecting to the model");

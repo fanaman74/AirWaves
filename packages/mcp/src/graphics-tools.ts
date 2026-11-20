@@ -1,6 +1,6 @@
 /**
  * The motion-graphics tools: drawing a graphic from a web page, the project's style
- * guide and the files the editor attached. Scarlet draws the page (packages/render/src/graphic.ts); these tools carry
+ * guide and the files the editor attached. AirWaves draws the page (packages/render/src/graphic.ts); these tools carry
  * the page and its files there and report what the drawing measured.
  */
 import { basename, dirname, join } from "node:path";
@@ -61,7 +61,7 @@ export function registerGraphics(deps: GraphicsDeps) {
 
   tool(
     "graphic_render",
-    `Draw a motion graphic from a web page and add it to the project's media as a graphic with alpha, to place over the picture with timeline_propose (addClip of the returned mediaId on a video track above the footage; its clip can be shorter than the graphic). Send the page as html: a complete HTML document drawn at the project's size (or width/height) on a transparent background, so use viewport units or the frame's pixels. Time: CSS animations, transitions and Web Animations are paused and set to each frame's time, SVG animations too; a page that keeps its own clock defines window.scarletSeek(seconds), called before each frame, which may return a promise. Fonts load from @font-face rules or installed fonts. Link fonts and pictures by absolute path or file URL (an attachment's path works)${deps.caps.files ? " or, with path, by a path relative to the page" : ""}; Scarlet keeps them with the graphic. Scarlet keeps the page with the graphic too: to revise one, read it with graphic_get, change it and render again with basedOn, which carries its files over, then point the clip at the new mediaId (updateClip). Returns the mediaId, the page's path, the box the graphic covers at a few moments (fractions of the frame, left/top/right/bottom), errors the page raised and files it couldn't load${deps.caps.images ? ", and pictures of those moments over the edit at checkAt" : ""}. A page whose text asks for a font that isn't installed or loaded is not added: missingFonts names each, and installedFonts lists common families this machine has. When the editor named the font, in their words or the style guide, ask them with task_question whether they will add its file or which installed font to use; never substitute it yourself. A font only you chose: pick an installed one and render again.`,
+    `Draw a motion graphic from a web page and add it to the project's media as a graphic with alpha, to place over the picture with timeline_propose (addClip of the returned mediaId on a video track above the footage; its clip can be shorter than the graphic). Send the page as html: a complete HTML document drawn at the project's size (or width/height) on a transparent background, so use viewport units or the frame's pixels. Time: CSS animations, transitions and Web Animations are paused and set to each frame's time, SVG animations too; a page that keeps its own clock defines window.scarletSeek(seconds), called before each frame, which may return a promise. Fonts load from @font-face rules or installed fonts. Link fonts and pictures by absolute path or file URL (an attachment's path works)${deps.caps.files ? " or, with path, by a path relative to the page" : ""}; AirWaves keeps them with the graphic. AirWaves keeps the page with the graphic too: to revise one, read it with graphic_get, change it and render again with basedOn, which carries its files over, then point the clip at the new mediaId (updateClip). Returns the mediaId, the page's path, the box the graphic covers at a few moments (fractions of the frame, left/top/right/bottom), errors the page raised and files it couldn't load${deps.caps.images ? ", and pictures of those moments over the edit at checkAt" : ""}. A page whose text asks for a font that isn't installed or loaded is not added: missingFonts names each, and installedFonts lists common families this machine has. When the editor named the font, in their words or the style guide, ask them with task_question whether they will add its file or which installed font to use; never substitute it yourself. A font only you chose: pick an installed one and render again.`,
     {
       html: z.string().min(1).max(500_000).optional().describe("The page, a complete HTML document"),
       ...(deps.caps.files ? { path: z.string().optional().describe("Or an HTML file in the task artifact directory") } : {}),
@@ -107,7 +107,7 @@ export function registerGraphics(deps: GraphicsDeps) {
 
   tool(
     "graphic_get",
-    "Read a graphic Scarlet drew: its page as it was drawn, where the page is, the files kept beside it (linked by those relative paths), and its size, fps and duration. Revise it by changing the page and calling graphic_render with basedOn.",
+    "Read a graphic AirWaves drew: its page as it was drawn, where the page is, the files kept beside it (linked by those relative paths), and its size, fps and duration. Revise it by changing the page and calling graphic_render with basedOn.",
     { mediaId: z.string().min(1) },
     async ({ mediaId }) => json(await client.graphic(deps.projectId, mediaId)),
   );

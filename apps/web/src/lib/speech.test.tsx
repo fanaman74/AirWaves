@@ -61,9 +61,9 @@ it("reports why when the engine can't transcribe, or when the text can't be sent
   await act(() => speech.handle(recording));
   expect(failed).toHaveBeenLastCalledWith("Speech model is still downloading");
   send.mockResolvedValue({ text: "zoom in here" });
-  heard.mockRejectedValue(new Error("Scarlet is offline"));
+  heard.mockRejectedValue(new Error("AirWaves is offline"));
   await act(() => speech.handle(recording));
-  expect(failed).toHaveBeenLastCalledWith("Scarlet is offline");
+  expect(failed).toHaveBeenLastCalledWith("AirWaves is offline");
   expect(failed).toHaveBeenCalledTimes(2);
   expect(speech.busy).toBe(false);
 });

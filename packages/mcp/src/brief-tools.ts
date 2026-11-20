@@ -39,12 +39,12 @@ export function listToolsBriefly(server: McpServer) {
   // The SDK lists registered tools from this handler. Wrapping it keeps its conversion of each tool's input schema.
   const handlers = (server.server as unknown as { _requestHandlers?: Map<string, ListTools> })._requestHandlers;
   const listed = handlers?.get("tools/list");
-  if (!handlers || !listed) throw new Error("Scarlet couldn't list its tools briefly: the MCP SDK no longer keeps its tools/list handler where Scarlet reads it.");
+  if (!handlers || !listed) throw new Error("AirWaves couldn't list its tools briefly: the MCP SDK no longer keeps its tools/list handler where AirWaves reads it.");
   let full: Promise<Tool[]> | undefined;
   const everyTool = (extra: unknown) => full ??= listed({ method: "tools/list" }, extra).then(({ tools }) => tools);
 
   server.registerTool(TOOL_HELP, {
-    description: "A Scarlet tool's full description and parameters. Read it before you first call a tool.",
+    description: "A AirWaves tool's full description and parameters. Read it before you first call a tool.",
     inputSchema: { name: z.string().describe("The tool's name, such as transcript_get") },
     annotations: { readOnlyHint: true, idempotentHint: true, destructiveHint: false, openWorldHint: false },
   }, async ({ name }, extra) => {
@@ -52,7 +52,7 @@ export function listToolsBriefly(server: McpServer) {
     const bare = name.replace(/^(mcp__scarlet__|mcp_scarlet_|scarlet[._/:])/, "");
     const tool = tools.find(t => t.name === bare);
     if (!tool || tool.name === TOOL_HELP) {
-      return { isError: true, content: [{ type: "text" as const, text: `No Scarlet tool is named ${name}. Its tools: ${tools.filter(t => t.name !== TOOL_HELP).map(t => t.name).join(", ")}.` }] };
+      return { isError: true, content: [{ type: "text" as const, text: `No AirWaves tool is named ${name}. Its tools: ${tools.filter(t => t.name !== TOOL_HELP).map(t => t.name).join(", ")}.` }] };
     }
     return { content: [{ type: "text" as const, text: `${tool.name}\n\n${tool.description ?? ""}\n\nParameters (JSON schema):\n${JSON.stringify(tool.inputSchema, null, 1)}` }] };
   });

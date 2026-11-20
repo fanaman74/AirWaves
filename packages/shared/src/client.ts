@@ -3,6 +3,7 @@
  * browsers (uses global fetch). Used by the web UI, MCP server and agent host.
  */
 import type { EditReviewRequest } from "./telemetry.js";
+import type { ApiProviderId, ApiProviderModel, ApiProviderSecret, ApiProviderStatus, GenerateMusicRequest, ImprovePromptResult, Instructions, PromptKind, SavedPrompt, TestApiKeyResult, TestApiModelResult, TestMusicResult } from "./apiProviders.js";
 import type { z } from "zod/v3";
 import { requireSecureEngineUrl } from "./engineTransport.js";
 import type { TranscriptSearchResult } from "./transcriptSearch.js";
@@ -732,6 +733,63 @@ export class ScarletClient {
   /** Change the words of a request that is still waiting its turn. It keeps its place in the queue. */
   rewordTask(taskId: string, text: string, skillIds?: string[]) {
     return this.post<{ task: Task }>(`/tasks/${taskId}/reword`, { text, skillIds } satisfies RewordTaskRequest);
+  }
+
+  // AirWave AI providers (Settings → AI providers)
+  apiProviders() {
+    return this.get<{ providers: ApiProviderStatus[] }>("/providers");
+  }
+  /** Keys and models as an agent host needs them to run a request. */
+  apiProviderSecrets() {
+    return this.get<{ providers: ApiProviderSecret[] }>("/providers/secrets");
+  }
+  /** With no key, tests the saved one. */
+  testApiKey(provider: ApiProviderId, apiKey?: string) {
+    return this.post<TestApiKeyResult>(`/providers/${provider}/test-key`, { apiKey });
+  }
+  apiProviderModels(provider: ApiProviderId, apiKey?: string) {
+    return this.post<{ models: ApiProviderModel[] }>(`/providers/${provider}/models`, { apiKey });
+  }
+  testApiModel(provider: ApiProviderId, model: string, apiKey?: string) {
+    return this.post<TestApiModelResult>(`/providers/${provider}/test-model`, { apiKey, model });
+  }
+  saveApiProvider(provider: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean; musicModel?: string }) {
+    return this.request<{ provider: ApiProviderStatus }>("PUT", `/providers/${provider}`, body);
+  }
+  /** OpenRouter models that make audio (Lyria). */
+  musicModels(apiKey?: string) {
+    return this.post<{ models: ApiProviderModel[] }>("/providers/openrouter/music-models", { apiKey });
+  }
+  /** Generates one track to listen to in Settings. Lyria Pro costs about $0.08 a song. */
+  testMusic(model: string, prompt?: string, apiKey?: string) {
+    return this.post<TestMusicResult>("/providers/openrouter/test-music", { apiKey, model, prompt });
+  }
+  /** Generate music with the saved OpenRouter key and add it to the project's media. */
+  generateMusic(projectId: string, body: GenerateMusicRequest) {
+    return this.post<{ media: MediaAsset; model: string; text?: string }>(`/projects/${apiPathId(projectId)}/music`, body);
+  }
+  instructions() {
+    return this.get<Instructions>("/instructions");
+  }
+  /** null resets a field to the built-in text. */
+  saveInstructions(body: { editing?: string | null; music?: string | null }) {
+    return this.request<Instructions>("PUT", "/instructions", body);
+  }
+  savedPrompts() {
+    return this.get<{ prompts: SavedPrompt[] }>("/prompts");
+  }
+  savePrompt(body: { kind: PromptKind; title?: string; text: string }) {
+    return this.post<{ prompt: SavedPrompt }>("/prompts", body);
+  }
+  deletePrompt(id: string) {
+    return this.request<{ ok: true }>("DELETE", `/prompts/${apiPathId(id)}`);
+  }
+  /** Rewrite a request or a music description with a saved AI provider. */
+  improvePrompt(body: { kind: PromptKind; text: string; agent?: string; model?: string }) {
+    return this.post<ImprovePromptResult>("/prompts/improve", body);
+  }
+  removeApiProvider(provider: ApiProviderId) {
+    return this.request<{ ok: true }>("DELETE", `/providers/${provider}`);
   }
 
   // Agent hosts

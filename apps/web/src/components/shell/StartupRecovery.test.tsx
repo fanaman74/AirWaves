@@ -20,10 +20,10 @@ it("opens native logs while the engine is offline and can copy an error without 
     await act(async () => button("Open logs")!.click());
     expect(open).toHaveBeenCalledWith("/fixture/logs");
     info.mockClear();
-    await act(async () => root.render(<StartupRecovery title="Scarlet couldn’t start" detail="Bridge unavailable" />));
+    await act(async () => root.render(<StartupRecovery title="AirWaves couldn’t start" detail="Bridge unavailable" />));
     expect(button("Open logs")).toBeUndefined();
     await act(async () => button("Copy diagnostics")!.click());
-    expect(copy).toHaveBeenCalledWith("Scarlet couldn’t start\nBridge unavailable");
+    expect(copy).toHaveBeenCalledWith("AirWaves couldn’t start\nBridge unavailable");
     expect(info).not.toHaveBeenCalled();
     expect(container.textContent).toContain("Diagnostics copied.");
   } finally {

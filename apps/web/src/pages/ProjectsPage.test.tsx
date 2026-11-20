@@ -45,7 +45,7 @@ it.each(["empty", "populated"])("can start a project from the %s library guide a
     expect([...guide.querySelectorAll("li h3")].map(el => el.textContent)).toEqual(["Add your footage", "Ask for an edit", "Play it back"]);
     const skills = guide.querySelector("details")!;
     expect(skills.open).toBe(false);
-    expect(skills.querySelector("summary")?.textContent?.trim()).toBe("Teach Scarlet your editing style");
+    expect(skills.querySelector("summary")?.textContent?.trim()).toBe("Teach AirWaves your editing style");
     await act(() => skills.querySelector("summary")!.click());
     expect(skills.open).toBe(true);
     expect(guide.textContent).toMatch(/Create a skill.*More → Learnings.*Approve/);
@@ -579,7 +579,7 @@ it("says what waits on the editor in the chat's words, with no heading over that
   }
 });
 
-it("says under a project's details what Scarlet is doing in it, and nothing while it is idle", async () => {
+it("says under a project's details what AirWaves is doing in it, and nothing while it is idle", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const previous = useProjectStore.getState();
   const db = buildDb();
@@ -698,7 +698,7 @@ it("shows one window-wide update on Projects while building and when ready", asy
   enableUpdateStatus();
   try {
     await act(async () => root.render(<><UpdateButton /><MemoryRouter><ProjectsPage /></MemoryRouter></>));
-    const controls = () => container.querySelectorAll('[aria-label="Scarlet update"]');
+    const controls = () => container.querySelectorAll('[aria-label="AirWaves update"]');
     expect(controls()).toHaveLength(0);
     const revision = "d".repeat(40);
     status.mockResolvedValue({ ready: null, building: { revision, done: 0.6, step: 0, stepStarted: 0, stepSeconds: 1 } });

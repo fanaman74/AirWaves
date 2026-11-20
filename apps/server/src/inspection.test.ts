@@ -729,7 +729,7 @@ it.skipIf(process.platform === "win32")("says plainly, with no path, which pictu
       { id: "line", kind: "caption", text: "Hello", timelineIn: 0, timelineOut: 4 }] } }] }).change.toVersion;
   vi.stubEnv("SCARLET_FFMPEG", bin);
   try {
-    const refusal = { code: "ffmpeg_missing_filter", message: expect.stringMatching(/^This copy of FFmpeg can’t draw text, so Scarlet can’t /) };
+    const refusal = { code: "ffmpeg_missing_filter", message: expect.stringMatching(/^This copy of FFmpeg can’t draw text, so AirWaves can’t /) };
     const sound = await client.soundPicture(projectId, { mediaId: "m", from: 0.5, to: 2 }).catch(error => error);
     expect(sound).toMatchObject({ status: 422, ...refusal });
     expect(sound.message).not.toContain(directory);

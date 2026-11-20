@@ -793,7 +793,7 @@ describe("scarlet server", () => {
     await api("POST", `/tasks/${task.id}/complete`, { body: { state: "done", summary: "Added a rule to keep laughter." } });
     const detail = (await api<{ skill: Skill; versions: SkillVersion[]; edits: Task[] }>("GET", `/skills/${skill.id}`)).json;
     expect(detail.versions.map(v => v.author?.type)).toEqual(["human", "agent"]);
-    // The history says what each version changed: Scarlet's carries the words that asked for it.
+    // The history says what each version changed: AirWaves's carries the words that asked for it.
     expect(detail.versions.map(v => [v.note, v.from])).toEqual([["First version", undefined], ["Never cut laughter.", "request"]]);
     expect(detail.edits).toMatchObject([{ id: task.id, state: "done", resultSkillId: skill.id, summary: "Added a rule to keep laughter." }]);
     expect((await api("POST", endpoint, { body: draft })).status).toBe(403);
@@ -834,10 +834,10 @@ describe("scarlet server", () => {
     const prompt = (await api<{ systemPrompt: string; instruction: string; plan?: boolean }>("GET", `/tasks/${check!.id}/prompt`)).json;
     expect(prompt.instruction).toBe(said);
     expect(prompt.plan).toBeUndefined();
-    expect(prompt.systemPrompt.startsWith("# You are listening for standing rules in Scarlet")).toBe(true);
+    expect(prompt.systemPrompt.startsWith("# You are listening for standing rules in AirWaves")).toBe(true);
     expect(prompt.systemPrompt).toContain("checked-style (");
     expect(prompt.systemPrompt).toContain("How the picture is framed");
-    expect(prompt.systemPrompt).not.toContain("# You are editing a video in Scarlet");
+    expect(prompt.systemPrompt).not.toContain("# You are editing a video in AirWaves");
     const laterCheck = checks().at(-1)!;
     const laterPrompt = (await api<{ systemPrompt: string }>("GET", `/tasks/${laterCheck.id}/prompt`)).json.systemPrompt;
     expect(laterPrompt).toContain("They said it about the moment at 2:05 in the video.");
@@ -867,7 +867,7 @@ describe("scarlet server", () => {
     expect(done.state).toBe("done");
     expect(scarlet.ctx.repos.activity.select("json_extract(json, '$.data.taskId') = ?", [check!.id])).toEqual([]);
 
-    // A message that only names a skill, a request of Scarlet's own and a resumed run aren't read.
+    // A message that only names a skill, a request of AirWaves's own and a resumed run aren't read.
     const count = checks().length;
     await api("POST", `/projects/${project.id}/tasks`, { body: { agent: "claude", instruction: "/first-cut-dialogue" } });
     expect(checks()).toHaveLength(count);
@@ -875,7 +875,7 @@ describe("scarlet server", () => {
     for (const open of scarlet.ctx.repos.tasks.select("project_id = ? AND state IN ('queued','claimed','running')", [project.id])) await api("POST", `/tasks/${open.id}/cancel`);
   });
 
-  it("keeps a rule Scarlet picked up until the editor approves it, then has the skill revised with it", async () => {
+  it("keeps a rule AirWaves picked up until the editor approves it, then has the skill revised with it", async () => {
     const skill = (await api<{ skill: Skill }>("POST", "/skills", { body: { name: "learned-style", description: "House rules", content: "---\nname: learned-style\ndescription: House rules\n---\n\nKeep the cold open.\n" } })).json.skill;
     const other = (await api<{ skill: Skill }>("POST", "/skills", { body: { name: "learned-other", content: "# Other" } })).json.skill;
     for (const queued of scarlet.ctx.repos.tasks.select("project_id = ? AND state = 'queued'", [project.id])) await api("POST", `/tasks/${queued.id}/cancel`);
@@ -941,7 +941,7 @@ describe("scarlet server", () => {
     expect((await api<{ instruction: string }>("GET", `/tasks/${next.id}/prompt`)).json.instruction).toContain("Work this standing rule into the skill: “Never cut a laugh.”");
     expect((await revise(second.id, "Never cut laughter.")).status).toBe(409);
 
-    // One that ends without changing the skill goes back to the editor with Scarlet's reason.
+    // One that ends without changing the skill goes back to the editor with AirWaves's reason.
     await api("POST", `/hosts/${host.id}/claim`, { body: { taskId: next.id } });
     await api("POST", `/tasks/${next.id}/complete`, { body: { state: "done", summary: "It already says that." } });
     expect((await list())[0]).toMatchObject({ id: second.id, state: "suggested", error: "It already says that." });
@@ -1030,7 +1030,7 @@ describe("scarlet server", () => {
     expect(moved.replaces).toBeUndefined();
     expect((await api<{ instruction: string }>("GET", `/tasks/${moved.editTaskId}/prompt`)).json.instruction).toContain("shown nothing in it that the rule would replace.");
 
-    // A save an older engine left waiting on its question goes back to the editor with it when Scarlet starts.
+    // A save an older engine left waiting on its question goes back to the editor with it when AirWaves starts.
     const left = scarlet.ctx.repos.tasks.get(moved.editTaskId!)!;
     scarlet.ctx.repos.tasks.put({ ...left, state: "waiting_for_user", question: "Keep the cold open as it is?" });
     returnRulesLeftWithQuestions(scarlet.ctx);
@@ -1075,7 +1075,7 @@ describe("scarlet server", () => {
     const edits = async () => (await api<{ edits: Task[] }>("GET", `/skills/${skill.id}`)).json.edits.map(t => [t.state, t.context.learningId, t.resumeRootId ?? null]);
     const learning = (id: string) => scarlet.ctx.repos.learnings.get(id)!;
 
-    // Scarlet quits while the first rule is being saved. The save carries on as a new attempt.
+    // AirWaves quits while the first rule is being saved. The save carries on as a new attempt.
     await api("POST", `/hosts/${host.id}/claim`, { body: { taskId: first.editTaskId } });
     expect((await api("POST", `/tasks/${first.editTaskId}/complete`, { body: { state: "cancelled", interrupted: true } })).status).toBe(200);
     // The second rule still waits its turn: started now, its edit would run beside that attempt and one would overwrite the other.

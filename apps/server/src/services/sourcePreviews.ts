@@ -253,7 +253,7 @@ export function prepareSourceProxies(ctx: Ctx, mediaIds: Iterable<string>, reque
 
 /**
  * Each video waits its turn. Its request is written down as it joins, with no worker yet, so one still waiting when
- * the project pauses or Scarlet quits reads as held and is cached after resume or the next launch.
+ * the project pauses or AirWaves quits reads as held and is cached after resume or the next launch.
  */
 function queueSourceProxies(ctx: Ctx, mediaIds: string[]): void {
   if (ctx.shutdown.aborted) return;
@@ -285,7 +285,7 @@ function queueSourceProxies(ctx: Ctx, mediaIds: string[]): void {
   }
 }
 
-/** One queued video's turn. False when it isn't a video Scarlet can cache, so its request can go. */
+/** One queued video's turn. False when it isn't a video AirWaves can cache, so its request can go. */
 async function cacheInTurn(ctx: Ctx, id: string): Promise<boolean> {
   // A quit or a pause keeps the request for the next launch or resume.
   if (ctx.shutdown.aborted) return true;

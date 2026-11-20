@@ -5,7 +5,7 @@ import { mediaProblems, mediaWarningLabel, transcriptionProgressLabel, transcrip
 
 const task = (mediaId: string, progress?: Task["progress"], state: Task["state"] = "running") => ({
   id: `tsk_${mediaId}`, projectId: "prj", kind: "transcribe", agent: "api", instruction: `Transcribe ${mediaId}`, context: { mediaId },
-  state, createdBy: { type: "scarlet", name: "Scarlet" }, hostId: null, changeIds: [], question: null, summary: null, progress,
+  state, createdBy: { type: "scarlet", name: "AirWaves" }, hostId: null, changeIds: [], question: null, summary: null, progress,
 }) as Task;
 
 describe("transcription progress", () => {

@@ -163,7 +163,7 @@ describe("the aligner in the audio helper", () => {
   });
 
   it("opens no audio when the runtime is missing", async () => {
-    vi.spyOn(uhm, "loadRuntime").mockImplementation(() => { throw new Error("The installed Scarlet engine is missing its Uhm runtime."); });
+    vi.spyOn(uhm, "loadRuntime").mockImplementation(() => { throw new Error("The installed AirWaves engine is missing its Uhm runtime."); });
     const groups = [{ start: 2, end: 2.4, words: words(2) }];
     await expect(runAlignWorker(join(dir, "never-opened.wav"), "aligner.onnx", await request(groups))).rejects.toThrow("missing its Uhm runtime");
   });

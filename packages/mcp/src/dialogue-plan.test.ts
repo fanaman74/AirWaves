@@ -90,7 +90,7 @@ describe("dialogue plan", () => {
     const plan = await planDialogueCuts({ tl, localPauses: false, cuts: [cut({ mediaId: "mic", fromWord: 1, toWord: 3 })] }, sources);
     expect(plan).toMatchObject({ outcome: "ready", decisions: [{ start: .9, end: 2.18, review: true }] });
     if (plan.outcome === "ready") expect(plan.gate.get(0)?.evidence).toContain("No pause on either side of “now start over”");
-    // The held cut says what Scarlet measured, what the join plays and what keeping it plays, for the agent to settle.
+    // The held cut says what AirWaves measured, what the join plays and what keeping it plays, for the agent to settle.
     if (plan.outcome === "ready") expect(plan.decisions[0]!.held).toBe("The words named run on into the ones beside them at the start and end: no pause or low point where they part, a join in running speech. As placed the join plays “… ready ‖ again …”. Kept, it plays “… ready now start over again …”.");
   });
 
@@ -403,7 +403,7 @@ describe("dialogue plan", () => {
     // 2 s and 3.2 s fall between the scan's words; 1.6 s is inside “set”.
     const plan = (start: number) => planDialogueCuts({ tl, localPauses: false, unsureJoins: "cut", cuts: [cut({ start, end: 3.2 })] }, sources);
     expect(await plan(1.95)).toMatchObject({ outcome: "ready", decisions: [{ review: false }] });
-    // An edge inside “set” stays held for the agent to settle, with what Scarlet measured.
+    // An edge inside “set” stays held for the agent to settle, with what AirWaves measured.
     expect(await plan(1.6)).toMatchObject({ outcome: "ready", decisions: [{ review: true, held: expect.stringContaining("inside “set”") }] });
   });
 
@@ -739,7 +739,7 @@ describe("dialogue plan", () => {
     expect((await plan(.0056)).decision).toMatchObject({ review: false, start: 1.4 });
     expect(dipped.gate).toMatchObject({ outcome: "cut", evidence: expect.stringContaining("No pause between “recognized” and “that”: the start is at the lowest level between them (-60 dBFS).") });
     // The repeat starts right after the cut. The cut applies and the gate tells the agent; whether the editor needs
-    // to watch the join is the agent's call, so Scarlet flags nothing itself.
+    // to watch the join is the agent's call, so AirWaves flags nothing itself.
     expect(dipped.decision.check).toBeUndefined();
     expect(dipped.gate.evidence).toContain("the removed sound starts 0.02 s after the cut");
     // Spoken straight through, or with a dip no deeper than a sibilant's hiss, the words part where the transcript parts
@@ -898,7 +898,7 @@ describe("dialogue plan", () => {
 
   it("lets a word reference's placed edge give way to the range the agent decided beside it", async () => {
     const { tl, sources } = fixture();
-    // A pause cut over the silence after "finish", then "first" by its index. Scarlet places the word cut's start in
+    // A pause cut over the silence after "finish", then "first" by its index. AirWaves places the word cut's start in
     // that same silence, on the frame at 1.633 s, inside the pause cut. Both come out; the word cut starts where the pause ends.
     const plan = await planDialogueCuts({ tl, localPauses: false, cuts: [
       cut({ start: 1.5, end: 1.75, kind: "pause" }), { kind: "retake", decision: "cut", reason: "Earlier take.", mediaId: "mic", fromWord: 1, toWord: 1 }] }, sources);
@@ -907,9 +907,9 @@ describe("dialogue plan", () => {
     expect(pause!.end).toBe(1.75);
     expect(take!.start).toBe(1.75);
     expect(take!.end).toBeCloseTo(3.333, 2);
-    // The agent is told where Scarlet had placed the edge and why it moved.
+    // The agent is told where AirWaves had placed the edge and why it moved.
     expect(dialogueGate(plan).decisions).toContainEqual(expect.objectContaining({ cut: 1,
-      evidence: expect.stringContaining("Scarlet placed its start at 1.63 s, inside cut 0; it moved to 1.75 s to meet that cut.") }));
+      evidence: expect.stringContaining("AirWaves placed its start at 1.63 s, inside cut 0; it moved to 1.75 s to meet that cut.") }));
     // The other way round: the pause after the word, given in seconds, starts inside the word cut's placed end.
     const after = await planDialogueCuts({ tl, localPauses: false, cuts: [
       { kind: "retake", decision: "cut", reason: "Earlier take.", mediaId: "mic", fromWord: 1, toWord: 1 }, cut({ start: 2.6, end: 3.35, kind: "pause" })] }, sources);
@@ -1008,7 +1008,7 @@ describe("equivalent removals", () => {
     expect(inspected.end).toBeLessThan(said[3]!.start);
     for (const decision of ["cut", "review", "keep"] as const) {
       const plan = await planDialogueCuts({ tl, cuts: [cut({ ...ref, decision })], localPauses: false }, sources);
-      // A cut to apply with an edge in sound comes back with the range Scarlet placed.
+      // A cut to apply with an edge in sound comes back with the range AirWaves placed.
       const actual = plan.outcome === "ready" ? plan.decisions[0]! : plan.outcome === "needsRevision" ? plan.disputedEdges[0]! as TimeRange : plan.kept![0]!;
       expect(actual.start).toBeLessThan(said[2]!.start);
       expect(actual.end).toBeLessThan(said[3]!.start);

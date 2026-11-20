@@ -349,8 +349,8 @@ export async function ingestMedia(
   }
   ctx.bus.publish({ type: "media.updated", projectId: project.id, media: stored });
   void ctx.track(backgroundIngest(ctx, project.id, asset).catch(error => {
-    // It keeps this engine's claim, so it is picked up again when Scarlet next starts.
-    if (!ctx.shutdown.aborted) ctx.log(`[ingest] ${asset.id} stopped part-way and stays unfinished until Scarlet restarts: ${(error as Error).message}`);
+    // It keeps this engine's claim, so it is picked up again when AirWaves next starts.
+    if (!ctx.shutdown.aborted) ctx.log(`[ingest] ${asset.id} stopped part-way and stays unfinished until AirWaves restarts: ${(error as Error).message}`);
   }), project.id);
   return stored;
 }
@@ -425,7 +425,7 @@ async function ingestInBackground(ctx: Ctx, projectId: string, asset: MediaAsset
     signal.throwIfAborted();
     asset = publish("ready");
     if (asset.kind === "video") prepareSourceProxies(ctx, [asset.id]);
-    logActivity(ctx, { projectId, actor: { type: "scarlet", name: "Scarlet" }, type: "media.added", summary: `${quote(asset.name)} was added${asset.duration ? ` (${Math.round(asset.duration)} s)` : ""}`, data: { mediaId: asset.id } });
+    logActivity(ctx, { projectId, actor: { type: "scarlet", name: "AirWaves" }, type: "media.added", summary: `${quote(asset.name)} was added${asset.duration ? ` (${Math.round(asset.duration)} s)` : ""}`, data: { mediaId: asset.id } });
     if (asset.transcriptId) return;
   } catch (e) {
     if (signal.aborted) {
@@ -434,7 +434,7 @@ async function ingestInBackground(ctx: Ctx, projectId: string, asset: MediaAsset
     }
     ctx.log(`[ingest] ${asset.id} failed: ${(e as Error).message}`);
     publish("failed", preparation, (e as Error).message);
-    logActivity(ctx, { projectId, actor: { type: "scarlet", name: "Scarlet" }, type: "media.failed", summary: `${quote(asset.name)} couldn’t be read: ${(e as Error).message.slice(0, 160)}`, data: { mediaId: asset.id } });
+    logActivity(ctx, { projectId, actor: { type: "scarlet", name: "AirWaves" }, type: "media.failed", summary: `${quote(asset.name)} couldn’t be read: ${(e as Error).message.slice(0, 160)}`, data: { mediaId: asset.id } });
     return;
   }
   if (!asset.hasAudio) return;
@@ -464,7 +464,7 @@ async function startImportTranscription(ctx: Ctx, projectId: string, asset: Medi
 
 /**
  * Whether a pause of the project's media work holds its transcriptions, and the speaker labels of its transcripts. It
- * doesn't while Scarlet is working on a request there: the editor asked for that request, a pass can't plan or cut
+ * doesn't while AirWaves is working on a request there: the editor asked for that request, a pass can't plan or cut
  * without its transcripts, and pausing the caching isn't stopping it. With no request under way the pause stops a
  * transcription, also as it starts, and resume starts it again. Only a request that edits the project counts: a
  * skill's edit only borrows the project, and the read of a request for a standing rule uses no transcript.
@@ -483,7 +483,7 @@ export function holdTranscriptions(ctx: Ctx, projectId: string): void {
 }
 
 /**
- * Take a file Scarlet couldn't read out of its project: its row and transcript, its original, and what preparing,
+ * Take a file AirWaves couldn't read out of its project: its row and transcript, its original, and what preparing,
  * previewing or transcribing it left on disk. A request can read such a file too (a dialogue scan takes a file of any
  * status and starts its transcript), so the file stays while one is at work, as it does once a version names it.
  * Each reason to refuse is checked before anything is stopped and again as the row goes, since a clip can be placed,
@@ -493,12 +493,12 @@ export async function removeUnreadableMedia(ctx: Ctx, projectId: string, id: str
   const removable = () => {
     const media = ctx.repos.projects.getMedia(id);
     if (!media || media.projectId !== projectId) throw notFound(`media ${id}`);
-    if (media.status !== "failed") throw conflict("media_readable", `Scarlet read ${media.name}, and can only remove a file it couldn’t read.`);
+    if (media.status !== "failed") throw conflict("media_readable", `AirWaves read ${media.name}, and can only remove a file it couldn’t read.`);
     // A clip placed while the file was still being added plays only with the file, in every version that has it.
     if (ctx.repos.versions.usesMedia(projectId, id)) throw conflict("media_in_use", `${media.name} is in the video or its history, so it can’t be removed.`);
     // Which files a request will read can't be known, and another engine process may be running it: the saved state decides.
     if (ctx.repos.tasks.count("project_id = ? AND kind <> 'transcribe' AND state IN ('claimed', 'running', 'waiting_for_user')", [projectId])) {
-      throw conflict("media_busy", `Scarlet is working on a request, so ${media.name} can’t be removed until it’s done.`);
+      throw conflict("media_busy", `AirWaves is working on a request, so ${media.name} can’t be removed until it’s done.`);
     }
     return media;
   };
@@ -606,7 +606,7 @@ function claimTranscription(ctx: Ctx, projectId: string, asset: MediaAsset, prov
   }
   const task = createTask(ctx, {
     projectId, kind: "transcribe", agent: "api", instruction: `Transcribe ${asset.name}`,
-    context: { mediaId: asset.id, transcribedWith: name, localModel: provider?.localModel, ...(chosen && { transcriptionProvider: chosen }) }, createdBy: { type: "scarlet", name: "Scarlet" }, state: "running",
+    context: { mediaId: asset.id, transcribedWith: name, localModel: provider?.localModel, ...(chosen && { transcriptionProvider: chosen }) }, createdBy: { type: "scarlet", name: "AirWaves" }, state: "running",
   });
   ctx.db.prepare("UPDATE tasks SET worker_pid = ?, worker_seen_at = ? WHERE id = ?").run(process.pid, now(), task.id);
   claimTranscriptionWork(ctx, asset.id, task, inherit);

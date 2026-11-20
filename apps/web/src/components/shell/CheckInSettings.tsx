@@ -11,7 +11,7 @@ const steps: { value: CheckIn; label: string }[] = [
 ];
 
 /**
- * How much Scarlet checks with the editor. At the end of a pass Scarlet orders its cuts by how likely each is to be
+ * How much AirWaves checks with the editor. At the end of a pass AirWaves orders its cuts by how likely each is to be
  * wrong; this picks how far down that order the editor is asked to look. The same for every project, saved as chosen.
  */
 export function CheckInSettings() {
@@ -45,7 +45,7 @@ export function CheckInSettings() {
           <span className="transcription-glyph"><Icon name="review" size={22} /></span>
           <div>
             <h2 id="check-in-heading">Checking with you</h2>
-            <p>How many of a pass’s cuts Scarlet asks you to check.</p>
+            <p>How many of a pass’s cuts AirWaves asks you to check.</p>
           </div>
         </div>
         <div className="min-w-0">
@@ -53,7 +53,7 @@ export function CheckInSettings() {
           <PreferenceSelect id="check-in" value={value} disabled={busy} options={steps} onChange={next => void choose(next)} />
         </div>
       </div>
-      <p className="transcription-status text-muted">{CHECK_IN_SHARE[value].replace(/^a/, "A")} of the cuts that take words out: the ones Scarlet thinks most likely to be wrong. They go into the video either way and wait in For you until you keep them.</p>
+      <p className="transcription-status text-muted">{CHECK_IN_SHARE[value].replace(/^a/, "A")} of the cuts that take words out: the ones AirWaves thinks most likely to be wrong. They go into the video either way and wait in For you until you keep them.</p>
       {error && <InlineError>{error}</InlineError>}
     </section>
   );

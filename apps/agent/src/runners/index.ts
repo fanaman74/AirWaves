@@ -3,12 +3,15 @@ import { MODEL_ID } from "../modelCatalog.js";
 import { runClaude } from "./claude.js";
 import { runCodex } from "./codex.js";
 import { runGemini } from "./gemini.js";
+import { runApi } from "./api.js";
 import type { RunAgentFn, RunAgentOptions, RunAgentResult } from "./types.js";
 
 export const RUNNERS: Record<Exclude<AgentId, "api">, RunAgentFn> = {
   claude: runClaude,
   codex: runCodex,
   gemini: runGemini,
+  aistudio: (opts) => runApi(opts),
+  openrouter: (opts) => runApi(opts),
 };
 
 export function runnerFor(agent: AgentId): RunAgentFn {
@@ -33,3 +36,4 @@ export { addUsage, claudeUsage, codexUsage, geminiUsage, tokenCount } from "./us
 export { parseCodexLine, newCodexState, buildCodexCommand, runCodex, tomlString, tomlInlineTable } from "./codex.js";
 export { acpMcpServer, buildGeminiCommand, isScarletMcpPermission, newGeminiState, parseGeminiAcpUpdate, parseGeminiLine, permissionOutcome, runGemini } from "./gemini.js";
 export { resolveMcpCliPath, nodeExecutable, mcpEnv, quoteForCmd, spawnSpec, spawnLines, resolveCli } from "./spawn.js";
+export { runApi, mcpToolBox, MAX_TURNS, type ApiToolBox, type ApiRunDeps } from "./api.js";

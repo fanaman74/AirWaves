@@ -99,7 +99,7 @@ it("returns a join it couldn't hear in a recording the aligner can't read, and d
   // Checking the same version again reports the same joins once.
   expect((await check(task, version)).unheardJoins).toEqual([unheard("voz")]);
   // The pass still finishes, and the check's own words about those joins reach the editor.
-  expect(await complete(task, "Scarlet couldn't hear the join at 0:04.")).toMatchObject({ state: "done", summary: "Scarlet couldn't hear the join at 0:04." });
+  expect(await complete(task, "AirWaves couldn't hear the join at 0:04.")).toMatchObject({ state: "done", summary: "AirWaves couldn't hear the join at 0:04." });
 });
 
 it("finds nothing unheard in a single uncut recording in a language the aligner can't read", async () => {

@@ -114,7 +114,7 @@ rl.on("close", () => process.exit(Number(process.env.FAKE_CODE ?? 0)));
 const mcp = { command: "node", args: ["/scarlet/mcp/cli.js"], env: { SCARLET_SERVER: "http://localhost:4000", SCARLET_TOKEN: "agent-token" } };
 
 // The same stand-in in Node, installed on Windows as npm installs each CLI: a .cmd shim beside its package. The shim
-// only fails. Scarlet starts the package's own entry with Node, so the request never passes through cmd.exe. As the
+// only fails. AirWaves starts the package's own entry with Node, so the request never passes through cmd.exe. As the
 // shell stand-in does, it hands `acp` to the ACP stand-in, which answers each request as it comes.
 const FAKE_NODE = `import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -325,8 +325,8 @@ describe("runClaude", { timeout: 20_000 }, () => {
     expect(events.map((e) => e.type)).toEqual(["log", "question"]);
   });
 
-  it("fails a run whose Scarlet MCP server failed to start, and stops the CLI instead of letting it write without tools", async () => {
-    const mcpFailed = "Scarlet's MCP server failed to start, so Claude Code had no editing tools.";
+  it("fails a run whose AirWaves MCP server failed to start, and stops the CLI instead of letting it write without tools", async () => {
+    const mcpFailed = "AirWaves's MCP server failed to start, so Claude Code had no editing tools.";
     // Recorded from claude 2.1.325: the server failed, and Claude answered without tools and called it a success.
     const failed = '{"type":"system","subtype":"init","session_id":"s1","model":"claude-opus-4-1","mcp_servers":[{"name":"scarlet","status":"failed","source":"dynamic"}]}';
     const success = '{"type":"result","subtype":"success","is_error":false,"result":"I can\'t reach the project\'s tools."}';
@@ -334,7 +334,7 @@ describe("runClaude", { timeout: 20_000 }, () => {
     expect(result).toMatchObject({ ok: false, error: mcpFailed, summary: "I can't reach the project's tools.", exitCode: 0, sessionId: "s1" });
     expect(result).not.toHaveProperty("aborted");
     expect(result.resumeFailed).toBeUndefined();
-    expect(events[1]).toMatchObject({ type: "error", text: "Scarlet MCP server status: failed" });
+    expect(events[1]).toMatchObject({ type: "error", text: "AirWaves MCP server status: failed" });
 
     // Nothing useful can follow, so the CLI is stopped instead of left to write for minutes.
     const started = Date.now();
@@ -561,7 +561,7 @@ describe("runCodex", { timeout: 20_000 }, () => {
 describe("runGemini", { timeout: 20_000 }, () => {
   const upd = (update: Record<string, unknown>) => JSON.stringify({ jsonrpc: "2.0", method: "session/update", params: { sessionId: "g1", update } });
 
-  it("runs an ACP session with Scarlet's prompt, model/effort config, MCP-only permissions, and usage", async () => {
+  it("runs an ACP session with AirWaves's prompt, model/effort config, MCP-only permissions, and usage", async () => {
     const { result, events, cwd, stdin, args } = await run(runGemini, {
       acp: true,
       lines: [
@@ -601,7 +601,7 @@ describe("runGemini", { timeout: 20_000 }, () => {
     expect(events.map((e) => [e.type, e.text])).toEqual([
       ["log", "Gemini session started (gemini-2.5-flash)"],
       ["log", "Adding captions."],
-      ["log", "Scarlet refused bash: only Scarlet's tools run here. Gemini carries on."],
+      ["log", "AirWaves refused bash: only AirWaves's tools run here. Gemini carries on."],
       ["result", "Adding captions."],
     ]);
     expect(events[2]!.data).toEqual({ kind: "tool_refused", harnessTool: "bash" });
@@ -619,8 +619,8 @@ describe("runGemini", { timeout: 20_000 }, () => {
       "session/prompt",
     ]);
     expect(sent.find((m) => m.method === "session/new")?.params).toMatchObject({ _meta: { antigravity: { systemPrompt: { append: "SYS" } } } });
-    expect(JSON.stringify(sent.filter((m) => m.method === "session/prompt").at(-1))).toContain("Scarlet refused bash: only Scarlet's own tools");
-    // Allowed Scarlet MCP tool, denied built-in bash tool.
+    expect(JSON.stringify(sent.filter((m) => m.method === "session/prompt").at(-1))).toContain("AirWaves refused bash: only AirWaves's own tools");
+    // Allowed AirWaves MCP tool, denied built-in bash tool.
     expect(sent.find((m) => m.id === 99)).toMatchObject({ result: { outcome: { outcome: "selected", optionId: "allow1" } } });
     expect(sent.find((m) => m.id === 100)).toMatchObject({ result: { outcome: { outcome: "selected", optionId: "deny2" } } });
   });
@@ -641,7 +641,7 @@ describe("runGemini", { timeout: 20_000 }, () => {
     const bash = JSON.stringify({ jsonrpc: "2.0", id: 100, method: "session/request_permission",
       params: { toolCall: { name: "bash" }, options: [{ optionId: "allow", kind: "allow_once" }, { optionId: "deny", kind: "reject_once" }] } });
     const { result, stdin } = await run(runGemini, { acp: { everyTurn: true }, lines: [bash] }, { agent: "gemini" });
-    expect(result).toMatchObject({ ok: false, error: "Gemini stopped after Scarlet refused bash, a tool that doesn't run in Scarlet, 5 times." });
+    expect(result).toMatchObject({ ok: false, error: "Gemini stopped after AirWaves refused bash, a tool that doesn't run in AirWaves, 5 times." });
     expect((await stdin()).match(/"method":"session\/prompt"/g)).toHaveLength(5);
   });
 

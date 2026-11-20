@@ -20,7 +20,7 @@ afterEach(() => vi.restoreAllMocks());
 it.each([false, true])("prepares the edited version only when it includes the neighboring removal (covered: %s)", async covered => {
   const after = timeline("after", [...(covered ? [{ start: 0, end: neighbor.start }, { start: neighbor.end, end: removed.start }]
     : [{ start: 0, end: removed.start }]), { start: removed.end, end: 30 }]);
-  const change: Change = { id: "change", projectId: project, author: { name: "Scarlet", type: "scarlet" }, description: "Cut a take.",
+  const change: Change = { id: "change", projectId: project, author: { name: "AirWaves", type: "scarlet" }, description: "Cut a take.",
     state: "approved", noteIds: [], ranges: [], renders: [], fromVersion: before.version, toVersion: after.version,
     ops: (covered ? [removed, neighbor] : [removed]).map(r => ({ op: "rippleDelete", ...r })) };
   const selected = edit(0, removed);
@@ -64,7 +64,7 @@ it("prepares a rebased applied cut on its saved version, including the changed p
   // The version the editor approved removed 2 seconds at the start while the pass waited,
   // then removed this cut. The pass's original proposal removed another call the editor skipped.
   const after = timeline("applied", [{ start: 2, end: removed.start }, { start: removed.end, end: 30 }]);
-  const change: Change = { id: "change", projectId: project, author: { name: "Scarlet", type: "scarlet" }, description: "Take",
+  const change: Change = { id: "change", projectId: project, author: { name: "AirWaves", type: "scarlet" }, description: "Take",
     state: "approved", noteIds: [], ranges: [], renders: [], fromVersion: before.version, toVersion: "staged", appliedOnto: "trimmed",
     appliedVersion: after.version, restoredCuts: [1], ops: [{ op: "rippleDelete", start: 21, end: 22 }, { op: "rippleDelete", ...removed }] };
   const selected = edit(0, removed);
@@ -82,7 +82,7 @@ it("prepares an applied cut on the video as it runs now once a later batch has c
   // This cut came out in the pass's first batch. A later batch took out the neighbor, which is a cut on another version.
   const batch = timeline("batch", [{ start: 0, end: removed.start }, { start: removed.end, end: 30 }]);
   const head = timeline("head", [{ start: 0, end: neighbor.start }, { start: neighbor.end, end: removed.start }, { start: removed.end, end: 30 }]);
-  const change: Change = { id: "change", projectId: project, author: { name: "Scarlet", type: "scarlet" }, description: "Cut a take.",
+  const change: Change = { id: "change", projectId: project, author: { name: "AirWaves", type: "scarlet" }, description: "Cut a take.",
     state: "approved", noteIds: [], ranges: [], renders: [], fromVersion: before.version, toVersion: batch.version,
     ops: [{ op: "rippleDelete", ...removed }] };
   const selected = edit(0, removed);

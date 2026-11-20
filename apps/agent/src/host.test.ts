@@ -253,7 +253,9 @@ describe("AgentHost", { timeout: 30_000 }, () => {
     await startHostAndWait(host, once(srv.events, "complete", { signal }));
 
     // Sequence: register -> claim -> (task fetch, engine prompt) -> events -> complete
-    const paths = srv.server.requests.map((r) => `${r.method} ${r.path}`);
+    // AirWaves reads the saved AI providers before registering; this test engine has none (404).
+    const paths = srv.server.requests.map((r) => `${r.method} ${r.path}`).filter(p => p !== "GET /providers/secrets");
+    expect(srv.server.requests[0]).toMatchObject({ method: "GET", path: "/providers/secrets" });
     expect(paths[0]).toBe("POST /hosts/register");
     expect(paths[1]).toBe("POST /hosts/host_1/claim");
     expect(paths.indexOf("POST /tasks/task_1/events")).toBeGreaterThan(paths.indexOf("GET /tasks/task_1/prompt"));
@@ -624,7 +626,7 @@ describe("AgentHost when a run or the engine misbehaves", { timeout: 30_000 }, (
     await startHostAndWait(host, Promise.all([once(srv.events, "started task_1", { signal }), once(srv.events, "started resumed", { signal })]));
 
     // The stopped attempt ends, and reports it as ever. Cleaning up as if alone, it would take the files the
-    // resumed one runs on: its CLI starts with no Scarlet tools, or its next resume finds no session.
+    // resumed one runs on: its CLI starts with no AirWaves tools, or its next resume finds no session.
     srv.events.emit("end task_1");
     await vi.waitFor(() => expect(host.runningTaskIds).toEqual(["resumed"]), { timeout: 5_000 });
     expect(srv.completes).toMatchObject([{ state: "cancelled" }]);

@@ -1,5 +1,5 @@
 /**
- * Desktop bridge. When the UI runs inside the Scarlet desktop app (Tauri 2)
+ * Desktop bridge. When the UI runs inside the AirWaves desktop app (Tauri 2)
  * this module talks to the Rust side: where the API lives (the bundled engine on
  * a random loopback port), the engine/agent-host status, and
  * a few native helpers. The renderer checks this bridge before loading the editor.

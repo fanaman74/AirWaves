@@ -121,7 +121,7 @@ export function getTranscriptionProvider(ctx: Ctx, override?: string, snapshot =
         // who reads this error under the message box or on the recording. It goes to the log.
         if (error instanceof FfmpegError) {
           ctx.log(`[transcribe] ${provider.name} failed: ${error.message}`);
-          throw new Error("Scarlet couldn’t transcribe this recording: export the logs from Settings → Advanced to report it.");
+          throw new Error("AirWaves couldn’t transcribe this recording: export the logs from Settings → Advanced to report it.");
         }
         throw error;
       }

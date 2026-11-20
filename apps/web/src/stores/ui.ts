@@ -25,7 +25,7 @@ export interface AgentContext {
   momentEdits?: { changeId: string; spot: number; label?: string }[];
   /**
    * A stretch the editor marked on the timeline's ruler for this message, on the version the timeline showed. It rides
-   * along with whatever the message is aimed at: a cut or an edit keeps its own time, and Scarlet is told both.
+   * along with whatever the message is aimed at: a cut or an edit keeps its own time, and AirWaves is told both.
    */
   markedRange?: MarkedRange;
 }
@@ -204,7 +204,7 @@ function savedDraft(draft: ComposerDraft): SavedDraft {
   return agentContext && agentContext !== "whole" && playheadPoints.has(agentContext) ? { ...draft, playheadPoint: true } : draft;
 }
 
-/** Messages being written when Scarlet last closed, by project and thread. */
+/** Messages being written when AirWaves last closed, by project and thread. */
 function loadDrafts(): Record<string, ComposerDraft> {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? "{}");
@@ -316,7 +316,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     const current = state.draftOwner === owner;
     const existing = current ? state : owner ? state.savedDrafts[owner] : undefined;
     if (existing?.agentDraft) return;
-    // Restore the recording's target, including a newer version of the same cut Scarlet re-aimed while transcribing.
+    // Restore the recording's target, including a newer version of the same cut AirWaves re-aimed while transcribing.
     const recovered = existing && sameTarget(existing.agentContext, unsent.agentContext)
       ? { ...unsent, agentContext: existing.agentContext } : unsent;
     if (current) set(recovered);

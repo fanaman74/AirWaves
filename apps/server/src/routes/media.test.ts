@@ -78,7 +78,7 @@ it.each(["prepare", "dialogue"])("continues saved recognition when a resumed edi
   await settle();
   expect(offsets).toEqual([0]);
   createTask(workspace.ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "Read the dialogue", state: "running",
-    createdBy: { type: "scarlet", name: "Scarlet" } });
+    createdBy: { type: "scarlet", name: "AirWaves" } });
   if (entry === "dialogue") expect(transcribeForDialogue(workspace.ctx, project.id, media)?.state).toBe("running");
   else expect((await prepare()).status).toBe(202);
   await settle();
@@ -91,7 +91,7 @@ it("keeps an interrupted local recording off the cloud when automatic preparatio
   const { ctx } = workspace;
   const media = ctx.repos.projects.putMedia(project.id, { id: "voice", name: "Voice", path: "voice.wav", kind: "audio" }, "ready");
   const last = createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", instruction: "Transcribe Voice", state: "running",
-    context: { mediaId: media.id, transcribedWith: "whispercpp" }, createdBy: { type: "scarlet", name: "Scarlet" } });
+    context: { mediaId: media.id, transcribedWith: "whispercpp" }, createdBy: { type: "scarlet", name: "AirWaves" } });
   saveTask(ctx, { ...last, state: "failed", interrupted: true });
   const upload = vi.spyOn(OpenAIProvider.prototype, "transcribe").mockResolvedValue({ segments: [] });
   const response = await api("POST", `/projects/${project.id}/media/${media.id}/prepare`, { kind: "transcript" });
@@ -186,7 +186,7 @@ it("answers 404 for a frame, loudness or speech of a recording whose file is gon
   const { ctx } = workspace;
   const lines: string[] = [];
   ctx.log = line => lines.push(line);
-  // The project still lists the recording, but its file was moved or deleted outside Scarlet.
+  // The project still lists the recording, but its file was moved or deleted outside AirWaves.
   ctx.paths.ensureProject(project.id);
   ctx.repos.projects.putMedia(project.id, { id: "gone", name: "Interview", path: "gone.mp4", kind: "video", duration: 60, hasAudio: true, fps: 30, width: 1920, height: 1080 }, "ready");
   writeFileSync(join(ctx.paths.waveforms(project.id), "gone.json"), JSON.stringify({ duration: 60, pointsPerSecond: 1, peaks: Array(60).fill(0.5) }));
@@ -263,7 +263,7 @@ it("shows the first frame of a file that is still being imported, and only of a 
   expect((await frame(clip, "prj_gone")).status).toBe(404);
 });
 
-it("takes a file Scarlet couldn't read out of the project with everything kept for it, and refuses one it read or one the video or its history uses", async () => {
+it("takes a file AirWaves couldn't read out of the project with everything kept for it, and refuses one it read or one the video or its history uses", async () => {
   const { ctx } = workspace;
   ctx.paths.ensureProject(project.id);
   const linkedMedia = join(directory, "linked-media");
@@ -304,7 +304,7 @@ it("takes a file Scarlet couldn't read out of the project with everything kept f
     return [res.status, (await res.json()).error?.message];
   };
 
-  expect(await remove("read")).toEqual([409, "Scarlet read read.mov, and can only remove a file it couldn’t read."]);
+  expect(await remove("read")).toEqual([409, "AirWaves read read.mov, and can only remove a file it couldn’t read."]);
   expect(await remove("placed")).toEqual([409, "placed.mov is in the video or its history, so it can’t be removed."]);
   expect(await remove("broken", "prj_other")).toEqual([404, "project prj_other not found"]);
   expect(ctx.repos.projects.listMedia(project.id).map(m => m.id)).toEqual(["read", "placed", "broken"]);
@@ -345,13 +345,13 @@ it("stops a transcription the editor started on an unreadable file before taking
   expect(ctx.repos.projects.getMedia("broken")).toBeNull();
 });
 
-it("leaves an unreadable file alone while Scarlet is working on a request, which may be reading it", async () => {
+it("leaves an unreadable file alone while AirWaves is working on a request, which may be reading it", async () => {
   const { ctx } = workspace;
   ctx.paths.ensureProject(project.id);
   writeFileSync(join(ctx.paths.media(project.id), "broken.wav"), "x");
   ctx.repos.projects.putMedia(project.id, { id: "broken", name: "broken.wav", path: "broken.wav", kind: "audio", duration: 60, hasAudio: true }, "failed", "Unreadable");
   // A dialogue pass scans a file of any status: it has saved a page of this one and started its transcript.
-  const pass = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut", createdBy: { type: "scarlet", name: "Scarlet" }, state: "running" });
+  const pass = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut", createdBy: { type: "scarlet", name: "AirWaves" }, state: "running" });
   ctx.db.prepare("INSERT INTO dialogue_scan_pages VALUES ('broken', 'f', 0, 60, '{}')").run();
   let stopped = false;
   vi.spyOn(OpenAIProvider.prototype, "transcribe").mockImplementation(({ signal }) => new Promise((_, reject) => {
@@ -362,7 +362,7 @@ it("leaves an unreadable file alone while Scarlet is working on a request, which
     const res = await api("DELETE", `/projects/${project.id}/media/broken`);
     return [res.status, (await res.json()).error];
   };
-  const busy = [409, { code: "media_busy", message: "Scarlet is working on a request, so broken.wav can’t be removed until it’s done." }];
+  const busy = [409, { code: "media_busy", message: "AirWaves is working on a request, so broken.wav can’t be removed until it’s done." }];
 
   expect(await remove()).toEqual(busy);
   // A request waiting on the editor can carry on with the file once they answer.
@@ -377,7 +377,7 @@ it("leaves an unreadable file alone while Scarlet is working on a request, which
 
   // Another project's request doesn't hold it, and neither does this one once it has ended.
   const elsewhere = ctx.repos.projects.insert(createProject("Other"));
-  createTask(ctx, { projectId: elsewhere.id, kind: "edit", agent: "api", instruction: "Cut", createdBy: { type: "scarlet", name: "Scarlet" }, state: "running" });
+  createTask(ctx, { projectId: elsewhere.id, kind: "edit", agent: "api", instruction: "Cut", createdBy: { type: "scarlet", name: "AirWaves" }, state: "running" });
   saveTask(ctx, { ...ctx.repos.tasks.get(pass.id)!, state: "done" });
   expect(await remove()).toEqual([200, undefined]);
   expect(ctx.repos.projects.getMedia("broken")).toBeNull();

@@ -46,7 +46,7 @@ it("clears a field sent as null, and keeps one the patch leaves out", async () =
   expect(stored.noteCleanup).not.toHaveProperty("model");
 });
 
-it("says whether the speech model the editor pointed to is there, and otherwise where Scarlet's own stands", async () => {
+it("says whether the speech model the editor pointed to is there, and otherwise where AirWaves's own stands", async () => {
   expect(await status()).toEqual({ selected: "crisperwhisper", state: "missing", fallback: false, reason: expect.stringContaining("unavailable") });
   app.ctx.whisperCli = process.execPath;
   expect(await status()).toEqual({ ...await app.ctx.whisperModel.status(), selected: "crisperwhisper", active: "whispercpp",

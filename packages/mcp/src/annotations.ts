@@ -5,7 +5,7 @@ import type { ScarletToolName } from "@scarlet/shared";
  * MCP tool annotations. Harnesses use them to run reads in parallel, retry
  * idempotent calls and decide which calls need approval.
  *
- * Every Scarlet edit creates a new timeline version and stays reversible, so no
+ * Every AirWaves edit creates a new timeline version and stays reversible, so no
  * tool is marked destructive. "Read" tools may start background preparation
  * (transcripts, scans, previews) but never change the project.
  */

@@ -150,7 +150,7 @@ const KEPT_TIMELINES = 6;
 
 /**
  * The timelines a pass's cuts are carried across. Each working cut the window shows is kept as it goes by, so the
- * version before Scarlet's own edit between two parts is at hand the moment the next part arrives, and a card open on
+ * version before AirWaves's own edit between two parts is at hand the moment the next part arrives, and a card open on
  * a call stays open. Any other version wanted is asked for.
  */
 function useCarryingFootage(projectId: string, working: Timeline | null | undefined, wanted: readonly string[], fps: number): Footage {
@@ -195,11 +195,11 @@ interface OpenPass {
   editNumbers: ReadonlyMap<string, { n: number; name: string }>;
   openCall(index: number): void;
   running: boolean;
-  /** Scarlet is still on the pass and has checked none of its staged cuts, so there is nothing yet to apply or schedule. */
+  /** AirWaves is still on the pass and has checked none of its staged cuts, so there is nothing yet to apply or schedule. */
   unchecked: boolean;
-  /** The calls are made and the pass goes in when Scarlet finishes. */
+  /** The calls are made and the pass goes in when AirWaves finishes. */
   scheduled: boolean;
-  /** Scarlet is revising one cut. The other calls stay open meanwhile. */
+  /** AirWaves is revising one cut. The other calls stay open meanwhile. */
   revising: boolean;
   deciding: boolean;
   error: string;
@@ -213,7 +213,7 @@ type LocatedReview = { head: string | null; markers: ReviewMarker[] };
 type ReportReviewMarkers = (threadId: string, review?: LocatedReview) => void;
 
 interface ChatActions {
-  /** How many requests about one cut or edit Scarlet is working on at this moment. It works on several at once when each is about its own. */
+  /** How many requests about one cut or edit AirWaves is working on at this moment. It works on several at once when each is about its own. */
   atOnce?: number;
   showing?: ThreadEdit;
   /** The request whose own row opened the edit that's showing. Opened from a list or the timeline, there is none. */
@@ -264,7 +264,7 @@ interface ChatActions {
 }
 
 /**
- * A rule Scarlet picked up from this request, under what the request did: the skill it is for and the rule in quotes,
+ * A rule AirWaves picked up from this request, under what the request did: the skill it is for and the rule in quotes,
  * then Review, which opens Learnings at it. Nothing is decided here; the line goes once the editor decides in Learnings.
  */
 function LearnedLine({ learning, onReview }: { learning: Learning; onReview?(id: string): void }) {
@@ -282,8 +282,8 @@ function LearnedLine({ learning, onReview }: { learning: Learning; onReview?(id:
 }
 
 /**
- * Scarlet's note in the card's row: up to two lines, and a longer note opens in full on a click and folds again on the
- * next. A call Scarlet hasn't checked yet says so first.
+ * AirWaves's note in the card's row: up to two lines, and a longer note opens in full on a click and folds again on the
+ * next. A call AirWaves hasn't checked yet says so first.
  */
 function EditNote({ text, unchecked }: { text: string; unchecked?: boolean }) {
   const ref = useRef<HTMLHeadingElement>(null);
@@ -324,7 +324,7 @@ function TranscriptLink({ open, toggle, disabled }: { open: boolean; toggle(): v
     <Icon name="diff" size={14} /></button>;
 }
 
-/** Where the decisions were, on a call that's with Scarlet: at work on it, asking about it, or not started yet. */
+/** Where the decisions were, on a call that's with AirWaves: at work on it, asking about it, or not started yet. */
 function CallStanding({ run, answer }: { run?: Task; answer?(): void }) {
   const state = run?.state;
   return state === "queued" ? <span className="edit-card-status" role="status">Queued</span>
@@ -357,7 +357,7 @@ function SourceNote({ projectId, source }: { projectId: string; source: ProjectS
   if (gone) return null;
   return <section className="simple-turn simple-source-note" aria-label="New project">
     <div className="simple-msg from-scarlet">
-      <span className="simple-who">Scarlet</span>
+      <span className="simple-who">AirWaves</span>
       <p className="said">New project, made from <SourceName source={source} />. That video isn’t changed.</p>
       <button type="button" className="btn-icon simple-source-dismiss" aria-label="Dismiss" title="Dismiss"
         // Through the store, so the project it holds says the note is dismissed and it doesn't come back with the chat.
@@ -368,7 +368,7 @@ function SourceNote({ projectId, source }: { projectId: string; source: ProjectS
 }
 
 /**
- * A call's decisions and their keys: Approve (A) makes the change Scarlet proposed, Skip (S) leaves it out, and the
+ * A call's decisions and their keys: Approve (A) makes the change AirWaves proposed, Skip (S) leaves it out, and the
  * chosen one stays pressed. A revision that left the cut's footage in proposes keeping it, so there Approve keeps it
  * and Skip cuts as first staged. Revise (R) aims the message box at this call, so feedback on it goes ahead of
  * requests waiting for the pass.
@@ -404,7 +404,7 @@ interface PassCall { index: number; askOrder?: number;
   /** Where its cut is on the working cut. None while it isn't there as it was staged, so nothing on the timeline is its. */
   at?: number;
   summary: string; state: CallState; version: number;
-  /** The request about this cut that Scarlet is on, or the next one waiting, while it's sent back. */
+  /** The request about this cut that AirWaves is on, or the next one waiting, while it's sent back. */
   run?: Task;
   /** What the last version was and the note that sent it back, for a revised call. */
   earlier?: Revision }
@@ -429,7 +429,7 @@ const shortTitle = (title: string) => {
 };
 
 /**
- * Scarlet's words about a change. Applied edits are listed once for the whole thread, after the last reply,
+ * AirWaves's words about a change. Applied edits are listed once for the whole thread, after the last reply,
  * so a reply carries only what needs the editor and, for a proposal, how to play it.
  */
 function ChangeReply({ thread, entry, actions }: { thread: Thread; entry: Extract<ThreadEntry, { kind: "change" }>; actions: ChatActions }) {
@@ -439,7 +439,7 @@ function ChangeReply({ thread, entry, actions }: { thread: Thread; entry: Extrac
   const pass = pending && isDialoguePass(change);
   const reviewing = actions.reviewingId === change.id;
   return <div className="simple-msg from-scarlet">
-    <span className="simple-who">Scarlet</span>
+    <span className="simple-who">AirWaves</span>
     {/* A suggestion still waiting has no Play link under it: its one line is the control, led by the play mark. */}
     {pending && !pass ? <button type="button" className={reviewing ? "simple-suggest is-on" : "simple-suggest"} aria-pressed={reviewing}
       title={reviewing ? "Stop showing this suggestion" : "Play this suggestion"} onClick={() => reviewing ? actions.stopShowing() : actions.review(change)}>
@@ -447,7 +447,7 @@ function ChangeReply({ thread, entry, actions }: { thread: Thread; entry: Extrac
   </div>;
 }
 
-/** Scarlet is on a request now, as against one waiting its turn or for an answer. */
+/** AirWaves is on a request now, as against one waiting its turn or for an answer. */
 const isWorking = (state?: Task["state"]) => state === "claimed" || state === "running";
 const noRejected: Omit<ThreadEdit, "at">[] = [];
 
@@ -467,7 +467,7 @@ const noSpent: Spent = new Map();
 
 /**
  * A finished request with one result opens its edit on the timeline. A collection opens a list to choose from. One
- * edit, or the edits so far while Scarlet works, is a link after the sentence (`place` "inline"). A finished
+ * edit, or the edits so far while AirWaves works, is a link after the sentence (`place` "inline"). A finished
  * collection is See all, a tab in the row where For you and See all sit when something waits on the editor
  * (`place` "tab"), so it is in the same place either way. Each place draws only its own.
  */
@@ -495,7 +495,7 @@ function EditResultLink({ thread, actions, single, count, soFar, list: [open, se
       title={current ? "Close this edit (Esc)" : "Show on the timeline"} onClick={letGo(toggleEdit)}>{current ? "Close edit" : "See edit"}</button>;
   }
   return <button type="button" className="simple-pass-toggle" data-so-far aria-expanded={expanded}
-    title={expanded ? "Hide the edits" : "Show the edits Scarlet has made so far, in order"}
+    title={expanded ? "Hide the edits" : "Show the edits AirWaves has made so far, in order"}
     onClick={() => { if (!expanded) reveal(); setOpen(expanded ? undefined : "all"); }}>{expanded ? "Hide" : `See ${count} ${count === 1 ? "edit" : "edits"} so far`}</button>;
 }
 
@@ -545,9 +545,9 @@ function Made({ parts, link }: { parts: readonly SentencePart[]; link?: ReactNod
 
 /**
  * What a dialogue pass made, as the rows of its block. While its calls wait they are listed without a click, each by
- * its number with Scarlet's note and, once decided or sent back, a word for where it stands. For you shows that list
+ * its number with AirWaves's note and, once decided or sent back, a word for where it stands. For you shows that list
  * by default and opens the first one still waiting when pressed. See all lists every edit, calls included, in timeline
- * order. Once Scarlet is done, what the pass applied is one sentence above the list. A row is one line and opens its
+ * order. Once AirWaves is done, what the pass applied is one sentence above the list. A row is one line and opens its
  * edit or call in the card on the timeline, where Approve and Skip move on to the next call. A request about one cut
  * or edit that is still in the chat (`nests`) sits directly under that cut's or edit's row. `aside` is what the run
  * used, when that shows.
@@ -567,11 +567,11 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
   const onRow = actions.showing ? editKey(actions.showing) : actions.listening?.key;
   useEffect(() => { list.current?.querySelector('[aria-current="true"]')?.scrollIntoView?.({ block: "nearest" }); }, [onRow, open]);
   const pass = actions.pass?.threadId === thread.id ? actions.pass : undefined;
-  // An edit sent back for revision waits on Scarlet, not on the editor.
+  // An edit sent back for revision waits on AirWaves, not on the editor.
   const flagged = useMemo(() => edits.filter(e => e.check && !reviewed(e) && !revising(e)), [edits, reviewed, revising]);
   const openCalls = pass?.calls.filter(c => c.state === "open").length ?? 0;
   const need = openCalls + flagged.length;
-  // One sent back for revision waits on Scarlet, and keeps its row in the list of what needs the editor until it is back.
+  // One sent back for revision waits on AirWaves, and keeps its row in the list of what needs the editor until it is back.
   const sentBack = useMemo(() => edits.filter(e => e.check && !reviewed(e) && revising(e)).length, [edits, reviewed, revising]);
   const totalRows = edits.length + (pass?.calls.length ?? 0);
   // While the pass makes its final check of the finished cut, the fixes it applies are marked New in the list: nothing
@@ -602,11 +602,11 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
   // Every hook is above this line: the pass's first cuts arriving must not change how many hooks run.
   if (!edits.length && !pass) return null;
   const count = edits.length || pass?.cuts || 0;
-  // While Scarlet is still on a pass that has asked about no cut, nothing needs the editor. The block is the pass's
+  // While AirWaves is still on a pass that has asked about no cut, nothing needs the editor. The block is the pass's
   // stages then: no count of the cuts staged so far, which would sit still between its parts, and nothing to schedule.
   const quiet = !!pass?.running && !pass.calls.length;
-  // Every call is made but the pass isn't applied: it applies now or, while Scarlet still checks, when it finishes.
-  // Under revision it waits for the revised cut to come back as a call. Before Scarlet has checked any staged cut there
+  // Every call is made but the pass isn't applied: it applies now or, while AirWaves still checks, when it finishes.
+  // Under revision it waits for the revised cut to come back as a call. Before AirWaves has checked any staged cut there
   // is nothing to schedule: its calls haven't arrived. Only its calls hold it: a cut it already applied that asks for a
   // look is kept on its own card, and waits there whether or not the rest of the pass has gone in.
   const waiting = pass && !quiet && !openCalls && !pass.scheduled && !pass.revising && !pass.unchecked;
@@ -620,7 +620,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
       // A revision on its way: the row says so until the new version lands, whether or not the editor had kept the
       // edit. A cut the pass applied through its calls counts as kept, so a guard on that left its row as it was.
       const sent = revising(e);
-      // One that came back revised with no reason from Scarlet says so until it is kept, as any other list's row does.
+      // One that came back revised with no reason from AirWaves says so until it is kept, as any other list's row does.
       const revised = e.check === REVISED_CHECK && !seen && !sent;
       // Where it stands, when it isn't simply waiting: the word a row among the calls ends on. In the list of every edit
       // it follows the row's amount, as in any other request's list, and the amount stays.
@@ -630,7 +630,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
       // Listed with the calls, it has the number it has among them.
       return [{ key, at, displayAt, mark: displayAt as number | undefined, hover: { threadId: thread.id, editKey: key }, label: (e.reason && e.summary) || e.label, n: 0, num: pass?.editNumbers.get(key)?.n,
         state: word, value: editRemoved(e) ?? editRowWord(e), word, revised, rejected: false,
-        // Scarlet is on that revision now, so its word moves; one still waiting its turn sits still.
+        // AirWaves is on that revision now, so its word moves; one still waiting its turn sits still.
         busy: isWorking(sent),
         needs: !!e.check && !seen && !sent, sentBack: !!e.check && !seen && !!sent,
         // Ticked once the editor has kept it: a flagged edit they reviewed, or any edit they pressed Keep on.
@@ -644,7 +644,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
       state: c.state === "approved" ? "Approved" : c.state === "skipped" ? "Skipped" : c.state === "revising" ? "Revising…" : c.version > 1 ? `v${c.version}` : undefined,
       value: c.state === "approved" ? "Approved" : c.state === "skipped" ? "Skipped" : c.state === "revising" ? "Revising…" : undefined,
       busy: c.state === "revising" && isWorking(c.run?.state),
-      version: c.version > 1 ? c.version : 0, title: c.earlier && `v${c.version - 1}: ${c.earlier.reason ?? "Scarlet’s earlier version."}${c.earlier.note ? `\nYou: “${c.earlier.note}”` : ""}`,
+      version: c.version > 1 ? c.version : 0, title: c.earlier && `v${c.version - 1}: ${c.earlier.reason ?? "AirWaves’s earlier version."}${c.earlier.note ? `\nYou: “${c.earlier.note}”` : ""}`,
       on: listening?.changeId === pass!.change.id && listening.index === c.index, word: undefined, revised: false, rejected: false, fresh: false,
       open: c.state === "revising" ? undefined : () => pass!.openCall(c.index) })),
     // An edit the editor rejected is out of the video. Its row stays where it was in the list of every edit, with a ×
@@ -672,12 +672,12 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     setOpen(undefined);
     if (!rows.some(row => row.on && row.needs)) (calls.length ? calls : rows).find(row => row.needs)?.open?.();
   };
-  // What it came to, once Scarlet is done, while calls still wait too: what it applied so far, with the link that opens
+  // What it came to, once AirWaves is done, while calls still wait too: what it applied so far, with the link that opens
   // every edit after it. Until its cuts are applied, a pass that finished with no call to make says how many it proposes.
   const made: SentencePart[] | undefined = edits.length ? working ? undefined : madeSentence(edits, lengthLabel, true)
     : calls.length || quiet ? undefined : [{ strong: plural(count, "cut") }, " proposed."];
   // The list of every edit goes by moments, at the time of the first of its edits. The moment's row stands for all of
-  // them: ticked once they're all kept, Revising… while Scarlet is on one, and lit while the moment is open. Its own
+  // them: ticked once they're all kept, Revising… while AirWaves is on one, and lit while the moment is open. Its own
   // edits show only once it is unfolded, or while one of them is open on its own, each without a time: they all play
   // in the moment's stretch. For you and the calls stay one edit a row.
   type Row = (typeof rows)[number];
@@ -715,7 +715,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
       data-log-control="open-pass-item" data-log-label={moment ? "Moment" : "Pass item"} disabled={!row.open} title={row.title || row.label} onClick={letGo(() => row.open?.())}
       aria-label={more ? `${clockLabel(row.displayAt)} ${row.label}, ${more.replace("+ ", "and ")}` : row.rejected ? `${clockLabel(row.displayAt)} ${row.label}, rejected` : undefined}
       onPointerEnter={() => actions.lightMark(row.mark, row.hover)} onPointerLeave={() => actions.lightMark()}>
-      {/* The calls are the short list: a call is its number, Scarlet's note and, once it's settled, sent back or
+      {/* The calls are the short list: a call is its number, AirWaves's note and, once it's settled, sent back or
           revised, a word for where it stands. An edit that asks for a look is listed with them by its number too,
           counted on from the calls, so the list is one run of numbers. The full list keeps each row's time, version
           and amount: the time is bold amber on a tint while the row needs the editor, and a decided row is ticked. */}
@@ -731,7 +731,7 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
       {filter === "calls" ? row.state && <span className={row.busy ? "simple-pass-value working-text" : "simple-pass-value"} title={spent.get(row.key)}>{row.state}</span>
         : row.value && <span className={row.busy && !row.word ? "simple-pass-value working-text" : "simple-pass-value"} title={spent.get(row.key)}>{row.value}</span>}
       {/* An applied edit sent back, or come back revised, says so after its amount, as a row of any other request's
-          list does: amber once it is back and waits on the editor, quiet while Scarlet is on it. */}
+          list does: amber once it is back and waits on the editor, quiet while AirWaves is on it. */}
       {filter !== "calls" && row.word && <span className={`simple-pass-check${row.revised ? "" : " is-kept"}${row.busy ? " working-text" : ""}`} title={spent.get(row.key)}>{row.word}</span>}
     </button>
     {/* Folded, a request about any of the moment's edits sits under the moment's row; unfolded, under its edit's. */}
@@ -760,8 +760,8 @@ function PassSummary({ projectId, thread, edits, rejected = noRejected, actions,
     {nests.filter(nest => !placed.has(nest.key)).map(nest => nest.node)}
     <div className="simple-pass-line req-row">
       {!made && seeEvery}
-      {/* The pass goes in once its calls are decided and Scarlet finishes checking. Only a failed apply offers Retry. */}
-      {pass?.scheduled && <span className="simple-pass-ok">Goes in when Scarlet finishes</span>}
+      {/* The pass goes in once its calls are decided and AirWaves finishes checking. Only a failed apply offers Retry. */}
+      {pass?.scheduled && <span className="simple-pass-ok">Goes in when AirWaves finishes</span>}
       {waiting && pass.deciding && <span className="simple-pass-ok">Applying…</span>}
       {waiting && !pass.deciding && !!pass.error && <button type="button" className="simple-link" onClick={pass.apply}>Retry</button>}
       <span className="req-right">{aside}</span>
@@ -814,7 +814,7 @@ function ThreadResult({ projectId, thread, edits, rejected, actions, aside, work
     if (showingInList && !wasShowing.current) setOpen(o => shownEdit!.check && !reviewed(shownEdit!) ? o ?? "need" : "all");
     wasShowing.current = showingInList;
   }, [showingInList]); // eslint-disable-line react-hooks/exhaustive-deps
-  // One sent back for revision waits on Scarlet, and keeps its row in the list of what needs the editor until it is back.
+  // One sent back for revision waits on AirWaves, and keeps its row in the list of what needs the editor until it is back.
   const sentBack = useMemo(() => edits.filter(e => e.check && !reviewed(e) && revising(e)).length, [edits, reviewed, revising]);
   // The list of what needs the editor has nothing to show once nothing does.
   useEffect(() => { if (open === "need" && !flagged.length && !sentBack) setOpen(undefined); }, [open, flagged.length, sentBack]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -880,8 +880,8 @@ const inFullScreen = () => !!document.fullscreenElement || !!document.querySelec
 const PAUSED_HINT = "Editing is paused. Resume picks this up where it left off.";
 
 /**
- * One thread's requests. Each is the editor's message, then what Scarlet is doing about it or what it made. The request
- * Scarlet is on now, or the pass waiting on the editor's calls, is `pinned`: it draws above the message box, in
+ * One thread's requests. Each is the editor's message, then what AirWaves is doing about it or what it made. The request
+ * AirWaves is on now, or the pass waiting on the editor's calls, is `pinned`: it draws above the message box, in
  * `pinHost`, and takes its place in the chat when it's done. A request still waiting its turn isn't here at all; it's in
  * the tray on the message box.
  */
@@ -976,7 +976,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
   }, [thread]);
   const runs = useMemo(() => threadRuns(thread), [thread]);
   const runOf = new Map(runs.flatMap(run => run.attempts.map(t => [t.id, run] as const)));
-  // The rules this thread's requests taught Scarlet that still wait on the editor's call.
+  // The rules this thread's requests taught AirWaves that still wait on the editor's call.
   const learned = useProjectStore(useShallow(s => (s.current?.learnings ?? []).filter(l => l.state === "suggested" && runOf.has(l.taskId))));
   // The thread's edits list on the card of the run that made them: the dialogue pass, else the first request. A
   // request about one cut never holds the pass: when its revision is the latest proposal, the pass stays on the card
@@ -1006,7 +1006,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
       case "answer":
         return <div key={i} className="simple-msg from-you"><span className="simple-who">You</span><Said text={entry.text} /></div>;
       case "agent":
-        return <div key={i} className="simple-msg from-scarlet"><span className="simple-who">Scarlet</span><Said text={entry.fullText ?? entry.text} /></div>;
+        return <div key={i} className="simple-msg from-scarlet"><span className="simple-who">AirWaves</span><Said text={entry.fullText ?? entry.text} /></div>;
       case "change":
         // An applied change with no request behind it says what it did once: in the sentence over its edits.
         if (entry.change.state === "approved" && hasRows) return null;
@@ -1033,7 +1033,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     if (target?.edit) return editKey(target.edit);
     return target?.call !== undefined && target.changeId === waitingPass?.id ? `call/${target.call}` : undefined;
   };
-  // A request that stopped early is overtaken once Scarlet has begun a later request about the same cut or edit, or the
+  // A request that stopped early is overtaken once AirWaves has begun a later request about the same cut or edit, or the
   // pass it was a call of has been applied or put away. Picking it up again would then work on something already asked
   // again or settled. A call on its cut alone doesn't take it away: nothing records when a call was made, so one made
   // before the cut was sent back reads the same as one made since, and a revision of an approved cut that couldn't
@@ -1051,7 +1051,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
 
   // A request about one cut or edit leaves the conversation once it's done: what it did is on that cut or edit, in its
   // list and on its card. One that stopped early, or left a suggestion to play, stays with its one action. So does one
-  // that changed nothing and said why, or whose new version couldn't be prepared: Scarlet's words are the only place
+  // that changed nothing and said why, or whose new version couldn't be prepared: AirWaves's words are the only place
   // that says so. One that stopped early leaves once it is overtaken: left there it would have no action to offer.
   const settled = (run: Run) => {
     if (run === owner || !aboutOne(run) || pinned === run.root) return false;
@@ -1059,10 +1059,10 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     // One paused for its transcripts ended as done, and stopped early all the same: it stays, with its way to finish.
     if (run.task.state !== "done" || !!runEnded(run.task) || !targets.get(run.root)) return false;
     const final = finals.get(run.task.id);
-    // Done with no change and not a word from Scarlet: there is nothing for it to say by staying.
+    // Done with no change and not a word from AirWaves: there is nothing for it to say by staying.
     if (!final) return !entries.some(e => (e.kind === "agent" || e.kind === "question" || e.kind === "system") && !!e.taskId && run.attempts.some(t => t.id === e.taskId));
-    // A version that couldn't be prepared changed nothing either, and only Scarlet's words here say so. Nor has a
-    // suggestion Scarlet is to make again changed anything yet: the request stays to say so while that redo waits.
+    // A version that couldn't be prepared changed nothing either, and only AirWaves's words here say so. Nor has a
+    // suggestion AirWaves is to make again changed anything yet: the request stays to say so while that redo waits.
     if (final.state === "failed" || thread.tasks.some(t => isRedo(t) && runIsActive(t) && t.context.changeId === final.id)) return false;
     return !(final.state === "ready" && !isOpenPass(final, allTasks));
   };
@@ -1104,25 +1104,25 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     const ids = new Set(run.attempts.map(t => t.id));
     const mine = entries.filter(e => !!e.taskId && ids.has(e.taskId) && !(e.kind === "change" && folded.has(e.change.id)));
     const request = mine.find((e): e is Extract<ThreadEntry, { kind: "request" }> => e.kind === "request");
-    // Scarlet's words for the editor: its reply, a question and the answer it got, a suggestion to play, why it stopped.
+    // AirWaves's words for the editor: its reply, a question and the answer it got, a suggestion to play, why it stopped.
     const said: ReactNode[] = [];
     // Whether those words say what the request came to: a reply, or a suggestion to play.
     let told = false;
     // A suggestion of this request's is waiting to be played: its heading says so.
     let proposing = false;
     let recovery: { label: string; run(): void } | undefined;
-    // While Scarlet is on a request about one cut or edit, the request shows its work and not what Scarlet wrote about
-    // it: that reads on the cut or edit once it lands, and the request then leaves. Scarlet's redo of the request's
+    // While AirWaves is on a request about one cut or edit, the request shows its work and not what AirWaves wrote about
+    // it: that reads on the cut or edit once it lands, and the request then leaves. AirWaves's redo of the request's
     // suggestion is the exception: nothing lands to say why the request is at work again, so its one line stays.
     const quiet = run !== owner && aboutOne(run) && runIsActive(task) && !isRedo(task);
-    // Scarlet answers the editor's note and then closes the request, mostly in the same words. The closing message is
+    // AirWaves answers the editor's note and then closes the request, mostly in the same words. The closing message is
     // the reply; what it wrote on the note shows only while there is no other.
     const closed = entries.some(e => e.kind === "agent" && !e.onNote && ids.has((e.taskId ?? e.replyTo)!));
-    // While every edit is listed, the list takes the place of Scarlet's reply; putting it away brings the reply back. The
+    // While every edit is listed, the list takes the place of AirWaves's reply; putting it away brings the reply back. The
     // short list of what needs the editor, shown without a click, leaves the reply where it is.
     const listing = run === owner && hasRows && passList[0] === "all";
     mine.forEach((e, i) => {
-      // All of what Scarlet said: folded it keeps to two lines, and a click opens the rest.
+      // All of what AirWaves said: folded it keeps to two lines, and a click opens the rest.
       if (e.kind === "agent") { if (!quiet && !(e.onNote && closed)) { told = true; if (!listing) said.push(<Said key={i} className="req-say" text={e.fullText ?? e.text} />); } }
       else if (e.kind === "question") said.push(<p key={i} className={e.answered ? "req-say is-quiet" : "req-say"}>{e.text}
         {!e.answered && <button type="button" className="simple-link is-warn" onClick={() => actions.reply(thread)}>Answer</button>}</p>);
@@ -1171,14 +1171,14 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
       : !!call && actions.listening?.changeId === pass!.change.id && actions.listening.index === call.index;
     const open = aimed ? () => actions.openEdit(thread, aimed, run.root) : call ? () => pass!.openCall(call.index)
       : final?.state === "approved" && run !== owner ? () => actions.play(thread, final) : undefined;
-    // The block holds the place above the message box while Scarlet is on it, or on a request drawn inside it.
+    // The block holds the place above the message box while AirWaves is on it, or on a request drawn inside it.
     const isPinned = !inside && (pinned === run.root || (!!pinned && nests.length > 0 && nested.has(pinned)));
-    // The heading is the editor's words, with no name or number: "Edit 14" anywhere is an edit Scarlet made. A request
+    // The heading is the editor's words, with no name or number: "Edit 14" anywhere is an edit AirWaves made. A request
     // about one cut or edit says which before its words, in the tag the message box showed: "Cut 2" for a call, by its
     // time otherwise. A request about a whole edit says which the same way.
     const tag = request?.revisionLabel ? tagOf(tagFor(request) ?? request.revisionLabel) : undefined;
     const about = aboutOne(run) ? actions.cutName?.(aimOf(run).context) ?? tag : undefined;
-    // Where the request stands, at the right of its heading: a dot while Scarlet asks, a word once it stopped early or
+    // Where the request stands, at the right of its heading: a dot while AirWaves asks, a word once it stopped early or
     // left a suggestion, and Paused while editing waits for Resume. The review count appears on For you.
     const ended = runEnded(task);
     const editsProject = isProjectEditTask(task);
@@ -1186,14 +1186,14 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     const stands = runIsActive(task) ? task.state === "waiting_for_user" ? <span className="unit-dot" aria-hidden />
         : paused ? <span className="unit-word" title={PAUSED_HINT}>Paused</span> : null
       : ended ? <span className="unit-word">{ended.replace(/ · .*$/, "")}</span> : proposing ? <span className="unit-word">Suggestion</span> : null;
-    // Scarlet works on several cuts or edits at once, an agent on each. The block that holds one of them says how many
+    // AirWaves works on several cuts or edits at once, an agent on each. The block that holds one of them says how many
     // there are, in the heading's place for where a request stands: each has its own row, and some may be out of view.
     const atOnce = actions.atOnce ?? 0;
     const among = !inside && atOnce > 1 && [run, ...(run === owner ? runs.filter(r => nested.has(r.root)) : [])]
       .some(r => aboutOne(r) && isWorking(r.task.state));
-    const standing = stands ?? (among ? <span className="unit-word" title={`Scarlet is working on ${atOnce} cuts or edits at the same time.`}>Working on {atOnce} at once</span> : null);
+    const standing = stands ?? (among ? <span className="unit-word" title={`AirWaves is working on ${atOnce} cuts or edits at the same time.`}>Working on {atOnce} at once</span> : null);
     const stop = runIsActive(task) && !(waitingToStart(task) && run.root === task.id) ? () => attempt(run.root, cancelTask(task.id)) : undefined;
-    // A request that edits the video has its controls at the band's right for as long as Scarlet has it: Pause, which
+    // A request that edits the video has its controls at the band's right for as long as AirWaves has it: Pause, which
     // holds all editing in the project, then Resume once it is paused, which picks the paused work up first; and Stop,
     // which ends just this one, paused or not. Each is an icon alone, named the moment the pointer rests on it.
     const hold = editingPaused ? () => attempt(run.root, resumeEditing(projectId)) : () => attempt(run.root, stopEditing(projectId));
@@ -1209,10 +1209,10 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
     const headingEnd = <><RequestMetrics attempts={run.attempts} events={events} />{requestControl}</>;
     const bundle = <RunBundle task={task} events={events[task.id] ?? []} changes={thread.changes} finalChange={final} banded={!!request} callNumber={actions.callNumber}
         say={said.length ? <div className="req-said">{said}</div> : undefined} told={told} result={rows} recovery={recovery}
-        // Under its call's row, that row is the cut it saved, with Scarlet's note: the note isn't said again under it.
+        // Under its call's row, that row is the cut it saved, with AirWaves's note: the note isn't said again under it.
         // A pass's calls are listed for as long as it waits, so a request keyed to one is always under its row.
         summary={target?.note} listedAbove={inside && !!nested.get(run.root)?.startsWith("call/")} showing={showingIt} onOpen={proposing ? undefined : open}
-        // Scarlet's own requests have no heading. Their menu stays with the active run's row.
+        // AirWaves's own requests have no heading. Their menu stays with the active run's row.
         actions={request ? undefined : editActions} onStop={request || editsProject ? undefined : stop} paused={paused}
         // Only the thread's last run can be finished, and not while another request in it is under way.
         {...(task === thread.tasks.at(-1) && !thread.active && !thread.question && {
@@ -1248,7 +1248,7 @@ function Turn({ projectId, thread, actions, pinned, pinHost, list: passList, rep
       {learnedIn(run).map(l => <LearnedLine key={l.id} learning={l} onReview={actions.reviewLearning} />)}
       {wrong}
     </div>;
-    // Scarlet's closing words on what it applied read under the block and go where it goes: above the message box
+    // AirWaves's closing words on what it applied read under the block and go where it goes: above the message box
     // with it, and out of the chat with a request about one cut or edit that has left. The open list takes their place.
     const replies = listing ? [] : entries.flatMap((e, i) => closingReply(e) && ids.has(e.replyTo!) ? [loose(e, i)] : []);
     // Always the same shape, so the block isn't mounted anew when its replies give way to its list and come back.
@@ -1346,7 +1346,7 @@ export function SimpleWorkspace() {
   // The rule a line in the chat opened Learnings at.
   const [learnFocus, setLearnFocus] = useState<string>();
   const [panel, setPanel] = useState<Panel>(() => { const asked = search.get("panel"); return asked === "media" || asked === "history" ? asked : null; });
-  // The cut, edit or call that was open when Scarlet last closed arrives the same way, as ?open=, and is read once too.
+  // The cut, edit or call that was open when AirWaves last closed arrives the same way, as ?open=, and is read once too.
   const [reopen, setReopen] = useState(() => search.get("open") ?? undefined);
   useEffect(() => {
     if (!search.has("panel") && !search.has("open")) return;
@@ -1355,7 +1355,7 @@ export function SimpleWorkspace() {
     rest.delete("open");
     setSearch(rest, { replace: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  // What Scarlet opens again by itself at launch doesn't start playing: its card comes back with the video paused on
+  // What AirWaves opens again by itself at launch doesn't start playing: its card comes back with the video paused on
   // it, as if the editor had paused there. Anything the editor then does opens and plays as ever.
   const quietOpen = useRef(false);
   useEffect(() => {
@@ -1394,7 +1394,7 @@ export function SimpleWorkspace() {
     return () => window.clearTimeout(timer);
   }, [landingEnds]);
 
-  // The request Scarlet is asking about: the question at the front of the line. With no cut or edit open, the next
+  // The request AirWaves is asking about: the question at the front of the line. With no cut or edit open, the next
   // message answers it.
   const asking = tasks.find(t => t.kind !== "transcribe" && t.state === "waiting_for_user");
   const askThread = asking && threads.find(t => t.question?.id === asking.id);
@@ -1434,7 +1434,7 @@ export function SimpleWorkspace() {
   const firstCuts = useMemo(() => focusThread && firstCutDeliveries(focusThread), [focusThread]);
   // The request's own edits and the ones it flagged that another request made.
   const focusChanges = useMemo(() => [...focusThread?.changes ?? [], ...focusThread?.flagged ?? []], [focusThread]);
-  // A proposal Scarlet is waiting on. A dialogue pass waits where it is until its calls are made; a suggestion opens in
+  // A proposal AirWaves is waiting on. A dialogue pass waits where it is until its calls are made; a suggestion opens in
   // the card on the timeline when its line is pressed. Neither stands in for the other: a suggestion that plays
   // leaves the pass its calls, its block and its place above the message box (2026-11-08: they went until Esc).
   const [reviewId, setReviewId] = useState<string>();
@@ -1492,13 +1492,13 @@ export function SimpleWorkspace() {
   // The passes already applied, or set to go in, without the editor pressing anything: each is tried once.
   const autoApplied = useRef(new Set<string>());
 
-  // Keep or Cut for each staged cut. Undecided ones follow Scarlet: once it has assessed the pass,
+  // Keep or Cut for each staged cut. Undecided ones follow AirWaves: once it has assessed the pass,
   // footage stays unless it said cut. Without assessments every proposed cut applies.
   // Calls are saved on the proposal, so a reload or the pass's next part keeps them. This holds them until the save lands.
   const [unsaved, setUnsaved] = useState<Record<string, { calls: Record<number, CutChoice>; applyWhenDone?: boolean }>>({});
   const choicesOf = (change: Change) => unsaved[change.id]?.calls ?? savedChoices(change);
   const applyWhenDone = (change: Change) => unsaved[change.id]?.applyWhenDone ?? !!change.applyWhenDone;
-  // Only a pass Scarlet is still working on can be set to apply when it finishes. Once its run has stopped, the staged
+  // Only a pass AirWaves is still working on can be set to apply when it finishes. Once its run has stopped, the staged
   // cuts it never checked are the editor's calls, and a schedule sent along with one of them would apply over the rest.
   // The last save sent for each pass, what a save that failed said, and the calls of each pass that the last failed save
   // carried and no save has carried since: those are back with the editor, and the line saying why stays until they're saved.
@@ -1548,12 +1548,12 @@ export function SimpleWorkspace() {
       });
     }
   }
-  // A pass interrupted when Scarlet quit carries on under a new task. One with a cut revised belongs to that revision's
+  // A pass interrupted when AirWaves quit carries on under a new task. One with a cut revised belongs to that revision's
   // task, which leads back to the run that staged it: that run says whether the pass is still being worked on or
   // stopped early, and it is the request that holds the place above the message box.
   const passTask = pass && lastAttempt(stagingTask(pass, changes, tasks), tasks);
   // The request that made this version of the pass. For a pass with a cut revised that is the revision, which checks
-  // its new cut after staging it and says what it found. Until it ends the pass is still Scarlet's: the last call
+  // its new cut after staging it and says what it found. Until it ends the pass is still AirWaves's: the last call
   // schedules it, and the engine applies it when that request finishes or asks the editor about the cut instead
   // (2026-11-09: the last call applied the pass over a revision still at work, and its verdict was refused as stale).
   const passMaker = pass && lastAttempt(tasks.find(t => t.id === pass.taskId), tasks);
@@ -1591,8 +1591,8 @@ export function SimpleWorkspace() {
     if (call) return { call, index: activeIndex, previous };
   }, [passMaker, pass, passThread, changes, tasks, passOver, footage]); // eslint-disable-line react-hooks/exhaustive-deps
   // A revision sent while the pass still runs can't replace it yet, so it waits in the queue as a request about one cut.
-  // That call waits on Scarlet now, not on the editor, just like the cut being revised.
-  // For each such cut, the request on it: the one Scarlet has started, else the first one waiting.
+  // That call waits on AirWaves now, not on the editor, just like the cut being revised.
+  // For each such cut, the request on it: the one AirWaves has started, else the first one waiting.
   const cutRuns = new Map<number, Task>();
   if (pass) for (const t of tasks) {
     if (!runIsActive(t) || (!t.cutConflict && (t.id === pass.taskId || t.id === passTask?.id))) continue;
@@ -1668,7 +1668,7 @@ export function SimpleWorkspace() {
     if (review.original.version === timeline.version) return listening.cut;
     return cutOnWorkingCut(listening.cut, { map: makeTimeMap(review.original, timeline, fps), timeline }, fps);
   }, [listening?.cut, listening?.changeId, pass, returningCall, review, timeline, toWorkingCut, placing, fps]); // eslint-disable-line react-hooks/exhaustive-deps
-  // A changed passage can be heard on the working cut when Scarlet asks about it. A subsequent revision
+  // A changed passage can be heard on the working cut when AirWaves asks about it. A subsequent revision
   // can have its own recorded Before and After, even though the other calls still use the original pass.
   const overrideForCall = (index: number) => revisionInput?.index === index
     ? revisionInput.previous.cutEdits?.find(c => c.index === revisionInput.call.index)
@@ -1767,7 +1767,7 @@ export function SimpleWorkspace() {
   // the stretch the card zooms to has some, the call is shown on a version that still has their footage, as an applied
   // cut is on the version before it: each is a grey gap there, After steps over it as the video runs now, and a click
   // in one plays it in Before from that point. That version is the one before the earliest of the cuts joined there,
-  // so it holds all of them. A call on another version, or one Scarlet is checking again, stays as it is.
+  // so it holds all of them. A call on another version, or one AirWaves is checking again, stays as it is.
   const { listed: listedPassEdits, located: locatedPassEdits } = useThreadEdits(current.id, passThread);
   const callOnHead = !!listening && !!pass && listening.changeId === pass.id && !conflict && !versionBefore && !!heard && !!callDuration
     && !!timeline && timeline.version === head && callTimeline === timeline;
@@ -1967,7 +1967,7 @@ export function SimpleWorkspace() {
     setSourceChoice({ id: "", play: false });
   };
 
-  // Reply and Answer aim the box at one request. Sending clears it. Scarlet's own work in that request doesn't:
+  // Reply and Answer aim the box at one request. Sending clears it. AirWaves's own work in that request doesn't:
   // a run that resumes or asks a question while the editor types leaves their message aimed where it was.
   const [replyTo, setReplyTo] = useState<string>();
   const replyThread = threads.find(t => t.id === replyTo);
@@ -2083,8 +2083,8 @@ export function SimpleWorkspace() {
   useEffect(() => { setStripError(""); }, [suggestion?.id]);
   /**
    * Approve or skip the call that's playing, then move on to the next item: the next call still waiting on For you,
-   * or the next item in the list (edit or call) when See all is open. The last call applies the pass, with Scarlet's
-   * picks for the rest, or schedules it for when Scarlet finishes checking.
+   * or the next item in the list (edit or call) when See all is open. The last call applies the pass, with AirWaves's
+   * picks for the rest, or schedules it for when AirWaves finishes checking.
    */
   async function decideCut(choice: CutChoice) {
     if (!pass || !listening || listening.changeId !== pass.id || deciding) return;
@@ -2109,7 +2109,7 @@ export function SimpleWorkspace() {
     await approveReview(pass, decidedNow, !!nextEdit);
   }
   /**
-   * Apply one proposal: the pass, with the editor's calls and Scarlet's picks for the rest, or the suggestion on its card.
+   * Apply one proposal: the pass, with the editor's calls and AirWaves's picks for the rest, or the suggestion on its card.
    * `movedOn`: the editor is on an edit by the time the pass applies, which then stays open and goes on playing.
    */
   async function approveReview(change: Change | undefined, choices?: Record<number, CutChoice>, movedOn = false) {
@@ -2167,9 +2167,9 @@ export function SimpleWorkspace() {
       autoApplied.current.add(`${applied}:apply`);
       const result = await approve(applied, undefined, restored);
       if (calls && result?.outcome === "sent_back") return;
-      // A suggestion the video had moved on from is sent back: it is with Scarlet again, and its request says so in
+      // A suggestion the video had moved on from is sent back: it is with AirWaves again, and its request says so in
       // the chat, so nothing is said here.
-      if (result?.outcome === "conflict") throw new Error("The video changed while this was waiting. Scarlet is redoing it on the video as it is now.");
+      if (result?.outcome === "conflict") throw new Error("The video changed while this was waiting. AirWaves is redoing it on the video as it is now.");
       // By the time it lands the editor may be on something else. A call, an edit, another suggestion or a clip from
       // Media they opened meanwhile isn't the change that was applied: the landing neither closes nor pauses it. A pass
       // applied with none of its calls open has nothing on screen that names it, and closes as the change applied.
@@ -2444,9 +2444,9 @@ export function SimpleWorkspace() {
     openCall: index => { const call = allCalls.find(a => a.index === index); if (call) actions.listen(pass, call); },
     apply: () => void (passRunning ? saveChoices(pass, choicesOf(pass), true) : approveReview(pass)),
   };
-  // The pass goes in once nothing is left to decide: no call waits on the editor and no cut is with Scarlet. The editor's
+  // The pass goes in once nothing is left to decide: no call waits on the editor and no cut is with AirWaves. The editor's
   // last call does this itself; this covers a pass that gets there another way, such as a run that ends with every
-  // call made, or one that asked nothing. While Scarlet still checks, it is set to go in when it finishes. Each state is
+  // call made, or one that asked nothing. While AirWaves still checks, it is set to go in when it finishes. Each state is
   // tried once: an apply that fails says why, with Retry, instead of trying again by itself.
   const autoApply = !current.project.editingPaused && pass && passThread && pass.state === "ready" && !revision && !queuedCuts.size && !waitingCalls.length
     // It waits for the pass's cut list, and once that fails to load, tries so the reason shows, with Retry.
@@ -2484,7 +2484,7 @@ export function SimpleWorkspace() {
     // runs over most of the video: a press on that one scrubs, as on any point of the timeline.
     : places.flatMap((r, i): TimelineDot[] => i === shownPlace && suggestionLine ? [] : [{ time: r.start, title: `Suggestion · ${clockLabel(r.start)}`, summary: suggestion?.description,
       detail: span(r), ...i !== shownPlace && { open: () => { player.pause(); setPlace(i); } } }]);
-  // The call that's open, also one sent back for revision: it keeps its note, Before and After while Scarlet works on it.
+  // The call that's open, also one sent back for revision: it keeps its note, Before and After while AirWaves works on it.
   const openCall = listening && listening.changeId === pass?.id ? allCalls.find(a => a.index === listening.index) : undefined;
   const openCallBack = !!openCall && sentBack(openCall.index);
   // What the video shows of the open call. Nothing, while its cut isn't on the working cut to be shown.
@@ -2632,13 +2632,13 @@ export function SimpleWorkspace() {
     setCutSide(prev => ({ key: cutKey, side, take: (prev?.key === cutKey ? prev.take : 0) + 1, at }));
   };
   // On After the pass's other cuts are out of the media: they grey out, and a click plays one in Before from that point.
-  // The grey and its name already say After skips it, so the hover note only says how much it took and Scarlet's words for it.
+  // The grey and its name already say After skips it, so the hover note only says how much it took and AirWaves's words for it.
   // On Before they play, so they're only outlined.
   const gaps: TimelineGap[] = otherEdits.map(({ at, label, removed }) => ({ start: removed.start, end: removed.end,
     title: `Cut at ${at} · ${lengthLabel(removed.end - removed.start)}`, summary: label, label: `Cut at ${at}`, shortLabel: at,
     skipped: appliedSide === "after" }));
   // A call shown where the cuts around it still have their footage marks them the same way, by their time on the
-  // working cut and with Scarlet's words for the one that made each.
+  // working cut and with AirWaves's words for the one that made each.
   const callGaps: TimelineGap[] | undefined = callView?.shown.map(({ at, removed }) => {
     const made = [...locatedPassEdits ?? [], ...threadEdits].find(e => e.beforeCut && e.at !== undefined && Math.abs(e.at - at) < 1.5 / fps);
     return { start: removed.start, end: removed.end, title: `Cut at ${clockLabel(at)} · ${lengthLabel(removed.end - removed.start)}`, summary: made?.label,
@@ -2746,7 +2746,7 @@ export function SimpleWorkspace() {
     // A rejected edit is out of the video: its band is where it was, outlined, over the video as it runs without it.
     : shownEdit?.rejected ? focusAround(shownEdit.at !== undefined ? { start: shownEdit.at, end: shownEdit.at } : shownEdit.range, cutDuration ?? 0, "Rejected", { tone: "kept" })
     // Any other edit is drawn for what it did: a sound fix or a zoom keeps its footage, so After plays it.
-    // A doubt Scarlet left is the passage it asks the editor to look at or hear: amber, as what waits on them is.
+    // A doubt AirWaves left is the passage it asks the editor to look at or hear: amber, as what waits on them is.
     : reviewRange ? focusAround(reviewRange, cutDuration ?? 0, "Check", { tone: "check" })
     // A moment is drawn across all of its edits, as it plays.
     : shownEdit ? editFocus(threadTimeline.selectedMoment ? { ...shownEdit, range: momentRange(threadTimeline.selectedMoment) } : shownEdit, cutDuration ?? 0) : undefined;
@@ -3227,7 +3227,7 @@ export function SimpleWorkspace() {
   }, []);
 
   // The open edit's card sits right on top of the timeline, above the passage it cut, so watching the join and deciding
-  // happen in one place. It is one row: how many still wait, Scarlet's note as a small caption, then the controls. Its
+  // happen in one place. It is one row: how many still wait, AirWaves's note as a small caption, then the controls. Its
   // words open under that row, behind Show transcript. Keys show on hover, not in boxes.
   const removedLength = beforeCut ? beforeCut.removed.end - beforeCut.removed.start : 0;
   // Before was reached by a click on the timeline, in this cut's passage or another's.
@@ -3245,12 +3245,12 @@ export function SimpleWorkspace() {
   const appliedTarget = openTarget && focusChanges
     .some(c => c.id === openTarget.changeId && c.state === "approved") ? openTarget : undefined;
   // An edit sent back for revision has no card until its new version lands: its note and its decisions are about the
-  // version on its way out, and its row in the chat says Scarlet is on it. It stays open meanwhile: the message box is
+  // version on its way out, and its row in the chat says AirWaves is on it. It stays open meanwhile: the message box is
   // still aimed at it, ↑ ↓ step on and Esc closes it.
   // One × rejects one edit (2026-11-19: the editor rejected a moment of two pause cuts, meaning one). On a moment's
   // card that is the edit the card is named for, and the card then stays on what is left of the moment.
   const rejectTarget = appliedTarget && threadTimeline.selectedAlone;
-  // The engine puts back what it can with no request to Scarlet: the open edit, placed on the video as it runs now. A
+  // The engine puts back what it can with no request to AirWaves: the open edit, placed on the video as it runs now. A
   // cut says where its join is and what it took out.
   const rejectedEdits = useMemo(() => {
     if (!appliedTarget?.version || !threadTimeline.located || !reviewingEdit) return;
@@ -3323,7 +3323,7 @@ export function SimpleWorkspace() {
       {threadTimeline.selectedMoment ? <span className="edit-card-length is-kind" title={threadTimeline.selectedMoment.members.map(e => e.label).join("\n")}>
         {threadTimeline.selectedMoment.edits.length} edits</span>
         : !beforeCut && shownKind && <span className={reviewingEdit.kind === "restore" ? "edit-card-length is-added" : "edit-card-length is-kind"}>{shownKind}</span>}
-      {/* Scarlet asks the editor to look or listen at a part of the video, which the timeline marks. It is a pill like the
+      {/* AirWaves asks the editor to look or listen at a part of the video, which the timeline marks. It is a pill like the
           edit's kind, in amber: a press plays just that part, and its times are on hover. */}
       {reviewRange && <button type="button" className="edit-card-length is-check" onClick={playCheck}
         title={`Play the part to check, ${checkSpan(reviewRange)}`}>Check</button>}
@@ -3353,7 +3353,7 @@ export function SimpleWorkspace() {
             ...(named && { name: tagOf(named) }) });
           // An edit the editor stepped to meanwhile stays open: the rejection wasn't about it.
           if (openEditNow.current !== openEditKey) return;
-          // One Scarlet was asked to put back stays in the video meanwhile, its row saying Rejecting…: the card goes on,
+          // One AirWaves was asked to put back stays in the video meanwhile, its row saying Rejecting…: the card goes on,
           // to the rest of its moment first, whose other edits are still the editor's to look at.
           const rest = threadTimeline.selectedMoment?.edits.find(e => e !== reviewingEdit);
           if (!sent.version) return rest ? actions.playEdit(rest, true) : moveOnFromShown();
@@ -3374,9 +3374,9 @@ export function SimpleWorkspace() {
           : <span className="edit-passage-wait working-text" role="status">Loading the words…</span>}</p></div>}</div>}
   </section> : undefined;
 
-  // A call the pass wasn't sure about opens the same card, as the same single row: Scarlet's reason, then Revise (R),
+  // A call the pass wasn't sure about opens the same card, as the same single row: AirWaves's reason, then Revise (R),
   // Approve (A) and Skip (S), the × after them. The last call applies the pass. A call sent back for revision keeps its
-  // note and Before/After, and says Scarlet is on it where the decisions were.
+  // note and Before/After, and says AirWaves is on it where the decisions were.
   const savedHistory = (openCall && revisions?.get(openCall.index)) ?? noRevisions;
   const callHistory = returningCall ? savedHistory.slice(0, -1) : savedHistory;
   const callLength = heard ? lengthLabel(heard.end - heard.start) : openCall && lengthLabel(openCall.end - openCall.start);
@@ -3403,7 +3403,7 @@ export function SimpleWorkspace() {
       {/* Hovered, it says where the cut is in the video. */}
       <span className="edit-card-count" title={callAt !== undefined ? `Cut at ${clockLabel(callAt)}` : undefined}>Cut {callNo.get(openCall.index)}</span>
       {callHistory.length > 0 && <EditVersion n={callHistory.length + 1}
-        title={`v${callHistory.length}: ${callHistory.at(-1)!.reason ?? "Scarlet’s earlier version."}${callHistory.at(-1)!.note ? `\nYou: “${callHistory.at(-1)!.note}”` : ""}`} />}
+        title={`v${callHistory.length}: ${callHistory.at(-1)!.reason ?? "AirWaves’s earlier version."}${callHistory.at(-1)!.note ? `\nYou: “${callHistory.at(-1)!.note}”` : ""}`} />}
       <EditNote key={callKey} text={openCall.reason} unchecked={openCall.unchecked} />
       <span className="edit-card-side">
         <TranscriptLink open={callScriptOpen} disabled={!!conflict && !heard} toggle={() => setScriptFor(callScriptOpen ? undefined : callKey)} />
@@ -3425,7 +3425,7 @@ export function SimpleWorkspace() {
   </section> : undefined;
 
   // A suggestion that isn't a dialogue pass opens the same card on top of the timeline, as the same single row:
-  // Scarlet's words for it, the Before icon, then Revise (R) and Apply (A). Esc closes it.
+  // AirWaves's words for it, the Before icon, then Revise (R) and Apply (A). Esc closes it.
   const suggestionNote = suggestion && (suggestion.reason
     || [...new Set(suggestion.timelineEdits?.flatMap(edit => edit.reason ? [edit.reason] : []))].join(" ")
     || suggestion.description);
@@ -3449,7 +3449,7 @@ export function SimpleWorkspace() {
   const itemThread = callCard ? passThread : editOpen ? focusThread : undefined;
   const selected = answeringCut && callCard ? `ask:${rechecking.id}` : callCard ? `call:${listening!.key}/${versionBefore ?? ""}` : editOpen ? `edit:${editKey(reviewingEdit!)}` : askThread ? `ask:${askThread.id}` : "new";
 
-  // The message box talks to the cut or edit that's open; with none open it answers Scarlet's question, else starts a
+  // The message box talks to the cut or edit that's open; with none open it answers AirWaves's question, else starts a
   // new edit. A message being written stays aimed where it was, so moving to another cut never sends a half-written
   // note there; once it lands, the box follows again.
   // A suggestion's card isn't what the box talks to until Revise (R) on it aims the box there. That aim is for the card,
@@ -3530,7 +3530,7 @@ export function SimpleWorkspace() {
   useLayoutEffect(() => {
     const was = wasAsked.current;
     wasAsked.current = asked;
-    // An answer on its way out takes the question with it too, and then Scarlet is at work on the request again: those
+    // An answer on its way out takes the question with it too, and then AirWaves is at work on the request again: those
     // words are the answer being sent, not a message left behind.
     if (was && !asked && replyTo === was && !replyThread?.active && !itemIsOpen.current && !aimForItem.current && useUiStore.getState().agentDraft.trim()) settleAim.current("new");
   }, [asked]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -3573,7 +3573,7 @@ export function SimpleWorkspace() {
     if (key && !placedEdits.some(e => matchesEdit(e, { changeId: changeId!, spot: editIndex! }))) {
       const kept = targetNames.current.get(key);
       if (kept) return kept;
-      // Not listed since Scarlet opened: the request's own saved list still says whether it took footage out.
+      // Not listed since AirWaves opened: the request's own saved list still says whether it took footage out.
       const own = threads.find(t => t.changes.some(c => c.id === changeId));
       return revisionTarget({ context: about } as Task, changes, own && threadEditList(own));
     }
@@ -3598,7 +3598,7 @@ export function SimpleWorkspace() {
     if (written) tagTakenOff.current = undefined;
     if (cleared) emptied.current();
   }, [written]);
-  // An answer says so too, so a message meant as a new edit isn't sent to Scarlet's question by mistake.
+  // An answer says so too, so a message meant as a new edit isn't sent to AirWaves's question by mistake.
   const boxTag = aimedAt ? (aimed && cutName(aimed)) ?? tagOf(aimedAt) : replyThread ? replyThread.question ? "Answer" : "Reply" : undefined;
   const aimOnOpen = callCard ? answeringCut ? !aimed : aimed?.changeId === pass!.id && aimed.cutIndex === listening!.index
     : editOpen && !!aimed && aimed.cutIndex === undefined && (aimed.changeId === reviewingEdit!.changeId || aimed.changeId === shownChange!.id)
@@ -3623,8 +3623,8 @@ export function SimpleWorkspace() {
     : aimedAtItem ? `Revising ${aimed!.cutIndex !== undefined ? `the cut at ${clockLabel(aimed!.time)}` : aimed!.label ? `“${aimed!.label}”` : "this edit"}`
     : `${replyThread.question ? "Answering" : "Replying to"} “${replyThread.title}”`;
   /**
-   * What a queued request is waiting for. Held by the pass whose calls are all made, it waits on Scarlet and not the
-   * editor: the pass goes in once Scarlet's revisions or rechecks of its cuts are done.
+   * What a queued request is waiting for. Held by the pass whose calls are all made, it waits on AirWaves and not the
+   * editor: the pass goes in once AirWaves's revisions or rechecks of its cuts are done.
    */
   const waitOf = useMemo(() => queueWaits(tasks, changes), [tasks, changes]);
   const waitFor = (task: Task) => {
@@ -3635,12 +3635,12 @@ export function SimpleWorkspace() {
   const waitHint = (task: Task) => {
     const wait = waitFor(task);
     return !wait ? undefined : wait.kind === "review" ? "Starts once you’ve made your calls on the dialogue pass"
-      : wait.kind === "question" ? "Starts once you’ve answered Scarlet" : "Starts when Scarlet finishes what it’s on";
+      : wait.kind === "question" ? "Starts once you’ve answered AirWaves" : "Starts when AirWaves finishes what it’s on";
   };
 
   /**
    * What the next request waits for when that is the editor. It is said on the tray's line, where Next would be: it
-   * doesn't start until they act, whatever Scarlet is on meanwhile.
+   * doesn't start until they act, whatever AirWaves is on meanwhile.
    */
   const waitsOnEditor = (task: Task) => {
     const wait = waitFor(task);
@@ -3648,27 +3648,27 @@ export function SimpleWorkspace() {
   };
 
   const compact = useSyncExternalStore(subscribeWidth, () => narrow.matches);
-  // What stays put above the message box: the request Scarlet is on now, else the pass waiting on the editor's calls.
+  // What stays put above the message box: the request AirWaves is on now, else the pass waiting on the editor's calls.
   // Everything queued waits behind it, so it holds the same place until it's done and then joins the chat.
   const [pinHost, setPinHost] = useState<HTMLElement | null>(null);
   const editingPaused = current.project.editingPaused;
-  // A request in line again after its question was answered is still the one Scarlet is on: it holds its place for the
-  // moment before Scarlet picks it back up, instead of dropping into the conversation and coming back.
+  // A request in line again after its question was answered is still the one AirWaves is on: it holds its place for the
+  // moment before AirWaves picks it back up, instead of dropping into the conversation and coming back.
   const front = tasks.find(t => t.kind !== "transcribe" && (t.state === "claimed" || t.state === "running" || t.state === "waiting_for_user"))
     ?? tasks.find(t => t.kind !== "transcribe" && t.state === "queued" && !!t.startedAt && !(editingPaused && isProjectEditTask(t)));
   const rootOf = useMemo(() => requestRoots(tasks), [tasks]);
-  // A request in the chat that Scarlet has, whose band holds Pause or Resume and Stop. A new one waiting its turn is
+  // A request in the chat that AirWaves has, whose band holds Pause or Resume and Stop. A new one waiting its turn is
   // in the tray instead.
   const editing = tasks.some(task => isProjectEditTask(task) && runIsActive(task) && !(waitingToStart(task) && rootOf(task) === task.id));
   const pinned = front ? rootOf(front) : pass && passTask ? rootOf(passTask) : undefined;
-  // The requests waiting their turn, in the order Scarlet will run them: a note on a call of the pass that waits goes
+  // The requests waiting their turn, in the order AirWaves will run them: a note on a call of the pass that waits goes
   // ahead of a new edit asked before it, which the calls hold back. An interrupted request keeps its place here.
   const cancelTask = useProjectStore(s => s.cancelTask);
   const resumeEditing = useProjectStore(s => s.resumeEditing);
   const holdForRewording = useProjectStore(s => s.holdForRewording);
   const rewordTask = useProjectStore(s => s.rewordTask);
   const startBeforeCalls = useProjectStore(s => s.startBeforeCalls);
-  // What the tray couldn't do is said in the banner, as Stop's is: most often, Scarlet began the request first.
+  // What the tray couldn't do is said in the banner, as Stop's is: most often, AirWaves began the request first.
   const queueAction = (action: Promise<void>) => { setMenuError(""); return action.catch(e => { setMenuError(errorMessage(e)); throw e; }); };
   // The line is about a request as it stood. Once any request moves on it has nothing left to say, and the tray may
   // have no row left whose press would take it away.
@@ -3681,7 +3681,7 @@ export function SimpleWorkspace() {
       fixed: t.createdBy.type !== "human" };
   }), [queued, tasks, changes, threadEdits, pass, allCalls]); // eslint-disable-line react-hooks/exhaustive-deps
   const queueHint = !editingPaused && queued[0] ? waitHint(queued[0]) : undefined;
-  // The queued request whose words are in the message box to change, and the words as they stand there. Scarlet
+  // The queued request whose words are in the message box to change, and the words as they stand there. AirWaves
   // doesn't start it meanwhile. A message being written waits, and is in the box again once these words are done.
   // They are kept as they are typed, as an unsent message is: after a quit the request is in the box again with the
   // words as they stood, and held again, instead of starting a minute later with the words it was first given.
@@ -3714,7 +3714,7 @@ export function SimpleWorkspace() {
 
   /**
    * A stretch marked on the timeline's ruler, or taken off there. It goes on the message as it is aimed: a cut or an
-   * edit the box talks to stays its target, and Scarlet is told both. With nothing aimed it is a new edit about that
+   * edit the box talks to stays its target, and AirWaves is told both. With nothing aimed it is a new edit about that
    * stretch. A queued request's words and a message being spoken are left as they are.
    */
   const markRange = (marked: MarkedRange | undefined, byKey?: boolean) => {
@@ -3775,7 +3775,7 @@ export function SimpleWorkspace() {
   // A pause writes its time into an empty box as the start of the message ("0:04 "), as if the editor had typed it.
   // While the box holds only that, the next pause or seek moves it, and playing on takes it out again.
   // With a cut or an edit open, a pause into an empty box shows its time in the tag, and the next seek moves it there:
-  // the message stays the cut's or the edit's, and Scarlet is told the frame the editor stopped on besides.
+  // the message stays the cut's or the edit's, and AirWaves is told the frame the editor stopped on besides.
   const pickPoint = (picked: AgentContext, how: "seek" | "n" | "pause") => {
     const box = useUiStore.getState();
     if (rewordingItem || box.speaking) return;
@@ -3859,7 +3859,7 @@ export function SimpleWorkspace() {
         setRewording(active => active === rewording ? undefined : active);
       },
       onCancel: () => setRewording(undefined) }}
-    // Pause, Resume and Stop are at the right of the band of the request Scarlet has. Only with no such band, editing
+    // Pause, Resume and Stop are at the right of the band of the request AirWaves has. Only with no such band, editing
     // paused while requests wait their turn, does the tray hold Resume.
     tray={queuedItems.length > 0 || (editingPaused && !editing) ? <QueueTray items={queuedItems} hint={queueHint} waits={!editingPaused && queued[0] ? waitsOnEditor(queued[0]) : undefined} rewording={rewordingItem?.id} opened={trayOpen}
       onRemove={id => void queueAction(cancelTask(id, true)).catch(() => {})}
@@ -4028,7 +4028,7 @@ function UndoLabel({ projectId, onUndo }: { projectId: string; onUndo(): void })
   </span>;
 }
 
-/** The passage Scarlet asks the editor to check, as the clock reads it: one time for a moment, from and to for a stretch. */
+/** The passage AirWaves asks the editor to check, as the clock reads it: one time for a moment, from and to for a stretch. */
 /** The box is aimed at a cut or an edit, not at a moment or the whole video. */
 function aimedAtChange(aim: AgentContext | "whole" | null) {
   return !!aim && aim !== "whole" && !!aim.changeId;

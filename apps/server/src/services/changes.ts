@@ -89,7 +89,7 @@ function putAway(ctx: Ctx, change: Change, rejectReason: string, replacedBy: str
 }
 
 /**
- * The editor sent one call of a dialogue pass back to Scarlet. A pass they had set to apply when Scarlet finishes was
+ * The editor sent one call of a dialogue pass back to AirWaves. A pass they had set to apply when AirWaves finishes was
  * scheduled on the calls as they stood, and the request about this one waits behind the run: applied on schedule, the
  * pass would go in with the old cut and leave the request nothing to revise. So the schedule is taken back, the pass
  * waits for the revised cut, and the editor applies it. The request names the pass as it stood when they sent it; when
@@ -409,7 +409,7 @@ function dialogueParts(projectId: string, rootId: string) {
 
 /**
  * Both writes commit together; optional ranges start on the kept version. Stable IDs make response-loss retries safe.
- * `fold` gathers the waiting parts of a run that has finished, with no cuts of its own: only Scarlet's own repair saves under such a run.
+ * `fold` gathers the waiting parts of a run that has finished, with no cuts of its own: only AirWaves's own repair saves under such a run.
  */
 export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body: DialogueCutsRequest, { fold = false, checkAttempt }: { fold?: boolean; checkAttempt?: () => void } = {}): {
   changes: Change[]; carriedForward?: number; editorDecided?: TimeRange[]; heldForReview?: TimeRange[];
@@ -596,7 +596,7 @@ export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body
     if (body.cuts.some(c => kept.some(k => (c.originalRange ?? c).start < k.end && k.start < (c.originalRange ?? c).end)))
       throw badRequest("invalid_cuts", "A removal reaches into footage marked to keep, including its restorable range.");
     const decided = earlier.flatMap(change => change.cutReasons!.filter(r => editorChoice(change, r)).map(outer));
-    // A call belongs to the editor as soon as Scarlet asks. Bulk plans often repeat the same
+    // A call belongs to the editor as soon as AirWaves asks. Bulk plans often repeat the same
     // footage as a new staged or confident cut. Carry the call and its number in either case.
     for (const change of earlier) {
       const reasons = change.cutReasons!;
@@ -606,7 +606,7 @@ export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body
       for (const r of reasons) {
         const call = assessmentOf(change, r);
         if (call && (isPublishedCall(call) || call.askOrder !== undefined)) protectedCuts.set(r, `${change.id}:${call.index}`);
-        // A cut staged because nothing Scarlet measures can settle its join is the editor's to hear from the moment it is
+        // A cut staged because nothing AirWaves measures can settle its join is the editor's to hear from the moment it is
         // staged, recommendation or none: a pass staged the right cut of a restart, then applied a cut of the take that
         // replaced it over the same footage half a minute later, and the review ended with no cut on the line (2026-11-17).
         // A keep recorded on it is the model's own decision that the passage stays, and frees the footage.
@@ -623,7 +623,7 @@ export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body
     // Why confident cuts wait for the editor here instead of applying. The agent sent them as cuts, so it is told.
     const stagedWhy = requested ? undefined : !sourceTask ? "No request of the editor's is attached, so every cut waits for them."
       : sourceTask.context.reviewAllCuts ? "The editor asked to review every cut."
-      : sourceTask.createdBy.type !== "human" ? "Scarlet started this request, not the editor, so its cuts wait for them."
+      : sourceTask.createdBy.type !== "human" ? "AirWaves started this request, not the editor, so its cuts wait for them."
       : !editsDialogue(sourceTask.kind) ? `A ${sourceTask.kind} request stages its cuts for the editor.`
       : "The editor moved to another version of the edit while this request ran.";
     const candidates = body.cuts.map(c => ({ ...c, crossfade: frames / fps, ...(current && { ...moveToHead(c), ...(c.originalRange && { originalRange: moveToHead(c.originalRange) }) }),
@@ -631,9 +631,9 @@ export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body
     const overruled = candidates.filter(c => decided.some(d => overlaps(outer(c), d)));
     const held = candidates.filter(c => !overruled.includes(c) && heldRanges.some(r => overlaps(outer(c), outer(r)) ||
       ((c.review || !requested) && (Math.abs(c.start - r.end) < 1e-5 || Math.abs(c.end - r.start) < 1e-5))));
-    // A staged cut Scarlet held for how its join measured is the model's to settle where it placed it: cut there, keep
+    // A staged cut AirWaves held for how its join measured is the model's to settle where it placed it: cut there, keep
     // it, or ask. A cut that takes its place with other edges, and applies only because the model sent unsureJoins cut,
-    // swaps one join Scarlet couldn't place for another and changes what the line says, with no one hearing either:
+    // swaps one join AirWaves couldn't place for another and changes what the line says, with no one hearing either:
     // held at "thing. ‖ And so in this video", a closing save cut "And so" as well and applied it (2026-11-18). The
     // staged cut stays, and the model is told.
     const heldCutsStay: NonNullable<DialogueCutsAdjustments["heldCutsStay"]> = [];
@@ -642,7 +642,7 @@ export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body
       const staged = earlier.flatMap(change => change.cutReasons!.filter(r => r.held && !r.unheard && !editorChoice(change, r) &&
         overlaps(outer(c), outer(r)) && (Math.abs(outer(c).start - outer(r).start) >= LEFT_OF_STAGED_CUT || Math.abs(outer(c).end - outer(r).end) >= LEFT_OF_STAGED_CUT)));
       for (const r of staged) heldCutsStay.push({ asked: c.asked, staged: { start: r.start, end: r.end },
-        why: `This cut takes the place of the staged cut at ${r.start.toFixed(2)}–${r.end.toFixed(2)} s with other edges, and Scarlet couldn't place its join either, so it applied only as unsureJoins cut. Moving a held cut onto other words changes what the line says. The staged cut stays as you first placed it: cut it there with unsureJoins cut, record keep, or ask the editor.` });
+        why: `This cut takes the place of the staged cut at ${r.start.toFixed(2)}–${r.end.toFixed(2)} s with other edges, and AirWaves couldn't place its join either, so it applied only as unsureJoins cut. Moving a held cut onto other words changes what the line says. The staged cut stays as you first placed it: cut it there with unsureJoins cut, record keep, or ask the editor.` });
       return staged.length > 0;
     });
     const planned = candidates.filter(c => !overruled.includes(c) && !held.includes(c) && !replacesHeld.includes(c));
@@ -800,8 +800,8 @@ export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body
       // review's own cut list. A note carries only onto a cut made of the same staged cuts. An approval carries onto any
       // cut whose staged cuts were all approved, so cuts that came apart each keep the call made on them. Footage the
       // editor chose to keep stays kept, with whatever joined it, until they say otherwise.
-      // In a pass Scarlet has assessed, a cut that lost its note or the editor's approval waits for the editor, as a
-      // revised cut does: the pass still reads as assessed, so nothing unchecked applies. Scarlet's next note on that cut
+      // In a pass AirWaves has assessed, a cut that lost its note or the editor's approval waits for the editor, as a
+      // revised cut does: the pass still reads as assessed, so nothing unchecked applies. AirWaves's next note on that cut
       // replaces this one. The pass doesn't apply itself while a cut waits for the editor because of this carry, or
       // over an approval that no longer holds.
       const assessed = earlier.some(c => c.cutAssessments?.length);
@@ -859,7 +859,7 @@ export function submitDialogueCuts(ctx: Ctx, user: User, projectId: string, body
   }), "immediate")();
 }
 
-/** What Scarlet did to submitted dialogue cuts on its own, each with why, so the agent reads what was saved. */
+/** What AirWaves did to submitted dialogue cuts on its own, each with why, so the agent reads what was saved. */
 export interface DialogueCutsAdjustments {
   /** Confident cuts that wait for the editor instead of applying, and why. */
   stagedForEditor?: { cuts: number; why: string };
@@ -1050,14 +1050,14 @@ export function reviseStagedCut(ctx: Ctx, user: User, named: Change, namedIndex:
     const autonomous = !scoped && (!!task || body.author?.type === "agent");
     if (autonomous && (was && (isPublishedCall(was) || was.askOrder !== undefined) || change.cutChoices?.some(c => c.index === index)))
       throw conflict("cut_with_editor", `${capitalized(editorsCut(change, index))} at ${old.start}–${old.end} s is with the editor. Only a revision they request can change this cut. ${CALL_WITH_EDITOR}`);
-    // A cut staged because nothing Scarlet measures can settle its join is the editor's to hear, where Scarlet placed it.
+    // A cut staged because nothing AirWaves measures can settle its join is the editor's to hear, where AirWaves placed it.
     // A pass moved one onto the take that replaced the false start, where both edges were quiet, recorded it as a cut,
     // and the broken take played with no call (2026-11-17). A keep is the model's own decision that the passage stays.
     const unheard = !!change.cutReasons?.some(r => r.unheard && r.start < old.end - 1e-6 && r.end > old.start + 1e-6);
     const aFrame = 1 / project.settings.fps;
     const moves = Math.abs(range.start - old.start) > aFrame + 1e-6 || Math.abs(range.end - old.end) > aFrame + 1e-6;
     if (autonomous && unheard && moves && !body.keep)
-      throw conflict("cut_unheard", `${capitalized(editorsCut(change, index))} at ${old.start}–${old.end} s waits for the editor to hear its join, so it stays where Scarlet placed it. `
+      throw conflict("cut_unheard", `${capitalized(editorsCut(change, index))} at ${old.start}–${old.end} s waits for the editor to hear its join, so it stays where AirWaves placed it. `
         + "Record ask on it with dialogue_review_save, with what to listen for, or keep if the passage belongs in the video as it was said.");
     const placement = placeRevision(ctx, project, change, review, index, body, range, task, scoped, named.fromVersion);
     if ("conflict" in placement) {
@@ -1130,7 +1130,7 @@ export function reviseStagedCut(ctx: Ctx, user: User, named: Change, namedIndex:
     const provisional = verdict === "ask" && autonomous;
     const updated: CutAssessment = { index, start, end, verdict, reason, summary, ...(provisional && { provisional: true }),
       ...(verdict === "ask" && sentBack && { revised: true }), ...(keepsForEditor && { proposes: "keep" as const }), ...(was?.askOrder && { askOrder: was.askOrder }) };
-    // The cuts Scarlet never checked stay unassessed: they are the editor's calls ("Not checked yet."), and keeping one
+    // The cuts AirWaves never checked stay unassessed: they are the editor's calls ("Not checked yet."), and keeping one
     // of them doesn't settle the rest (2026-11-15).
     const cutAssessments = [...(change.cutAssessments ?? []).filter(a => a.index !== index), updated].sort((a, b) => a.index - b.index);
     const decided = new Set(cutChoices.map(c => c.index));
@@ -1180,7 +1180,7 @@ function leftOutOf(ctx: Ctx, project: Omit<Project, "media">, change: Change): C
 
 /**
  * Read the footage left out by changes an earlier build applied without looking: a video built from the pieces to
- * keep showed none of what it left out as cuts (2026-11-12). Runs once as Scarlet starts.
+ * keep showed none of what it left out as cuts (2026-11-12). Runs once as AirWaves starts.
  */
 export function recordLeftOutFootage(ctx: Ctx): void {
   // The index holds only the changes still to read. Left to choose, SQLite would read every applied change by its state.
@@ -1200,7 +1200,7 @@ export function recordLeftOutFootage(ctx: Ctx): void {
   }
 }
 
-/** Put away the versions of applied passes that an earlier build left waiting. Runs once as Scarlet starts. */
+/** Put away the versions of applied passes that an earlier build left waiting. Runs once as AirWaves starts. */
 export function retireLeftoverPasses(ctx: Ctx): void {
   ctx.db.transaction(() => {
     // Only a project with a proposal still waiting can have one: its applied edits alone are read.
@@ -1215,7 +1215,7 @@ export function retireLeftoverPasses(ctx: Ctx): void {
  * Gather into one review the parts of a dialogue pass that an earlier build left waiting side by side, as the pass's
  * next part would have. Each part's staged cuts waited on its own, out of sight behind the latest, and held the next
  * request for calls nobody was shown (2026-11-10). The review goes on the current edit, under the run's latest part.
- * Runs once as Scarlet starts.
+ * Runs once as AirWaves starts.
  */
 export function foldStrandedPasses(ctx: Ctx): void {
   const runs = new Map<string, Change[]>();
@@ -1269,7 +1269,7 @@ const capitalized = (words: string) => words.charAt(0).toUpperCase() + words.sli
 const LEFT_OF_STAGED_CUT = .15;
 
 /**
- * What to do with a finding about a call the editor holds. The same pass asked "Scarlet has locked edit 5 for your
+ * What to do with a finding about a call the editor holds. The same pass asked "AirWaves has locked edit 5 for your
  * review. May I revise it…?" about a call that already waited on the editor's Approve, Skip and Revise (2026-11-16).
  */
 const CALL_WITH_EDITOR = "The editor decides this call with Approve, Skip or Revise, so don’t ask them about it with task_question. "
@@ -1310,7 +1310,7 @@ function assertStagedCallsStand(ctx: Ctx, project: Omit<Project, "media">, task:
         + `${taken.length === 1 ? "waits" : "wait"} for the editor’s call in ${change.id} (${named}${taken.length > 12 ? ", …" : ""}; times on version ${base.version}). `
         // A pass sent the same edit here three times before it moved the cut with dialogue_revise_cut (2026-11-18).
         + `Nothing was saved. Leave that footage in this edit. To move a staged cut's edges, use dialogue_revise_cut with changeId ${change.id} and its index (${taken.slice(0, 12).map(c => c.index).join(", ")}). `
-        + "dialogue_apply_cuts updates a staged cut Scarlet hasn't asked the editor about.");
+        + "dialogue_apply_cuts updates a staged cut AirWaves hasn't asked the editor about.");
     }
     located.sort((a, b) => a.range.start - b.range.start);
     for (let i = 1; i < located.length; i++) {
@@ -1659,7 +1659,7 @@ export function prepareCutReview(ctx: Ctx, change: Change, restoredCuts?: number
   return { review, draft, joinFades, ...placement };
 }
 
-/** The editor's call on each staged cut, or what Approve does without one: Scarlet's verdict once it has assessed the pass, else cut. */
+/** The editor's call on each staged cut, or what Approve does without one: AirWaves's verdict once it has assessed the pass, else cut. */
 function cutDecision(change: Change, index: number): CutChoice["choice"] {
   const chosen = change.cutChoices?.find(c => c.index === index)?.choice;
   if (chosen) return chosen;
@@ -1690,7 +1690,7 @@ export function saveCutChoices(ctx: Ctx, user: User, change: Change, body: {
     if (!project) throw notFound("project");
     const original = prepareCutReview(ctx, change).review;
     if (!original) throw badRequest("cuts_unsupported", "This edit has no individual cuts.");
-    // A click can arrive just after Scarlet adds a part or revises another call. Merge only the
+    // A click can arrive just after AirWaves adds a part or revises another call. Merge only the
     // choices made since the named pass. An old form must never erase a newer decision.
     const previous = new Map(change.cutChoices?.map(c => [c.index, c.choice]));
     const incoming = body.choices.filter(c => previous.get(c.index) !== c.choice);
@@ -1770,7 +1770,7 @@ export function saveCutChoices(ctx: Ctx, user: User, change: Change, body: {
 }
 
 /**
- * Send one cut the editor approved back to Scarlet: its footage changed on the working cut, so it can't go in as it
+ * Send one cut the editor approved back to AirWaves: its footage changed on the working cut, so it can't go in as it
  * was staged. The other calls keep their decisions (`choices`); this one asks again until the recheck lands.
  */
 function recheckApprovedCut(ctx: Ctx, project: Omit<Project, "media">, change: Change, review: CutReview,
@@ -1786,7 +1786,7 @@ function recheckApprovedCut(ctx: Ctx, project: Omit<Project, "media">, change: C
   const checked = { ...change, cutChoices: choices.filter(c => c.index !== index), cutAssessments: assessments.sort((a, b) => a.index - b.index) };
   const prior = change.taskId ? ctx.repos.tasks.get(change.taskId) : undefined;
   const task = createTask(ctx, { projectId: project.id, kind: "revise", agent: prior?.agent ?? ctx.settings().defaultAgent,
-    model: prior?.model, effort: prior?.effort, serviceTier: prior?.serviceTier, createdBy: { type: "scarlet", name: "Scarlet" },
+    model: prior?.model, effort: prior?.effort, serviceTier: prior?.serviceTier, createdBy: { type: "scarlet", name: "AirWaves" },
     context: { changeId: change.id, threadId: threadOfChange(ctx, change), cutIndex: index, version: head, time: range?.start, end: range?.end,
       noteIds: change.noteIds, message: "Recheck this cut" }, cutConflict: { version: head, range, approved: true },
     instruction: `The editor approved this cut. The passage changed before it could apply. Recheck the current footage and preserve the intended edit. ${reason}` +
@@ -1796,7 +1796,7 @@ function recheckApprovedCut(ctx: Ctx, project: Omit<Project, "media">, change: C
 
 /**
  * A call the editor just approved whose footage changed on the working cut since the pass staged it goes back to
- * Scarlet now, while the editor makes the other calls, instead of when the last call applies the pass (2026-11-14:
+ * AirWaves now, while the editor makes the other calls, instead of when the last call applies the pass (2026-11-14:
  * every such recheck waited for the last call, one after another). One recheck at a time: while the pass is being
  * revised, applying it finds the rest.
  */
@@ -1815,7 +1815,7 @@ function recheckMovedCalls(ctx: Ctx, saved: Change, before: Change, review: CutR
   }
 }
 
-/** The task now doing a run's work: a run interrupted when Scarlet quit carries on under a new task. */
+/** The task now doing a run's work: a run interrupted when AirWaves quit carries on under a new task. */
 function latestAttempt(ctx: Ctx, taskId: string | undefined): Task | undefined {
   let task = taskId ? ctx.repos.tasks.get(taskId) ?? undefined : undefined;
   for (let hops = 0; task?.retryTaskId && hops < 100; hops++) {
@@ -1827,7 +1827,7 @@ function latestAttempt(ctx: Ctx, taskId: string | undefined): Task | undefined {
 }
 
 const STALE_SAVE = "The timeline changed while the edit was running.";
-const SAVED_AGAIN = "Scarlet saved this work again on the video as it was by then.";
+const SAVED_AGAIN = "AirWaves saved this work again on the video as it was by then.";
 
 /**
  * Put away a save the video had moved on from, once the run that made it has saved its work again. Such a save is left
@@ -1850,12 +1850,12 @@ export function retireStaleSaves(ctx: Ctx, task: Task): void {
 
 /**
  * Apply a dialogue pass with the editor's calls once its run has finished, when the editor asked for that.
- * Cuts the editor didn't call follow Scarlet's verdict. Null while the run is still going, nothing was asked, or a cut
+ * Cuts the editor didn't call follow AirWaves's verdict. Null while the run is still going, nothing was asked, or a cut
  * still waits on the editor.
  *
- * A pass whose staged cuts Scarlet settled itself, every one, asking the editor nothing, goes in the same way when its
+ * A pass whose staged cuts AirWaves settled itself, every one, asking the editor nothing, goes in the same way when its
  * run finishes. The window used to be what applied it, once it saw the finished run: with the window closed, or a run
- * no window watches, the cuts Scarlet had held and then decided stayed out of the video, waits of ten seconds among
+ * no window watches, the cuts AirWaves had held and then decided stayed out of the video, waits of ten seconds among
  * them (2026-11-15).
  */
 export function applyChoicesWhenDone(ctx: Ctx, change: Change): Change | null {
@@ -1878,7 +1878,7 @@ export function applyChoicesWhenDone(ctx: Ctx, change: Change): Change | null {
     const review = prepareCutReview(ctx, change).review;
     if (!review) throw new Error("This edit has no individual cuts");
     // A run can finish, or pause for its transcripts, without checking every staged cut. Those are the editor's calls
-    // now ("Not checked yet."), as a cut Scarlet asked about is, and applying would settle them unseen (2026-11-10).
+    // now ("Not checked yet."), as a cut AirWaves asked about is, and applying would settle them unseen (2026-11-10).
     // The schedule stands: the editor's call on the last of them applies the pass.
     const settled = new Set([...change.cutChoices ?? [], ...(change.cutAssessments ?? []).filter(a => a.verdict !== "ask")].map(c => c.index));
     const remaining = review.cuts.reduce((count, _, index) => count + Number(!settled.has(index)), 0);
@@ -1894,7 +1894,7 @@ export function applyChoicesWhenDone(ctx: Ctx, change: Change): Change | null {
     // A video that moved under the pass names the cut it moved under. Anything else is in the log.
     const moved = error instanceof HttpError && error.code === "cut_review_stale";
     return saveChange(ctx, { ...change, applyWhenDone: undefined,
-      error: moved ? error.message : "This pass wasn’t applied when Scarlet finished, but your calls are saved: press Retry to try again." });
+      error: moved ? error.message : "This pass wasn’t applied when AirWaves finished, but your calls are saved: press Retry to try again." });
   }
 }
 
@@ -1942,12 +1942,12 @@ export function approveChange(ctx: Ctx, user: User, change: Change, opts: { spot
       return { change, project: ctx.repos.projects.withMedia(project), outcome: "sent_back", task: checking };
   }
   if (reviewTask && ["running", "claimed", "queued"].includes(reviewTask.state))
-    throw conflict("review_in_progress", "Your choices can be staged while Scarlet checks the remaining cuts.");
+    throw conflict("review_in_progress", "Your choices can be staged while AirWaves checks the remaining cuts.");
   if (change.cutAssessments?.length && !opts.restoredCuts) {
     const review = prepareCutReview(ctx, change).review;
     if (!review || opts.spots || change.cutAssessments.length !== review.cuts.length || change.cutAssessments.some(a => a.verdict === "ask"))
       throw conflict("review_decisions_needed", "Open Needs your call to finish the outstanding decisions.");
-    // The editor's call on a cut stands over Scarlet's verdict, as when the pass is applied once it finishes.
+    // The editor's call on a cut stands over AirWaves's verdict, as when the pass is applied once it finishes.
     opts = { ...opts, restoredCuts: keptCuts(change, review) };
   }
   if (change.cutEdits?.length && !opts.restoredCuts) {
@@ -2081,7 +2081,7 @@ export function approveChange(ctx: Ctx, user: User, change: Change, opts: { spot
     threadId: threadOfChange(ctx, change),
     error: undefined,
     autoApplied: opts.automatic || undefined,
-    decidedBy: opts.automatic ? { type: "scarlet", name: "Scarlet" } : actorFor(user),
+    decidedBy: opts.automatic ? { type: "scarlet", name: "AirWaves" } : actorFor(user),
     appliedVersion: target,
     appliedOnto: head,
     appliedWindows,
@@ -2122,7 +2122,7 @@ export function approveChange(ctx: Ctx, user: User, change: Change, opts: { spot
   return { change: saved, project: updated, outcome };
 }
 
-/** The agent and model that made a change, to run its next version. An author Scarlet can't place runs on the default agent. */
+/** The agent and model that made a change, to run its next version. An author AirWaves can't place runs on the default agent. */
 function authorsAgent(ctx: Ctx, author: Author): { agent: AgentId; model?: string } {
   try {
     return { ...parseAssignTo(author.id, ctx.settings().defaultAgent), model: author.model };
@@ -2149,7 +2149,7 @@ function sendBack(ctx: Ctx, user: User, change: Change, project: Project, reason
       `Make the same edit on the current timeline.`,
     ].join(" "),
     context: { changeId: change.id, noteIds: change.noteIds, version: head, threadId: change.threadId, message: "Redo on the current edit" },
-    createdBy: { type: "scarlet", name: "Scarlet" },
+    createdBy: { type: "scarlet", name: "AirWaves" },
   });
   const saved = saveChange(ctx, { ...beginRevision(change, task), error: `Sent back: ${reason}` });
   logActivity(ctx, {
@@ -2459,8 +2459,8 @@ export function flagEdit(ctx: Ctx, projectId: string, task: Task, body: FlagEdit
   const existing = flags.find(f => f.spot === found!.edit.spot && f.check === body.check && sameRun(f.taskId));
   if (!existing) {
     saveChange(ctx, { ...change, flags: [...flags, { spot: found!.edit.spot, check: body.check, taskId: task.id, at: now(), location }] });
-    logActivity(ctx, { projectId, actor: { type: "scarlet", name: "Scarlet" }, type: "change.flagged",
-      summary: `Scarlet flagged ${quote(found!.edit.label)}: ${quote(body.check, 120)}`,
+    logActivity(ctx, { projectId, actor: { type: "scarlet", name: "AirWaves" }, type: "change.flagged",
+      summary: `AirWaves flagged ${quote(found!.edit.label)}: ${quote(body.check, 120)}`,
       data: { changeId: change.id, threadId: change.threadId, taskId: task.id } });
   } else if (location && !existing.location) {
     saveChange(ctx, { ...change, flags: flags.map(f => f === existing ? { ...f, location } : f) });

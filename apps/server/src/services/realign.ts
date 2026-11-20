@@ -38,7 +38,7 @@ export async function realignTranscript(ctx: Ctx, projectId: string, mediaId: st
   const segments = await alignTranscript(ctx, { source, language: original.language, segments: original.segments, signal, emissions,
     work: { mediaId, kind: "alignment" }, onFailure: () => { failed = true; } });
   signal.throwIfAborted();
-  if (failed) return { state: "unavailable", reason: "Scarlet couldn’t realign this transcript. Try again when the source recording and aligner are available." };
+  if (failed) return { state: "unavailable", reason: "AirWaves couldn’t realign this transcript. Try again when the source recording and aligner are available." };
   return ctx.db.transaction((): Realigned => {
     // A transcription or a speaker reading that finished meanwhile wrote the transcript this one would replace.
     const current = ctx.repos.projects.getMedia(mediaId);

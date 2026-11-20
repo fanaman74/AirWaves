@@ -92,9 +92,9 @@ export function changeRoutes(ctx: Ctx) {
       ...(editorDecided && { editorDecided }), ...(heldForReview && { heldForReview }), ...(alreadyRemoved && { alreadyRemoved }),
       // The requested crossfade on the joins these cuts made: how many got it, and each join left a straight cut with why.
       ...(joinCrossfades && { joinCrossfades }),
-      // What Scarlet changed on its own: confident cuts it staged, edges it put on frames, earlier staged cuts it let go.
+      // What AirWaves changed on its own: confident cuts it staged, edges it put on frames, earlier staged cuts it let go.
       ...(stagedForEditor && { stagedForEditor }), ...(onFrames && { onFrames }), ...(droppedFromReview && { droppedFromReview }),
-      // Cuts left out because they would have swapped a held staged cut for other edges Scarlet couldn't place either.
+      // Cuts left out because they would have swapped a held staged cut for other edges AirWaves couldn't place either.
       ...(heldCutsStay && { heldCutsStay }),
       // The version to build on next: where the confident cuts left the edit.
       head: ctx.repos.projects.header(c.req.param("id"))?.head }, 201);
@@ -143,7 +143,7 @@ export function changeRoutes(ctx: Ctx) {
       if (!review) throw badRequest("cuts_unsupported", "This edit has no individual cuts.");
       const previous = new Map(change.cutAssessments?.map(a => [a.index, a]));
       const byIndex = new Map(previous);
-      // A cut the editor sent back waits for their call on the revised version, whatever Scarlet recommends on it.
+      // A cut the editor sent back waits for their call on the revised version, whatever AirWaves recommends on it.
       const heldRevised: number[] = [];
       const heldForEditor: number[] = [];
       const heldCalls: number[] = [];
@@ -166,7 +166,7 @@ export function changeRoutes(ctx: Ctx) {
         if (suggestOnly) heldForEditor.push(item.index);
         const shown = previous.get(item.index);
         if (shown && (isPublishedCall(shown) || shown.askOrder !== undefined)) {
-          // A call still waiting on the editor takes a new note when Scarlet means to change it: something found after
+          // A call still waiting on the editor takes a new note when AirWaves means to change it: something found after
           // asking that the editor should know before deciding, such as a join that clips a word. Its number, footage
           // and verdict stay. A pass that couldn't, asked the editor a separate question about the call (2026-11-16).
           if (amend && isPublishedCall(shown) && item.verdict === "ask" && !called.has(item.index)) {
@@ -208,7 +208,7 @@ export function changeRoutes(ctx: Ctx) {
           + "The note is the one line the editor reads on each call, so they couldn’t tell these apart. Nothing was saved. "
           + "Give each its own: the words this cut takes out or keeps, and what to listen for at its join.");
       }
-      // Each new ask is numbered after every ask before it: in the order Scarlet makes them, and within one save in
+      // Each new ask is numbered after every ask before it: in the order AirWaves makes them, and within one save in
       // timeline order. The editor's number for a call goes by it. A pass whose asks aren't numbered yet, as one saved
       // before the engine numbered them, numbers the asks it already has first, in timeline order, so none of the calls
       // the editor has seen moves. Once a pass numbers its asks, one left without a number is a cut no one checked that
@@ -237,7 +237,7 @@ export function changeRoutes(ctx: Ctx) {
           ctx.log(`[review] Could not prefetch the first decision for ${change.id}: ${error}`);
         }
       }
-      // A pass set to apply when the run finishes was scheduled on the calls made so far. A cut Scarlet now asks about,
+      // A pass set to apply when the run finishes was scheduled on the calls made so far. A cut AirWaves now asks about,
       // with no call from the editor, waits for them: applying on schedule would skip it unseen.
       const applyWhenDone = cutAssessments.some(a => isPublishedCall(a) && !called.has(a.index)) ? undefined : change.applyWhenDone;
       const assessedForReview = first ? true : change.assessedForReview;

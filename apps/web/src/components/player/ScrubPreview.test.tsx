@@ -354,7 +354,7 @@ it("keeps a drag's bubble through the page handing it a new way to ask for frame
   const bar = await show(60, 120);
   await pointer(bar, "pointerdown", 500, { buttons: 1 });
   expect([bubble().hidden, stamp()]).toEqual([false, "2:30.000"]);
-  // The project or its media changed under the drag, as they do while videos cache or Scarlet works: the page builds
+  // The project or its media changed under the drag, as they do while videos cache or AirWaves works: the page builds
   // `frameAt` again. The drag is still on, and its bubble goes on following the pointer with the new one's frames.
   const newer = (time: number, exact?: boolean) => `http://engine.test/projects/p/frame?v=2&t=${time}${exact ? "&exact=1" : ""}`;
   await act(async () => root.render(<ScrubPreview start={120} duration={60} frameAt={newer} note={<em>Edit 2</em>}><div className="track" /></ScrubPreview>));

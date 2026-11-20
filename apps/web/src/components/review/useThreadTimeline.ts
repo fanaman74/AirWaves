@@ -85,7 +85,7 @@ export function useThreadTimeline(projectId: string, head: string | null, thread
   const replyTarget = (edit: ThreadEdit, moment?: Moment<ThreadEdit>): AgentContext => ({
     changeId: edit.changeId, editIndex: edit.spot, reviewRef: reviewRefs.get(edit), editNumber: edits.indexOf(edit) + 1,
     version: head ?? undefined, time: edit.range.start, end: edit.range.end, clipIds: [], label: edit.label,
-    // A moment is about all of its edits: its stretch is theirs, and Scarlet is told the others.
+    // A moment is about all of its edits: its stretch is theirs, and AirWaves is told the others.
     ...moment && { time: Math.min(...moment.edits.map(e => e.range.start)), end: Math.max(...moment.edits.map(e => e.range.end)),
       momentEdits: moment.edits.filter(e => e !== edit).map(e => ({ changeId: e.changeId, spot: e.spot, label: e.label })) },
   });

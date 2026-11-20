@@ -644,7 +644,7 @@ export const RenderRequest = z.object({
 // ---------------------------------------------------------------------------
 
 /** Known agent runtimes. Hosts report which are installed and logged in. */
-export const AgentId = z.enum(["claude", "codex", "gemini", "api"]);
+export const AgentId = z.enum(["claude", "codex", "gemini", "api", "aistudio", "openrouter"]);
 export type AgentId = z.infer<typeof AgentId>;
 
 /** What each agent is called, in the interface and in the sentences the engine keeps in a project's history. */
@@ -653,6 +653,8 @@ export const AGENT_LABEL: Record<AgentId, string> = {
   codex: "Codex",
   gemini: "Gemini",
   api: "API",
+  aistudio: "Gemini API",
+  openrouter: "OpenRouter",
 };
 
 /** Note assignments accept an agent alone or an agent and an exact CLI model ID. */

@@ -106,7 +106,7 @@ export function UpdateButton() {
     }
   }
 
-  if (restarting || (ready && !showProgress)) return <aside className="update-control update-corner" aria-label="Scarlet update"
+  if (restarting || (ready && !showProgress)) return <aside className="update-control update-corner" aria-label="AirWaves update"
     onPointerLeave={() => { if (error) setRestart({ error: "" }); }} onBlur={() => { if (error) setRestart({ error: "" }); }}>
     <button type="button" className="update-button" disabled={restarting} onClick={install}
       aria-describedby={ready && !error ? hint : undefined}>
@@ -115,13 +115,13 @@ export function UpdateButton() {
     </button>
     {error ? <span role="alert" className="update-button-error">{error}</span>
       : ready && <UpdateHint id={hint} revision={ready} title={release ? <>Version {ready} is ready</> : <>Build {build(ready)} is ready</>}>
-        <span>Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off.</span>
+        <span>Restarting installs it and brings you back here. An edit AirWaves is working on picks up where it left off.</span>
       </UpdateHint>}
   </aside>;
   if (!building) return null;
   const percent = buildPercent(building, now);
-  return <aside className="update-control update-corner" aria-label="Scarlet update">
-    <span role="status" className="update-button" aria-label={`Updating Scarlet, ${percent}% ${release ? "downloaded" : "built"}`} aria-describedby={hint}>
+  return <aside className="update-control update-corner" aria-label="AirWaves update">
+    <span role="status" className="update-button" aria-label={`Updating AirWaves, ${percent}% ${release ? "downloaded" : "built"}`} aria-describedby={hint}>
       <svg className="update-button-ring" viewBox="0 0 14 14" aria-hidden="true">
         <circle cx="7" cy="7" r="5" />
         <circle cx="7" cy="7" r="5" strokeDasharray={RING} strokeDashoffset={RING * (1 - percent / 100)} />
@@ -130,7 +130,7 @@ export function UpdateButton() {
       <span className="update-button-figure">{percent}%</span>
     </span>
     <UpdateHint id={hint} revision={building.revision} title={release ? <>Updating to version {building.revision}</> : <>Updating to build {build(building.revision)}</>}>
-      <span>Scarlet is {release ? "downloading" : "building"} it in the background. Keep working: this becomes Restart to update when it’s ready.</span>
+      <span>AirWaves is {release ? "downloading" : "building"} it in the background. Keep working: this becomes Restart to update when it’s ready.</span>
     </UpdateHint>
   </aside>;
 }

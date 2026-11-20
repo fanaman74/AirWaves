@@ -57,7 +57,7 @@ it("gives a button that can be pressed the pointer hand, and never one that can'
 });
 
 it("opens a confirmation without the error its last attempt left", async () => {
-  const fail = vi.fn().mockRejectedValue(new Error("Scarlet is working. Try again after the current jobs finish."));
+  const fail = vi.fn().mockRejectedValue(new Error("AirWaves is working. Try again after the current jobs finish."));
   function Host() {
     const [open, setOpen] = useState(false);
     return <><button onClick={() => setOpen(true)}>Empty Trash</button>
@@ -67,18 +67,18 @@ it("opens a confirmation without the error its last attempt left", async () => {
   const button = (text: string) => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === text)!;
   await act(async () => button("Empty Trash").click());
   await act(async () => button("Delete permanently").click());
-  expect(el.textContent).toContain("Scarlet is working.");
+  expect(el.textContent).toContain("AirWaves is working.");
   await act(async () => button("Cancel").click());
   await act(async () => button("Empty Trash").click());
   expect(el.querySelector("dialog")).not.toBeNull();
-  expect(el.textContent).not.toContain("Scarlet is working.");
+  expect(el.textContent).not.toContain("AirWaves is working.");
 });
 
-it("says Scarlet can't reach its engine, not \"Service Unavailable\", when a confirmation's action is turned away as the engine shuts down", async () => {
+it("says AirWaves can't reach its engine, not \"Service Unavailable\", when a confirmation's action is turned away as the engine shuts down", async () => {
   const onConfirm = vi.fn().mockRejectedValue(new ScarletApiError(503, "http_error", "Service Unavailable"));
   await act(async () => root.render(<ConfirmDialog open onClose={() => {}} onConfirm={onConfirm} title="Empty Trash?" confirmLabel="Delete permanently" danger />));
   await act(async () => [...el.querySelectorAll("button")].find(b => b.textContent?.trim() === "Delete permanently")!.click());
-  expect(el.querySelector('[role="alert"]')?.textContent).toBe("Scarlet can’t reach its engine right now.");
+  expect(el.querySelector('[role="alert"]')?.textContent).toBe("AirWaves can’t reach its engine right now.");
 });
 
 it("names the × of a dialog and of a drawer on hover, with the key that closes it", async () => {
@@ -113,8 +113,8 @@ it("keeps a confirmation open while its action runs, and says there why it faile
   await pointer(dialog, "click", 400);
   expect(onClose).not.toHaveBeenCalled();
   // The failure shows in the dialog that is still open, and it can be closed again.
-  await act(async () => fail(new Error("Scarlet is working. Try again after the current jobs finish.")));
-  expect(el.querySelector('[role="alert"]')?.textContent).toBe("Scarlet is working. Try again after the current jobs finish.");
+  await act(async () => fail(new Error("AirWaves is working. Try again after the current jobs finish.")));
+  expect(el.querySelector('[role="alert"]')?.textContent).toBe("AirWaves is working. Try again after the current jobs finish.");
   await esc();
   expect(onClose).toHaveBeenCalledOnce();
 });

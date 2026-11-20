@@ -3,9 +3,9 @@ import { newId, type Author } from "@scarlet/timeline";
 import type { Ctx } from "../context.js";
 import { now } from "../db.js";
 
-/** A person, or Scarlet itself for automatic actions. */
+/** A person, or AirWaves itself for automatic actions. */
 export function actorFor(user: User | null | undefined): Author {
-  return user ? { type: "human", id: user.id, name: user.name } : { type: "scarlet", name: "Scarlet" };
+  return user ? { type: "human", id: user.id, name: user.name } : { type: "scarlet", name: "AirWaves" };
 }
 
 /**

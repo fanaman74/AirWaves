@@ -1,4 +1,4 @@
-/** Public, write-only token for the Scarlet project in PostHog US Cloud. */
+/** Public, write-only token for the AirWaves project in PostHog US Cloud. */
 export const DEFAULT_POSTHOG_KEY = "phc_xWw7KkqDL4iYF6fd4E4bm7WDNADN2AsAd5nzDUjh8d7N";
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 

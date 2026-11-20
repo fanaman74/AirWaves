@@ -51,7 +51,7 @@ export interface MockDb {
   /** Graphics saved to reuse, picked with $name in the message box. Library-wide, like skills. */
   /** Files dropped on the message box, by project. */
   attachments: Record<string, { id: string; name: string; size: number; mime?: string }[]>;
-  /** Rules Scarlet picked up from requests, waiting for the editor. */
+  /** Rules AirWaves picked up from requests, waiting for the editor. */
   learnings: Learning[];
   skillVersions: Record<string, SkillVersion[]>;
   settings: ServerSettings;
@@ -450,7 +450,7 @@ export function buildDb(chatLayouts = false): MockDb {
       ranges: [{ start: 0, end: 16 }],
       state: "failed",
       renders: [],
-      error: "Scarlet couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it.",
+      error: "AirWaves couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it.",
       createdAt: minutesAgo(30),
       updatedAt: minutesAgo(29),
     },

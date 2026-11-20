@@ -19,7 +19,7 @@ export interface JoinCheck extends TimeRange {
   reason?: string;
   /** The scan has no audio measurements at a failing edge, so the check found nothing either way. */
   unmeasured?: boolean;
-  /** Edges left in sound at speaking level, with no quiet or low point Scarlet could move them to within the words asked for. */
+  /** Edges left in sound at speaking level, with no quiet or low point AirWaves could move them to within the words asked for. */
   inSound?: Array<"start" | "end">;
   /** Of those, the edges inside a transcript word that is sounding there. */
   inWord?: Array<"start" | "end">;
@@ -137,7 +137,7 @@ const WORD_SLACK = .05;
 const reach = .75, wordMargin = .02, quietMargin = .03;
 
 /**
- * Padding for a word-addressed removal when the model gives none. When Scarlet places an edge in a quiet run, it leaves
+ * Padding for a word-addressed removal when the model gives none. When AirWaves places an edge in a quiet run, it leaves
  * AIR_AFTER_SPEECH of room tone after the last kept word (its decay and release) and
  * AIR_BEFORE_SPEECH before kept speech resumes (a natural entrance, no clipped breath onset).
  * A run shorter than both splits proportionally. An edge the model already put in silence stays put:
@@ -154,7 +154,7 @@ export const AIR_AFTER_SPEECH = .20;
 export const AIR_BEFORE_SPEECH = .05;
 /**
  * The room tone a join leaves: `after` the last kept word and `before` speech resumes, in the recording's seconds. A
- * skill sets it as a pace; Scarlet's defaults are AIR_AFTER_SPEECH and AIR_BEFORE_SPEECH.
+ * skill sets it as a pace; AirWaves's defaults are AIR_AFTER_SPEECH and AIR_BEFORE_SPEECH.
  */
 export interface JoinPace { after: number; before: number }
 export const DEFAULT_PACE: JoinPace = { after: AIR_AFTER_SPEECH, before: AIR_BEFORE_SPEECH };
@@ -872,7 +872,7 @@ export function sameWordJoin(tl: Timeline, project: Pick<Project, "media" | "set
   // taken from one line ("time where", where an edge 0.03 s early played "time" clipped and 0.02 s late played clean).
   // On "which is nice you can see the rough, you can see the shadows" that put the cut 0.04 s into the first "you":
   // the editor heard himself start a word before the cut, and picked the frame nearest the matched start by ear. That
-  // frame is within the range he called clean on the first line too (2026-11-17). Scarlet still can't hear either.
+  // frame is within the range he called clean on the first line too (2026-11-17). AirWaves still can't hear either.
   const begins = from + onset * step - lag, fps = project.settings.fps;
   const start = Math.round(sourceToTimeline(out, begins) * fps) / fps, source = timelineToSource(out, start), end = range.end;
   if (source >= middle(first) || source <= out.sourceIn || end - start < 2 / fps) return;
@@ -917,17 +917,17 @@ export function dialogueJoinChecker(tl: Timeline, project: Project, pages: JoinP
     const same = sameWordJoin(tl, project, range, pages);
     if (!same) return judge(range, namedWords, air);
     const said = "“" + same.word + "”";
-    // Saved where Scarlet put it, the join is what it is: neither edge moves, and no kept word is cut.
+    // Saved where AirWaves put it, the join is what it is: neither edge moves, and no kept word is cut.
     if (Math.abs(same.start - range.start) < 2e-3) return { start: same.start, end: same.end, status: "review", sameWord: same.word,
       reason: `The cut starts as the first ${said} begins and the second ${said} follows it. The word before runs into the first with no pause, so its start was found by matching the two ` +
-        `${said}s on their sound. No kept word is cut as measured. Scarlet can't hear the join, and neither can you: the editor hears it.` };
+        `${said}s on their sound. No kept word is cut as measured. AirWaves can't hear the join, and neither can you: the editor hears it.` };
     const checked = judge(range, namedWords, air, true);
     // A removal with quiet at both edges needs no other way in.
     if (checked.status === "unchanged" || checked.status === "snapped") return checked;
     return { ...checked, sameWordJoin: { start: same.start, end: same.end, word: same.word, ...(same.takesFirst && { takesFirst: true as const }),
       reason: `${said} is said again right after this removal, and the word before runs into the first one with no pause. Matched on their sound, the first ${said} begins at ` +
         `${same.start.toFixed(3)} s: removing ${same.start.toFixed(3)}–${same.end.toFixed(3)} s ${same.takesFirst ? `also takes out the first ${said}, which this range leaves playing twice,` : "takes out the same words"} ` +
-        "and plays the word before whole. Scarlet can't hear the result, so a cut saved on those seconds is the editor's to hear, as a call." } };
+        "and plays the word before whole. AirWaves can't hear the result, so a cut saved on those seconds is the editor's to hear, as a call." } };
   };
 }
 
@@ -1195,7 +1195,7 @@ export const DIP_DBFS = -55;
 export const TROUGH_DBFS = -48, TROUGH_DEPTH_DB = 10;
 /**
  * A shallower low point, as deep under the sound either side, is where an edge within 50 ms of it goes, an edge given
- * in seconds or the place a word reference's words part, and what an edge left in sound is told of. Scarlet does not go looking for one further off: the
+ * in seconds or the place a word reference's words part, and what an edge left in sound is told of. AirWaves does not go looking for one further off: the
  * stop before a final “s” reads the same, and moving a pause's edge 0.1 s onto it in “21 cents” would have cut the “s”.
  * Edges two and three frames inside “you” and “that” sat beside low points at -45 dBFS, 13 dB under the words either
  * side, and the editor asked for the cut on them (2026-11-16).

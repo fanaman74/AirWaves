@@ -89,13 +89,13 @@ it("counts for the library what the project's chat counts: a pass's calls that s
   task("run");
   const cuts = Array.from({ length: 8 }, (_, i) => ({ start: i * 10, end: i * 10 + 1, reason: "Retake" }));
   const pass = repos.changes.put(Change.parse({ id: "pass", projectId: project.id, threadId: "run", taskId: "run", intent: "suggestion", description: "Dialogue pass",
-    fromVersion: "v0", toVersion: "v1", author: { type: "agent", name: "Scarlet" }, state: "ready", createdAt: new Date(1000).toISOString(), cutReasons: cuts,
+    fromVersion: "v0", toVersion: "v1", author: { type: "agent", name: "AirWaves" }, state: "ready", createdAt: new Date(1000).toISOString(), cutReasons: cuts,
     cutAssessments: cuts.map((cut, index) => ({ index, ...cut, verdict: index < 5 ? "ask" : "cut" })) }));
   expect(count()).toBe(5);
   repos.changes.put({ ...pass, cutChoices: [{ index: 0, start: 0, end: 1, choice: "cut" }, { index: 1, start: 10, end: 11, choice: "keep" }] });
   expect(count()).toBe(3);
 
-  // One call sent back: no proposal is ready while Scarlet revises it, and the pass's other calls still wait.
+  // One call sent back: no proposal is ready while AirWaves revises it, and the pass's other calls still wait.
   repos.changes.put({ ...pass, state: "revising" });
   const revision = task("revision", { kind: "revise", state: "queued", context: { threadId: "run", changeId: "pass", cutIndex: 4 }, createdAt: new Date(2000).toISOString() });
   expect(count()).toBe(4);

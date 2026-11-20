@@ -70,7 +70,7 @@ export function transcriptionPaused(latest: Task | undefined, mediaPaused: boole
 }
 
 /**
- * Media whose problem only shows on the Media page: a file Scarlet couldn't read, or a recording still without a
+ * Media whose problem only shows on the Media page: a file AirWaves couldn't read, or a recording still without a
  * transcript whose last transcription failed or was interrupted. One the pause stopped isn't a problem, and neither
  * is one on a file with no audio track, which Media gives no transcript line.
  */

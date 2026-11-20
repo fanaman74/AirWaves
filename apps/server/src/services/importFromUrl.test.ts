@@ -253,7 +253,7 @@ it("names a download after the address, without its percent-escapes, when the se
   expect(lines.filter(line => line.startsWith("[error]"))).toEqual([]);
 });
 
-it("answers 400 with the reason when the address can't be reached, and when it isn't one Scarlet downloads", async () => {
+it("answers 400 with the reason when the address can't be reached, and when it isn't one AirWaves downloads", async () => {
   vi.mocked(downloadImport).mockRejectedValueOnce(Object.assign(new Error("getaddrinfo ENOTFOUND media.example"), { code: "ENOTFOUND" }));
   const unreachable = await importUrl("https://media.example/clip.mp4");
   expect(unreachable.status).toBe(400);

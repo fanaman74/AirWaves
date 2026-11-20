@@ -19,7 +19,7 @@ export interface PriceList {
   models: Record<string, ModelPrice>;
 }
 
-/** LiteLLM's community-kept list of published API prices, read for models Scarlet's own table doesn't have. */
+/** LiteLLM's community-kept list of published API prices, read for models AirWaves's own table doesn't have. */
 export const PRICE_LIST_URL = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
 const PROVIDERS = new Set(["openai", "anthropic", "gemini"]);
 const TIER_FIELD = /^input_cost_per_token_([a-z]+)$/;
@@ -36,7 +36,7 @@ function ratesOf(entry: Record<string, unknown>, suffix = ""): Rates | undefined
   return cacheWrite !== undefined ? [input, output, cacheRead ?? input, cacheWrite] : cacheRead !== undefined ? [input, output, cacheRead] : [input, output];
 }
 
-/** The chat models of the providers Scarlet runs, from LiteLLM's price file, at short-context rates. */
+/** The chat models of the providers AirWaves runs, from LiteLLM's price file, at short-context rates. */
 export function pickPrices(raw: unknown): Record<string, ModelPrice> {
   const models: Record<string, ModelPrice> = {};
   if (!raw || typeof raw !== "object") return models;
@@ -80,7 +80,7 @@ function tierRates(price: ModelPrice, tier: string, standard: Rates): Rates | un
 }
 
 export interface PriceLookup {
-  /** Rates for `model` at `tier` from the price lists, given the standard rates Scarlet's own table has, if any. */
+  /** Rates for `model` at `tier` from the price lists, given the standard rates AirWaves's own table has, if any. */
   rates(model: string, tier: string | undefined, standard: Rates | undefined): Rates | undefined;
   /** A model or speed had no price: look again, at most once a day. */
   missed(): void;

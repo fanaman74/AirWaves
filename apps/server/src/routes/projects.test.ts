@@ -65,7 +65,7 @@ it("projects simultaneous edit lists from one history read and returns just the 
   for (const [i, threadId] of ["one", "__proto__", "three"].entries()) {
     ctx.repos.changes.put(Change.parse({ id: "change" + i, threadId, projectId: project.id, state: "approved",
       fromVersion: version, toVersion: version, ranges: [{ start: i, end: i + 1 }], description: "Edit " + i,
-      author: { type: "agent", name: "Scarlet" }, createdAt: "2026-01-01T00:00:00Z" }));
+      author: { type: "agent", name: "AirWaves" }, createdAt: "2026-01-01T00:00:00Z" }));
   }
   const path = "/projects/" + project.id;
   const one = await (await api("GET", path + "/threads/one/edits")).json();
@@ -86,7 +86,7 @@ it("fails only the thread whose edit list cannot be projected", async () => {
   for (const [i, threadId] of ["one", "broken"].entries()) {
     ctx.repos.changes.put(Change.parse({ id: "change" + i, threadId, projectId: project.id, state: "approved",
       fromVersion: version, toVersion: version, ranges: [{ start: i, end: i + 1 }], description: "Edit " + i,
-      author: { type: "agent", name: "Scarlet" }, createdAt: "2026-01-01T00:00:00Z" }));
+      author: { type: "agent", name: "AirWaves" }, createdAt: "2026-01-01T00:00:00Z" }));
   }
   const threads = ctx.repos.projects.threads.bind(ctx.repos.projects);
   vi.spyOn(ctx.repos.projects, "threads").mockImplementation(id =>
@@ -107,7 +107,7 @@ it("stops editing across the project and continues interrupted requests ahead of
   const other = ctx.repos.projects.insert(createProject("Other"));
   const make = (kind: Task["kind"], state?: Task["state"], projectId = project.id) => createTask(ctx, {
     projectId, kind, agent: kind === "transcribe" ? "api" : "claude", instruction: "Fixture",
-    state, createdBy: { type: "scarlet", name: "Scarlet" },
+    state, createdBy: { type: "scarlet", name: "AirWaves" },
   });
   const { host } = await (await api("POST", "/hosts/register", { name: "Host", platform: "test", agents: [{ id: "claude", installed: true }] })).json();
   const claim = async (taskId?: string, wait = 0): Promise<Task | null> => {
@@ -230,7 +230,7 @@ it("stops just one edit and lets the next queued request start", async () => {
   const { ctx } = workspace;
   const make = (kind: Task["kind"]) => createTask(ctx, {
     projectId: project.id, kind, agent: "claude", instruction: "Fixture",
-    createdBy: { type: "scarlet", name: "Scarlet" },
+    createdBy: { type: "scarlet", name: "AirWaves" },
   });
   const { host } = await (await api("POST", "/hosts/register", { name: "Host", platform: "test", agents: [{ id: "claude", installed: true }] })).json();
   const claim = async () => (await (await api("POST", `/hosts/${host.id}/claim`, {})).json()).task as Task | null;
@@ -248,7 +248,7 @@ it("removes a request from the queue without stopping an edit that has already s
   const { ctx } = workspace;
   const make = (state: Task["state"]) => createTask(ctx, {
     projectId: project.id, kind: "edit", agent: "claude", instruction: "Fixture", state,
-    createdBy: { type: "scarlet", name: "Scarlet" },
+    createdBy: { type: "scarlet", name: "AirWaves" },
   });
   const running = make("running");
   const queued = make("queued");
@@ -334,7 +334,7 @@ it("interrupts a transcription when the project goes to the trash, and starts it
   expect(cloud).toHaveBeenCalledTimes(2);
 });
 
-it("leaves transcription running through a pause while Scarlet is working on a request, and stops it when nothing is under way", async () => {
+it("leaves transcription running through a pause while AirWaves is working on a request, and stops it when nothing is under way", async () => {
   const { ctx } = workspace;
   // Each run goes on until the test finishes it or its signal stops it, as a long recording's does.
   const runs: Array<{ signal: AbortSignal; finish(): void }> = [];
@@ -351,7 +351,7 @@ it("leaves transcription running through a pause while Scarlet is working on a r
   await api("POST", "/media/camera/transcribe", {});
   await vi.waitFor(() => expect(runs).toHaveLength(1));
   const pass = createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "/first-cut-dialogue",
-    state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+    state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
   await pause(true);
   // The pass can't plan or cut without that transcript, so the pause leaves it running.
   expect([runs[0]!.signal.aborted, latest("camera").state]).toEqual([false, "running"]);
@@ -367,7 +367,7 @@ it("leaves transcription running through a pause while Scarlet is working on a r
   // short run that reads a request for a standing rule isn't one: it edits nothing and uses no transcript.
   saveTask(ctx, { ...ctx.repos.tasks.get(pass.id)!, state: "done", finishedAt: new Date().toISOString() });
   createTask(ctx, { projectId: project.id, kind: "learning_check", agent: "api", instruction: "Read the request for a rule",
-    state: "running", createdBy: { type: "scarlet", name: "Scarlet" } });
+    state: "running", createdBy: { type: "scarlet", name: "AirWaves" } });
   expect((await api("POST", `/projects/${project.id}/media/broll/prepare`, { kind: "transcript" })).status).toBe(202);
   await vi.waitFor(() => expect(latest("broll")).toMatchObject({ state: "failed", interrupted: true }));
   expect(runs).toHaveLength(2);
@@ -406,14 +406,14 @@ it("stops a transcription when another engine pauses the project", async () => {
   }
 });
 
-it("lists what Scarlet is doing in each project: a request it is on, then files importing, transcribing and caching", async () => {
+it("lists what AirWaves is doing in each project: a request it is on, then files importing, transcribing and caching", async () => {
   const { ctx } = workspace;
   const other = ctx.repos.projects.insert(createProject("Idle"));
   const activity = async () => Object.fromEntries(((await (await api("GET", "/projects")).json()).projects as Array<{ id: string; activity?: unknown }>)
     .map(p => [p.id, p.activity]));
   expect(await activity()).toEqual({ [project.id]: undefined, [other.id]: undefined });
 
-  const scarlet = { type: "scarlet", name: "Scarlet" } as const;
+  const scarlet = { type: "scarlet", name: "AirWaves" } as const;
   createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "/first-cut-dialogue", state: "running", createdBy: scarlet });
   // A question waits on the editor, so it is counted with what needs them, not as work under way; a skill's edit isn't the project's.
   createTask(ctx, { projectId: other.id, kind: "edit", agent: "api", instruction: "Tighten it", state: "waiting_for_user", createdBy: scarlet });

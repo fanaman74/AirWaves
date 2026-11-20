@@ -44,7 +44,7 @@ interface Rewording { id: string; text: string; onChange(text: string): void; on
 export interface PausedAt { time: number; version?: string; mediaId?: string }
 
 interface ComposerProps {
-  /** What sits attached to the top of the message box: the requests queued behind the one Scarlet is on. */
+  /** What sits attached to the top of the message box: the requests queued behind the one AirWaves is on. */
   tray?: ReactNode;
   /** What the message revises, as a tag inside the box before the text: "Cut at 2:05". Its × takes the target off. */
   targetTag?: string;
@@ -64,7 +64,7 @@ interface ComposerProps {
   rewording?: Rewording;
   /**
    * Where the editor paused the video while a cut or an edit is open, on the timeline the player showed. The tag shows
-   * that time in place of the cut's or the edit's; the message is still theirs, and Scarlet is told the frame too.
+   * that time in place of the cut's or the edit's; the message is still theirs, and AirWaves is told the frame too.
    */
   pausedAt?: PausedAt;
   /**
@@ -193,7 +193,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
   };
 
   /** Continue the focused thread, start a note at a moment, or start a new request. */
-  /** Sends the message, and says whether the files attached to it went with it. An answer to Scarlet's question can't carry any: they wait for the next message. */
+  /** Sends the message, and says whether the files attached to it went with it. An answer to AirWaves's question can't carry any: they wait for the next message. */
   const send = async (text: string, voiceTranscript?: string, anchor = displayAnchor, skillIds?: string[], files?: TaskAttachment[], drawn?: PictureMarks): Promise<boolean> => {
     const attachments = files?.length ? files : undefined;
     const carried = attachments && { attachments, ...(drawn && { pictureMarks: drawn }) };
@@ -374,7 +374,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
   }, [value, firstTime, inputClock, typedPoint, sameClock, rewording, replying, aimsByText, setContext]);
   const tagWords = targetTag && `${targetTag.charAt(0).toLowerCase()}${targetTag.slice(1)}`;
   // What the tag's message does, for its hover note: a cut or an edit is revised, a question answered, an edit replied to.
-  const tagAct = !targetTag ? undefined : question && targetTag === "Answer" ? "Answering Scarlet’s question"
+  const tagAct = !targetTag ? undefined : question && targetTag === "Answer" ? "Answering AirWaves’s question"
     : thread && targetTag === "Reply" ? "Replying to this edit" : `Revising ${tagWords === "whole edit" ? "the whole edit" : tagWords}`;
   const tag = rewording ? undefined : targetTag;
   // A stretch marked on the timeline's ruler rides with the message, beside the tag of the cut or edit it is aimed at.
@@ -480,7 +480,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
               title={recording || heard ? "Waits until what you’re saying is sent" : "New edit instead"} onClick={takeOffTarget}><Icon name="x" size={10} /></button>
           </span>}
           <SkillCommandInput key={owner} id={inputId} inputRef={inputRef} value={value} skills={skills}
-            placeholder={rewording ? "What should it ask instead?" : question ? "Answer Scarlet…" : displayAnchor?.changeId && context ? "What should change?" : replying ? "Write a follow-up…" : NEW_EDIT_HINT}
+            placeholder={rewording ? "What should it ask instead?" : question ? "Answer AirWaves…" : displayAnchor?.changeId && context ? "What should change?" : replying ? "Write a follow-up…" : NEW_EDIT_HINT}
             timestamps={sameClock ? times : undefined} onTimestamp={inputClock?.seek} onChange={changeText} onSubmit={() => void submitText()} />
           {/* The reason is only for a mic with no agent to talk to. While a message sends or is written down the spinner says why. */}
           <MicButton onResult={(r) => void onVoice(r)} onStart={() => {
@@ -488,7 +488,7 @@ function ComposerBox({ project, thread, onCreated, onSent, selectedEdit, onClear
             setError("");
             voiceReword.current = rewording ? rewordSession : undefined;
             if (!voiceReword.current) voiceAnchor.current = captureTarget();
-          }} onRecording={setRecording} onError={setError} followHold disabled={unavailable || busy || speech.busy} disabledReason={unavailable ? unavailableReason : undefined} label="Talk to Scarlet" />
+          }} onRecording={setRecording} onError={setError} followHold disabled={unavailable || busy || speech.busy} disabledReason={unavailable ? unavailableReason : undefined} label="Talk to AirWaves" />
           {(busy || speech.busy) && <Spinner className="size-3.5 shrink-0" />}
           {/* Shown once there's something to send (Enter sends too). Stopping an edit is on its card, where its progress is. */}
           {value.trim() && !onlyTime && <button type="button" className={rewording ? "btn-primary composer-send is-save shrink-0" : "btn-primary composer-send shrink-0"} data-log-control={rewording ? "save-queued-request" : "send-request"} aria-label={saveLabel} title={saveLabel}

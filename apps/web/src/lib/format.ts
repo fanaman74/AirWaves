@@ -94,7 +94,7 @@ export function tokenBreakdown(u: { inputTokens: number; outputTokens: number; c
  */
 export function authorLabel(a: Author): string {
   if (a.type === "agent") return (AGENT_LABEL as Record<string, string>)[a.id ?? ""] ?? a.name;
-  if (a.type === "scarlet") return "Scarlet";
+  if (a.type === "scarlet") return "AirWaves";
   return a.name;
 }
 

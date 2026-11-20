@@ -27,9 +27,9 @@ it("shows a release downloading by how much of it is here, then restarts into it
     status.mockResolvedValue({ ready: null, building: download, source: "release" });
     await poll();
     expect(container.querySelector("[role=status]")!.textContent).toBe("Updating42%");
-    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("Updating Scarlet, 42% downloaded");
+    expect(container.querySelector("[role=status]")!.getAttribute("aria-label")).toBe("Updating AirWaves, 42% downloaded");
     expect(hint()).toEqual(["Updating to version 0.2.0", on,
-      "Scarlet is downloading it in the background. Keep working: this becomes Restart to update when it’s ready."]);
+      "AirWaves is downloading it in the background. Keep working: this becomes Restart to update when it’s ready."]);
     // The figure is the download's own: it doesn't move between reports.
     await act(async () => vi.advanceTimersByTimeAsync(4000).then(() => undefined));
     expect(container.querySelector(".update-button-figure")!.textContent).toBe("42%");
@@ -37,7 +37,7 @@ it("shows a release downloading by how much of it is here, then restarts into it
     await poll();
     const button = container.querySelector("button")!;
     expect(button.textContent).toBe("Restart to update");
-    expect(hint()).toEqual(["Version 0.2.0 is ready", on, "Restarting installs it and brings you back here. An edit Scarlet is working on picks up where it left off."]);
+    expect(hint()).toEqual(["Version 0.2.0 is ready", on, "Restarting installs it and brings you back here. An edit AirWaves is working on picks up where it left off."]);
     await act(async () => button.click());
     expect(restart).toHaveBeenCalledWith("0.2.0");
   } finally {
@@ -59,9 +59,9 @@ it("checks the release manifest from Settings, not Git", async () => {
     await act(async () => { root.render(<UpdateSettings />); });
     const button = container.querySelector("button")!;
     await act(async () => button.click());
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Version 0.2.0 is available. Scarlet is getting it ready.");
+    expect(container.querySelector("[role=status]")!.textContent).toBe("Version 0.2.0 is available. AirWaves is getting it ready.");
     await act(async () => button.click());
-    expect(container.querySelector("[role=status]")!.textContent).toBe("Scarlet is up to date.");
+    expect(container.querySelector("[role=status]")!.textContent).toBe("AirWaves is up to date.");
     expect(check).toHaveBeenCalledTimes(2);
     expect(git).not.toHaveBeenCalled();
   } finally {

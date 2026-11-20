@@ -25,7 +25,7 @@ export type UndoStep = {
   edit: EditRef & { single?: boolean };
 } | {
   kind: "revision";
-  /** "Reject" for a Reject edit, which asks Scarlet to put the edit back as a revision does. */
+  /** "Reject" for a Reject edit, which asks AirWaves to put the edit back as a revision does. */
   word?: "Reject";
   /** The request the revision went out as. */
   taskId?: string;

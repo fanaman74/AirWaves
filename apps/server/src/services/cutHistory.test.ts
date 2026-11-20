@@ -67,7 +67,7 @@ it("puts a rejected cut's footage back itself, and refuses a cut whose join it c
   expect(ctx.repos.versions.summaries(project.id, after.head).find(v => v.isHead)).toMatchObject({ parent: cut.version, duration: 55 });
 });
 
-it("takes a look edit off again itself, undoes a request whose every edit is rejected, and asks Scarlet for the rest", () => {
+it("takes a look edit off again itself, undoes a request whose every edit is rejected, and asks AirWaves for the rest", () => {
   const { ctx } = app;
   const user = localUser(ctx);
   ctx.repos.projects.putMedia(project.id, { id: "camera", name: "interview.mov", kind: "video", path: "camera.mov" }, "ready");
@@ -86,7 +86,7 @@ it("takes a look edit off again itself, undoes a request whose every edit is rej
   const reject = (edits: Parameters<typeof rejectEdits>[4]) => rejectEdits(ctx, user, project.id, "thread", edits, ctx.repos.projects.get(project.id)!.head!, branch);
   const answer = { changeId: "chg_punch", spot: 0, label: "Punch in on the answer", range: { start: 10, end: 38 } };
   const close = { changeId: "chg_punch", spot: 1, label: "Punch in on the close", range: { start: 38, end: 53 } };
-  // An edit that has been revised is only known by its latest version: Scarlet is asked.
+  // An edit that has been revised is only known by its latest version: AirWaves is asked.
   expect(() => reject([{ ...answer, revised: true }])).toThrow("This edit can’t be put back as it was.");
   // One of the two punch-ins comes off, and the other stays.
   const one = reject([answer]);

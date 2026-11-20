@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user } = await api.me();
       if (current !== attempt) return;
       set({ status: "ready", user, error: null, failed: false });
-      // Finish the exports that were in progress when Scarlet last quit.
+      // Finish the exports that were in progress when AirWaves last quit.
       void import("../lib/exportJobs").then(jobs => jobs.resumeExports())
         .catch(error => appLog("error", "resume-exports", { error: errorMessage(error) }, { level: "warn" }));
       // And the imports, in every project that has files still to copy.

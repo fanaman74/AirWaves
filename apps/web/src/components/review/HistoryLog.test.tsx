@@ -39,7 +39,7 @@ const entries = () => container.querySelectorAll("section li").length;
 
 /** A full page of the log: 200 entries, so the engine may hold older ones. */
 const page = (from: number): ActivityEntry[] => Array.from({ length: 200 }, (_, i) => ({
-  id: `act_${from + i}`, projectId: PRJ, actor: { type: "scarlet" as const, name: "Scarlet" }, type: "change.approved",
+  id: `act_${from + i}`, projectId: PRJ, actor: { type: "scarlet" as const, name: "AirWaves" }, type: "change.approved",
   summary: `Entry ${from + i}`, data: {}, createdAt: new Date(Date.now() - (from + i) * 1000).toISOString(),
 }));
 
@@ -69,7 +69,7 @@ it("retries a history that didn't load, and keeps the loaded entries when an old
 });
 
 it("keeps every entry's words one colour, with a small mark before the ones approved, put back or gone wrong", async () => {
-  const entry = (id: string, type: string, summary: string): ActivityEntry => ({ id, projectId: PRJ, actor: { type: "scarlet", name: "Scarlet" }, type, summary, data: {},
+  const entry = (id: string, type: string, summary: string): ActivityEntry => ({ id, projectId: PRJ, actor: { type: "scarlet", name: "AirWaves" }, type, summary, data: {},
     createdAt: new Date().toISOString() });
   vi.spyOn(api, "activity").mockResolvedValue({ activity: [
     entry("a", "request.failed", "Claude Code couldn’t finish “Add captions”"), entry("b", "change.undone", "Undo · Zoom in"),
@@ -87,11 +87,11 @@ it("keeps every entry's words one colour, with a small mark before the ones appr
   expect(lines[0]!.querySelector(".history-mark")!.getAttribute("aria-hidden")).toBe("true");
 });
 
-it("marks what Scarlet did with the same badge, whichever model ran it", async () => {
+it("marks what AirWaves did with the same badge, whichever model ran it", async () => {
   const entry = (id: string, actor: ActivityEntry["actor"]): ActivityEntry => ({ id, projectId: PRJ, actor, type: "change.created", summary: `Entry ${id}`,
     data: {}, createdAt: new Date().toISOString() });
   vi.spyOn(api, "activity").mockResolvedValue({ activity: [
-    entry("a", { type: "agent", id: "claude", name: "Claude Code" }), entry("b", { type: "scarlet", name: "Scarlet" }),
+    entry("a", { type: "agent", id: "claude", name: "Claude Code" }), entry("b", { type: "scarlet", name: "AirWaves" }),
   ] });
   await act(async () => root.render(<HistoryLog />));
   const badges = [...container.querySelectorAll("section li")].map(li => li.firstElementChild!.textContent);

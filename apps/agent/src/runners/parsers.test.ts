@@ -30,7 +30,7 @@ describe("claude stream-json parser", () => {
     const st = newClaudeState();
     const evs = feed(fixture, st, parseClaudeLine);
     expect(evs.map((e) => e.type)).toEqual(["log", "log", "tool", "tool", "error", "log", "result"]);
-    expect(evs[0]!.text).toContain("Scarlet MCP connected");
+    expect(evs[0]!.text).toContain("AirWaves MCP connected");
     expect(evs[2]!.text).toBe("scarlet.project_get");
     expect(evs[3]!.text).toContain("scarlet.timeline_propose {\"ops\"");
     expect(evs[4]!.text).toContain("Invalid ops");
@@ -111,7 +111,7 @@ describe("claude stream-json parser", () => {
     ], st, parseClaudeLine);
     expect(steps(next).at(-1)).toEqual(["plan", ["done Read the scene", "in_progress Trim the long pause"]]);
     expect(next.at(-1)!.text).toBe("[x] Read the scene\n[>] Trim the long pause");
-    // A refused update, a look at the list and a step it doesn't know change nothing, and none is logged as a Scarlet tool.
+    // A refused update, a look at the list and a step it doesn't know change nothing, and none is logged as a AirWaves tool.
     expect(feed([
       use("u5", "TaskUpdate", { taskId: "2", status: "completed" }),
       JSON.stringify({ type: "user", message: { role: "user", content: [{ tool_use_id: "u5", type: "tool_result", is_error: true, content: "No such task" }] } }),
@@ -237,7 +237,7 @@ describe("codex exec --json parser", () => {
     expect(evs[1]).toEqual({ type: "plan", text: "[ ] Step 1\n[ ] Step 2\n[ ] Step 3",
       data: { steps: [{ text: "Step 1", state: "pending" }, { text: "Step 2", state: "pending" }, { text: "Step 3", state: "pending" }] } });
     expect(evs[2]!.text).toBe("[x] Step 1\n[ ] Step 2\n[ ] Step 3");
-    // A list Scarlet can't read is passed over.
+    // A list AirWaves can't read is passed over.
     expect(parseCodexLine('{"type":"item.updated","item":{"id":"item_1","type":"todo_list"}}', st)).toEqual([]);
   });
   it.skipIf(process.platform !== "darwin")("allows the resolved Codex executable without opening its installation directory", () => {
@@ -285,7 +285,7 @@ describe("codex exec --json parser", () => {
     expect(long.stdin).toBe("a\nb");
     const tuned = buildCodexCommand({ instruction: "x", systemPrompt: "SYS", mcp, cwd: "/w", effort: "ultra", serviceTier: "priority" }, "codex", "/w/.scarlet");
     expect(tuned.args.slice(-5)).toEqual(["-c", 'model_reasoning_effort="ultra"', "-c", 'service_tier="priority"', "-"]);
-    // Ephemeral: Scarlet runs stay out of the user's Codex thread list.
+    // Ephemeral: AirWaves runs stay out of the user's Codex thread list.
     expect(cmd.args).toContain("--ephemeral");
     expect(cmd.args).not.toContain("resume");
   });
@@ -327,7 +327,7 @@ describe("gemini ACP parser", () => {
     expect(evs[2]!.text).toContain("Invalid ops");
   });
 
-  it("enforces Scarlet MCP-only permissions and builds the agy acp command", () => {
+  it("enforces AirWaves MCP-only permissions and builds the agy acp command", () => {
     expect(isScarletMcpPermission({ toolCall: { name: "mcp__scarlet__timeline_get" } })).toBe(true);
     expect(isScarletMcpPermission({ toolCall: { _meta: { mcpServer: "scarlet" }, title: "read" } })).toBe(true);
     expect(isScarletMcpPermission({ toolCall: { name: "bash", title: "Run shell" } })).toBe(false);

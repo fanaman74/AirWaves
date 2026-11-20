@@ -2,7 +2,7 @@
  * What a saved part of a dialogue pass still plays once its cuts are out: pauses long enough to hear as a wait, and
  * words said twice in a row. A pass reads the recording, not the edit it leaves, so a wait it trimmed too little, a
  * restart it missed and a word doubled across one of its own joins all went unseen until the editor played the cut.
- * Scarlet reports them; the model decides.
+ * AirWaves reports them; the model decides.
  */
 import { adjacentRepeatCandidates, normalizeTranscriptToken } from "@scarlet/shared";
 import type { TimeRange, TranscriptWord } from "@scarlet/timeline";

@@ -10,7 +10,7 @@ function engine(noteCleanup: Cleanup, keys: Ctx["env"] = {}, env: NodeJS.Process
   const ctx = { settings: () => ({ noteCleanup }), env: keys, options: { env }, log: (line: string) => lines.push(line) } as unknown as Ctx;
   return { ctx, lines };
 }
-/** What the provider would answer, and what Scarlet sent it. */
+/** What the provider would answer, and what AirWaves sent it. */
 function provider(answer: unknown, status = 200) {
   const sent: Array<{ url: string; headers: Record<string, string>; body: Record<string, any> }> = [];
   vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {

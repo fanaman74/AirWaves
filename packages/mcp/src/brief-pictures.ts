@@ -171,7 +171,7 @@ export const BRIEF_PICTURES_NEXT = `Each stretch in briefPictures shows that pic
 /** A picture this short between two others is a flash: no one means it, so its edge goes onto the cut beside it. */
 export const FLASH_SECONDS = 0.1;
 
-/** A flash an edit made that Scarlet closed: `clips` had their edges at `from` and now meet the cut at `to`. */
+/** A flash an edit made that AirWaves closed: `clips` had their edges at `from` and now meet the cut at `to`. */
 export interface MetCut { from: number; to: number; seconds: number; clips: string[] }
 
 /**
@@ -228,10 +228,10 @@ export function flashesOntoCuts(before: Timeline | null, after: Timeline, media:
   return { ops, met };
 }
 
-export const MET_CUT_NEXT = `Each stretch in metCut showed a picture for ${FLASH_SECONDS} s or less between two others: Scarlet moved the listed ` +
+export const MET_CUT_NEXT = `Each stretch in metCut showed a picture for ${FLASH_SECONDS} s or less between two others: AirWaves moved the listed ` +
   "clips' edges onto the cut beside it, so the shot over it now changes on that cut.";
 
-/** An insert's edge Scarlet moved onto a cut in its recording: it was at `from` and is now at `to`, on `source` seconds of the recording. */
+/** An insert's edge AirWaves moved onto a cut in its recording: it was at `from` and is now at `to`, on `source` seconds of the recording. */
 export interface MetRecordingCut { from: number; to: number; seconds: number; clips: string[]; source: number }
 
 /**
@@ -333,5 +333,5 @@ function fillsFrame(tl: Timeline, media: readonly MediaAsset[], canvas: { width:
 }
 
 export const MET_RECORDING_CUT_NEXT = "Each edge in metRecordingCut ran past a cut in its recording by pictures that each played under a second, " +
-  "so the viewer saw them for a moment before the picture changed again: Scarlet moved the listed clips' edges from `from` to `to`, onto the recording's cut " +
+  "so the viewer saw them for a moment before the picture changed again: AirWaves moved the listed clips' edges from `from` to `to`, onto the recording's cut " +
   "at `source` seconds of it, so the picture now changes there.";

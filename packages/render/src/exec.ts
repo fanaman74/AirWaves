@@ -98,31 +98,31 @@ export function resolveFfprobe(explicit?: string): string {
   return explicit ?? process.env.SCARLET_FFPROBE ?? process.env.FFPROBE_PATH ?? findBinary("ffprobe") ?? "ffprobe";
 }
 
-/** How to install the FFmpeg Scarlet supports on this platform, as one sentence. */
+/** How to install the FFmpeg AirWaves supports on this platform, as one sentence. */
 function installFfmpeg(platform: NodeJS.Platform = process.platform): string {
   return platform === "win32"
     ? "In PowerShell, run winget install --id Gyan.FFmpeg.Essentials --exact."
     : platform === "darwin"
-      ? "Run the FFmpeg setup helper linked in the Scarlet download instructions."
+      ? "Run the FFmpeg setup helper linked in the AirWaves download instructions."
       : "Install the FFmpeg package from your system’s package manager.";
 }
 
 /** Show the prerequisite at the import or render that needs it. Other launch errors keep their diagnostics. */
 export function mediaToolLaunchError(bin: string, error: NodeJS.ErrnoException, fallback: string): string {
   if (error.code !== "ENOENT" || !/^ff(mpeg|probe)(\.exe)?$/i.test(basename(bin))) return fallback;
-  return `${fallback}. ${installFfmpeg()} Then restart Scarlet and retry.`;
+  return `${fallback}. ${installFfmpeg()} Then restart AirWaves and retry.`;
 }
 
 /**
- * Why Scarlet can't draw text with the FFmpeg it found, and what to do: some builds leave out the filter that draws
- * text (drawtext), which captions and the labels on Scarlet's pictures need. `need` says what that stops, such as
+ * Why AirWaves can't draw text with the FFmpeg it found, and what to do: some builds leave out the filter that draws
+ * text (drawtext), which captions and the labels on AirWaves's pictures need. `need` says what that stops, such as
  * "draw the video’s captions". No path: the editor and the model read this.
  */
 export function missingTextFilterMessage(need: string, platform: NodeJS.Platform = process.platform): string {
   const install = platform === "linux"
     ? "Install an FFmpeg package built with text drawing (libfreetype) from your system’s package manager."
     : installFfmpeg(platform);
-  return `This copy of FFmpeg can’t draw text, so Scarlet can’t ${need}. ${install} Then restart Scarlet and try again.`;
+  return `This copy of FFmpeg can’t draw text, so AirWaves can’t ${need}. ${install} Then restart AirWaves and try again.`;
 }
 
 /** The FFmpeg in use lacks a filter a render needs. Its message is a sentence for the editor; see `missingTextFilterMessage`. */
@@ -459,7 +459,7 @@ export function ffmpegFilters(ffmpegPath?: string): Promise<Set<string>> {
 
 /**
  * Whether this ffmpeg build can draw text. A build that can't be asked counts as able, so whatever stops it from
- * running is the error the render reports. So does a list Scarlet couldn't read a filter from, so a change in how a
+ * running is the error the render reports. So does a list AirWaves couldn't read a filter from, so a change in how a
  * later FFmpeg prints it never blocks captions on a build that has them.
  */
 export async function hasDrawtext(ffmpegPath?: string): Promise<boolean> {

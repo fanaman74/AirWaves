@@ -1,5 +1,5 @@
 /**
- * The local agent host daemon: registers with the Scarlet server, heartbeats,
+ * The local agent host daemon: registers with the AirWaves server, heartbeats,
  * claims tasks (long-poll + WebSocket wake-ups), runs them through the chosen
  * CLI runner, streams events back and completes them.
  */
@@ -10,7 +10,7 @@ import { basename, dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import WebSocket from "ws";
 import type { AgentAvailability, AgentId, AgentUsage, Task, TaskEvent } from "@scarlet/shared";
-import { ScarletClient, TaskState } from "@scarlet/shared";
+import { ScarletClient, TaskState, isApiProvider, type ApiProviderSecret } from "@scarlet/shared";
 import { privateDirectory } from "./private-files.js";
 import type { AgentConfig } from "./config.js";
 import { CLI_AGENTS, detect as detectAgents, runnerEnv } from "./detect.js";
@@ -74,6 +74,9 @@ export class AgentHost {
   private readonly opts: HostOptions;
   private readonly log: (msg: string) => void;
   private agents: AgentAvailability[] = [];
+  /** What the CLI detection found; `agents` adds the API providers saved in the engine. */
+  private cliAgents: AgentAvailability[] = [];
+  private apiSecrets: ApiProviderSecret[] = [];
   private running = new Map<string, RunningTask>(); // taskId -> run
   /** Running task count per runtime; each may run up to maxParallel at once. */
   private busy = new Map<AgentId, number>();
@@ -111,7 +114,8 @@ export class AgentHost {
       (this.opts.detect ?? (() => detectAgents({ models: this.config.models, log: this.log })))(),
       pruneTaskDirs(this.opts.workRoot, undefined, home).catch((err) => this.log(`could not prune old task folders: ${errMsg(err)}`)),
     ]);
-    this.agents = agents;
+    this.cliAgents = agents;
+    await this.refreshApiProviders();
     await this.register();
     this.heartbeatTimer = setInterval(() => void this.heartbeat(), this.opts.heartbeatMs ?? 30_000);
     if (this.opts.ws !== false) this.connectWs();
@@ -145,8 +149,33 @@ export class AgentHost {
     this.log(`registered as host ${host.id} (${name}); agents: ${this.agents.filter((a) => a.installed).map((a) => a.id).join(", ") || "none"}`);
   }
 
+  /**
+   * AirWaves: read the API providers saved in Settings → AI providers and report each enabled one as an agent,
+   * offering its saved model. Runs at start and on each heartbeat, so a provider saved in Settings appears within one.
+   */
+  async refreshApiProviders(): Promise<void> {
+    try {
+      const { providers } = await this.client.apiProviderSecrets();
+      this.apiSecrets = providers;
+    } catch (err) {
+      // An older engine has no providers route. Keep what was last read.
+      if (!isStatus(err, 404)) this.log(`could not read AI providers: ${errMsg(err)}`);
+    }
+    const api: AgentAvailability[] = this.apiSecrets.filter((p) => p.enabled && p.apiKey && p.model).map((p) => ({
+      id: p.id,
+      installed: true,
+      loggedIn: true,
+      auth: "api_key",
+      model: p.model,
+      models: [p.model],
+      modelLabels: { [p.model]: p.modelLabel ?? p.model },
+    }));
+    this.agents = [...this.cliAgents.filter((a) => !isApiProvider(a.id)), ...api];
+  }
+
   private async heartbeat(): Promise<void> {
     if (!this.config.hostId) return;
+    await this.refreshApiProviders();
     try {
       await this.client.heartbeat(this.config.hostId, this.agents, [...this.running.keys()]);
       await this.checkCancellations();
@@ -246,7 +275,7 @@ export class AgentHost {
   private async claimLoop(): Promise<void> {
     const limit = Math.min(8, Math.max(1, this.config.maxParallel ?? 3));
     while (!this.stopped) {
-      const available = this.agents.filter(a => a.installed && a.loggedIn !== false && (CLI_AGENTS as string[]).includes(a.id));
+      const available = this.agents.filter(a => a.installed && a.loggedIn !== false && ((CLI_AGENTS as string[]).includes(a.id) || isApiProvider(a.id)));
       const idle = available.filter(a => (this.busy.get(a.id) ?? 0) < limit).map(a => a.id);
       // A long poll cannot gain another runtime when one of our workers finishes.
       const wait = idle.length === available.length ? this.opts.claimWaitSeconds ?? 25 : 0;
@@ -437,9 +466,12 @@ export class AgentHost {
       });
     };
     let questionSeen: string | undefined;
+    if (isApiProvider(task.agent)) await this.refreshApiProviders();
+    const apiSecret = isApiProvider(task.agent) ? this.apiSecrets.find((p) => p.id === task.agent) : undefined;
     const run = (p: Prepared, priorUsage?: AgentUsage) => runner({
       agent: task.agent,
-      model: task.model ?? this.config.models?.[task.agent],
+      model: task.model ?? this.config.models?.[task.agent] ?? apiSecret?.model,
+      ...(apiSecret && { apiKey: apiSecret.apiKey }),
       effort: task.effort,
       fast: task.fast,
       serviceTier: task.serviceTier,
@@ -588,7 +620,7 @@ export function claudeProjectDir(realCwd: string, home = homedir()): string | un
 }
 
 /**
- * Delete the Claude sessions of one finished Scarlet task: only the project folder named after its task folder,
+ * Delete the Claude sessions of one finished AirWaves task: only the project folder named after its task folder,
  * and the to-do list of each session in it.
  */
 export async function removeClaudeSessions(realCwd: string, home = homedir()): Promise<void> {

@@ -8,7 +8,7 @@ type TokenUsage = {
 };
 
 // USD per million tokens at first-party standard rates for short prompts and the default cache TTL.
-// Rates here take precedence over the price list in modelPrices.generated.ts and the one fetched while Scarlet runs,
+// Rates here take precedence over the price list in modelPrices.generated.ts and the one fetched while AirWaves runs,
 // so a model whose price depends on the date, or that the list has wrong, is priced by hand.
 
 const standardRates = new Map<string, Rates>([
@@ -106,7 +106,7 @@ export function speedTier(serviceTier: string | null | undefined, fast?: boolean
   return tier && !STANDARD_SPEEDS.has(tier) ? tier : undefined;
 }
 
-/** What the editor reads for a model and speed Scarlet has no price for. */
+/** What the editor reads for a model and speed AirWaves has no price for. */
 export function priceLabel(model: string | null, tier?: string): string {
   const name = model ?? "an unnamed model";
   return tier ? `${name} at ${SPEED_NAMES[tier] ?? tier} speed` : name;

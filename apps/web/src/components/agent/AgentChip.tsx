@@ -12,7 +12,7 @@ import { AgentSignIn, canSignIn, useLocalHost } from "../shell/AgentSignIn";
 import { Icon } from "../ui/primitives";
 import { MENU_ITEM_CLASS } from "../shell/WorkspaceNavigation";
 
-export const NO_AGENT_REASON = "Sign in with Claude, ChatGPT or Google to let Scarlet edit";
+export const NO_AGENT_REASON = "Sign in with Claude, ChatGPT or Google to let AirWaves edit";
 
 // A provider on two hosts can offer different settings for the same model.
 function supportedOptions(profiles: ModelOptions[], effort?: string, serviceTier?: string, preferSpeed = false) {
@@ -130,7 +130,7 @@ function OptionList<T extends string>({ label, options, value, onChange }: { lab
 }
 
 /**
- * Scarlet is still finding its models: the list of hosts hasn't arrived, this computer's host hasn't said what is
+ * AirWaves is still finding its models: the list of hosts hasn't arrived, this computer's host hasn't said what is
  * installed, or it hasn't reached the engine yet. That passes by itself, so nothing is marked for it.
  */
 function stillConnecting(hostsReady: boolean, localHost: HostStatus | null) {

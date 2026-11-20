@@ -4,7 +4,7 @@ import { sourceCacheStatuses } from "./sourcePreviews.js";
 import { PROJECT_EDIT_KINDS } from "./tasks.js";
 
 /**
- * What Scarlet is doing in each listed project, for the project list: a request it is working on, then files it
+ * What AirWaves is doing in each listed project, for the project list: a request it is working on, then files it
  * is importing, transcribing or caching. Saved state answers all but caching, so a project with nothing under way costs
  * nothing; only one with videos waiting to cache reads its cache files.
  */

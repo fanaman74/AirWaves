@@ -1,5 +1,5 @@
 /**
- * Motion graphics: pages Scarlet draws into movies with alpha, the files an editor attaches to a message, and a
+ * Motion graphics: pages AirWaves draws into movies with alpha, the files an editor attaches to a message, and a
  * project's style guide.
  *
  * A graphic's page and every file it links to are kept in one folder of the project (`graphics/<id>/index.html`), so
@@ -240,11 +240,11 @@ async function writeAssets(folder: string, assets: Map<string, Buffer>) {
 
 const chrome = (ctx: Ctx) => findChrome(undefined, ctx.options.env ?? process.env);
 
-/** A graphic Scarlet drew in this project, and its page. */
+/** A graphic AirWaves drew in this project, and its page. */
 export function graphicMedia(ctx: Ctx, projectId: string, mediaId: string): { media: MediaAsset; page: string } {
   const media = ctx.repos.projects.getMedia(mediaId);
   if (!media || media.projectId !== projectId) throw notFound(`media ${mediaId}`);
-  if (!media.graphic) throw badRequest("not_a_drawn_graphic", `${quote(media.name)} wasn't drawn by Scarlet from a page, so it has none to revise.`);
+  if (!media.graphic) throw badRequest("not_a_drawn_graphic", `${quote(media.name)} wasn't drawn by AirWaves from a page, so it has none to revise.`);
   const page = resolve(ctx.paths.project(projectId), media.graphic.source);
   if (!inside(ctx.paths.project(projectId), page)) throw notFound("graphic page");
   return { media, page };

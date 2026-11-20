@@ -25,9 +25,9 @@ function savedChanges(ctx: Ctx, tasks: Task[]) {
 const LOST_WORKER_ATTEMPTS = 3;
 
 /**
- * Called with the write lock held, after the worker has stopped or surrendered the job. Scarlet stopped, not the
+ * Called with the write lock held, after the worker has stopped or surrendered the job. AirWaves stopped, not the
  * run, so the run carries on by itself and neither a quit nor a lost worker costs the editor a pass.
- * `quit`: Scarlet closed or was found closed. Otherwise the worker went missing while Scarlet stayed open, which
+ * `quit`: AirWaves closed or was found closed. Otherwise the worker went missing while AirWaves stayed open, which
  * can repeat, so those are counted.
  */
 function reconcileTask(ctx: Ctx, task: Task, unstarted: boolean, quit: boolean, lastSeen?: string | null): Task {
@@ -156,7 +156,7 @@ function settleTask(ctx: Ctx, task: Task, unstarted: boolean, lastSeen?: string 
     ? "The agent was interrupted after saving changes." : "The editing request was interrupted before a result was saved." });
 }
 
-/** `quit`: Scarlet is quitting. Otherwise the run's engine went away while Scarlet stayed open, which counts as a lost worker. */
+/** `quit`: AirWaves is quitting. Otherwise the run's engine went away while AirWaves stayed open, which counts as a lost worker. */
 export function interruptTask(ctx: Ctx, taskId: string, ifStartedAt?: string, quit = true): Task {
   return ctx.db.transaction(() => {
     const task = ctx.repos.tasks.get(taskId);
@@ -199,7 +199,7 @@ export function recoverTasks(ctx: Ctx, starting = false): void {
       try {
         ctx.db.savepoint(() => {
           const task = ctx.repos.tasks.get(id)!;
-          // Found dead at startup: Scarlet was closed or crashed mid-run.
+          // Found dead at startup: AirWaves was closed or crashed mid-run.
           reconcileTask(ctx, task, pid !== null && !alive && task.state === "claimed", starting, seen);
           ctx.bus.taskQueued({ taskId: id, projectId: task.projectId });
         });
@@ -239,7 +239,7 @@ export function resumeProjectTranscriptions(ctx: Ctx, projectId: string): void {
 }
 
 /**
- * A transcription runs inside the engine, so quitting Scarlet stops it. Continue from its last committed audio chunk or alignment turn
+ * A transcription runs inside the engine, so quitting AirWaves stops it. Continue from its last committed audio chunk or alignment turn
  * when the engine is back, or when the project's media processing resumes. Only an interruption restarts:
  * a transcription that failed by itself waits for the editor.
  */
@@ -289,7 +289,7 @@ function resumeTranscriptions(ctx: Ctx, projectId?: string, mediaId?: string): v
 /**
  * How many of a waiting pass's staged cuts have no recommendation yet. The run that staged them knew, and the one that
  * carries on is a new process that doesn't: without this it can finish with them unchecked, and they reach the
- * editor as calls Scarlet never looked at.
+ * editor as calls AirWaves never looked at.
  */
 function unchecked(ctx: Ctx, change: Change): string {
   if (change.state !== "ready") return "";
@@ -302,7 +302,7 @@ function unchecked(ctx: Ctx, change: Change): string {
   }
 }
 
-/** The edits an attempt tried to save after its last saved change and Scarlet refused, newest last, each said once. */
+/** The edits an attempt tried to save after its last saved change and AirWaves refused, newest last, each said once. */
 function refusedSinceLastSave(ctx: Ctx, attempt: Task): string[] {
   const events = ctx.repos.taskEvents.list(attempt.id);
   const lastSave = events.findLastIndex(e => e.type === "change");
@@ -358,11 +358,11 @@ function recoveryInstruction(ctx: Ctx, task: Task, rootId?: string): string {
   if (unsaved.length) {
     // A restart that lands just after a refused save leaves that work undone, and nothing in the saved changes says so
     // (2026-11-18: the framing of a demo's last four minutes was refused, then the app restarted to update).
-    lines.push("Not saved when it stopped (Scarlet refused these after its last saved change, so that work is still to do):");
+    lines.push("Not saved when it stopped (AirWaves refused these after its last saved change, so that work is still to do):");
     for (const text of unsaved) lines.push(`- ${text}`);
   }
   for (const c of savedChanges(ctx, attempts)) {
-    // Scarlet closes a proposal when a later part or a revision takes its cuts over. The editor didn't turn it down:
+    // AirWaves closes a proposal when a later part or a revision takes its cuts over. The editor didn't turn it down:
     // a resumed pass that read fifteen such proposals as [rejected] kept 24 of the 27 cuts held for review, "as you
     // chose earlier" (2026-11-13).
     const state = c.state === "rejected" && c.replacedBy ? `replaced by ${c.replacedBy}, which holds its cuts now; the editor made no decision on it` : c.state;
@@ -373,7 +373,7 @@ function recoveryInstruction(ctx: Ctx, task: Task, rootId?: string): string {
 
 /**
  * Retry or resume a run. The editor's Retry and Resume send the model picked now, which runs the next attempt, so a
- * run on a model that stopped working can go again on another. Scarlet's own resumes keep the run's model.
+ * run on a model that stopped working can go again on another. AirWaves's own resumes keep the run's model.
  */
 export function retryTask(ctx: Ctx, id: string, choice: RunChoice = {}): Task {
   return ctx.db.transaction(() => {
@@ -429,7 +429,7 @@ function resumeTask(ctx: Ctx, task: Task, choice: RunChoice = {}, afterProjectSt
   // A run its host cut short kept its CLI session, so the next attempt on the same model carries on in it instead of
   // starting cold. On another model it starts a session of its own.
   const sameModel = retry.agent === task.agent && retry.model === task.model;
-  // Project Stop ends the run's session with it: it isn't one Scarlet closed on.
+  // Project Stop ends the run's session with it: it isn't one AirWaves closed on.
   if (action === "resume" && !afterProjectStop && task.interrupted && task.session && RESUMABLE.has(task.agent) && sameModel) {
     const resumed = saveTask(ctx, { ...retry, session: task.session });
     // The session still holds the plan it was working to, and reports it again only when a step changes. Until then
@@ -457,7 +457,7 @@ export function continueWhenReady(ctx: Ctx, id: string, on: boolean): { task: Ta
       if (hasTranscript(ctx, mediaId) || ctx.repos.tasks.select(`project_id = ? AND ${ACTIVE_TRANSCRIPTION}`, [before.projectId, mediaId]).length) continue;
       const media = ctx.repos.projects.getMedia(mediaId);
       if (!media || media.projectId !== before.projectId || !transcribeForDialogue(ctx, before.projectId, media)) {
-        throw conflict("transcription_unavailable", `Scarlet can’t transcribe ${media?.name ?? mediaId} now. Check Transcription in Settings, and that caching isn’t paused.`);
+        throw conflict("transcription_unavailable", `AirWaves can’t transcribe ${media?.name ?? mediaId} now. Check Transcription in Settings, and that caching isn’t paused.`);
       }
     }
   }
@@ -487,7 +487,7 @@ export function continueReadyRuns(ctx: Ctx, projectId?: string): Task[] {
     if (!task?.continueWhenReady || !taskNeedsTranscripts(task)) return;
     const pending = task.needsTranscripts!.filter(id => !hasTranscript(ctx, id));
     if (!pending.length) return resumeTask(ctx, task);
-    // A transcription cut short by a quit or a pause starts again when Scarlet or the project's media is back, so the run keeps waiting for it.
+    // A transcription cut short by a quit or a pause starts again when AirWaves or the project's media is back, so the run keeps waiting for it.
     const restarts = (id: string) => {
       const last = latestTranscription(ctx, task.projectId, id);
       return last?.state === "failed" && !!last.interrupted;

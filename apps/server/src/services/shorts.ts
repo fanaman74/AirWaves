@@ -172,7 +172,7 @@ export async function makeShorts(ctx: Ctx, user: User, sourceId: string, req: Ma
         ctx.repos.projects.saveStyleGuide(project.id, source.styleGuide);
       }
       const first = storeVersion(ctx, project.id, remapMedia(timeline, ids, project.id), {
-        parent: null, author: { type: "scarlet", name: "Scarlet" }, description: `Made from ${quote(source.name)}`,
+        parent: null, author: { type: "scarlet", name: "AirWaves" }, description: `Made from ${quote(source.name)}`,
       });
       ctx.repos.projects.update(project.id, { head: first.version });
     }
@@ -251,7 +251,7 @@ function saveShortsPlan(ctx: Ctx, user: User, taskId: string, plan: ShortsPlanRe
     ctx.repos.projects.softDelete(projectId);
     // As when the editor trashes a project: its caching and renders under way stop with it.
     ctx.db.afterCommit(() => { ctx.stopMedia(projectId, true); ctx.renders.stopProject(projectId); });
-    logActivity(ctx, { projectId, actor: actorFor(user), type: "project.deleted", summary: "Scarlet found fewer moments than the editor allowed, so this short wasn’t needed" });
+    logActivity(ctx, { projectId, actor: actorFor(user), type: "project.deleted", summary: "AirWaves found fewer moments than the editor allowed, so this short wasn’t needed" });
   }
   return { shorts: started, removed: short.projectIds.slice(plan.moments.length) };
 }

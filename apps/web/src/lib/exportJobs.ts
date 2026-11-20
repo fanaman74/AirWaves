@@ -64,7 +64,7 @@ const ENGINE_WENT = /^Not connected to the engine$|^error (sending request|decod
 /** How often a save is tried while the engine keeps going away under it. */
 const SAVE_ATTEMPTS = 4;
 
-/** The engine was unreachable, as it is while Scarlet quits or restarts its engine. */
+/** The engine was unreachable, as it is while AirWaves quits or restarts its engine. */
 const unreachable = (err: unknown) => !(err instanceof ScarletApiError) || err.status === 503;
 
 export function exportFile(project: ProjectData, file: ExportFile) {
@@ -75,7 +75,7 @@ export function exportFile(project: ProjectData, file: ExportFile) {
 
 /**
  * Pick up the exports the engine still owes the editor: ones that were rendering or saving when
- * Scarlet quit or the window reloaded. The engine has requeued their renders under the same ids.
+ * AirWaves quit or the window reloaded. The engine has requeued their renders under the same ids.
  */
 export async function resumeExports() {
   const { renders } = await api.exports();
@@ -227,7 +227,7 @@ async function run(projectId: string, file: ExportFile, context: string, version
   } catch (err) {
     const message = errorMessage(err);
     // Another window is saving the file: it resumed this export, whichever window started it, and it settles it.
-    keepPending = message === "Export is already saving in another Scarlet window.";
+    keepPending = message === "Export is already saving in another AirWaves window.";
     if (keepPending) return;
     // The app couldn't read its record of where exports go. The failure is shown, so the export is let go even if
     // the engine can't hear: a later launch must never save it over whatever the editor has put there since.

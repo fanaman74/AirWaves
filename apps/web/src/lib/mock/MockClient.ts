@@ -34,6 +34,7 @@ import type { Author, Change, MediaAsset, Note, Project, Timeline, TimelineDiff,
 import { CaptionExportError, captionExportHttpStatus, captionExportRange, toCaptions, planRevert, toOtio, toFcpxml, usedMedia, handoffFileNames, handoffLosses, handoffReadMe, timelineToSrt, captionTracks, exactRate, type HandoffSource, applyOps, canApproveSpots, clipEnd, withHandles, describeDiff, diffTimelines, emptyTimeline, formatTimecode, newId, planApply, timelineDuration, ASPECT_PRESETS, TimelineOp } from "@scarlet/timeline";
 import type { ActivityEntry, ApproveResponse, HandoffFile, HandoffResponse, TrashedProject } from "@scarlet/shared";
 import type { ScarletApi } from "../api";
+import { maskApiKey, type ApiProviderId, type ApiProviderModel, type ApiProviderStatus } from "@scarlet/shared";
 import { buildDb, mc, SAMPLE_TRANSCRIPTION_MODEL, type MockDb } from "./fixtures";
 import sampleWaveform from "./sample-waveform.json";
 
@@ -67,6 +68,87 @@ export class MockClient implements ScarletApi {
   private readonly tokenSource: () => string | undefined;
 
   private activityLog: ActivityEntry[] = [];
+  /** AirWaves AI providers in the demo: any key works except one starting with "bad". */
+  private providers: Partial<Record<ApiProviderId, { apiKey: string; model: string; modelLabel?: string; musicModel?: string; enabled: boolean; savedAt: string }>> = {};
+
+  async apiProviders() {
+    const ids: ApiProviderId[] = ["aistudio", "openrouter"];
+    return { providers: ids.map((id): ApiProviderStatus => {
+      const p = this.providers[id];
+      return p ? { id, configured: true, enabled: p.enabled, keyPreview: maskApiKey(p.apiKey), model: p.model, modelLabel: p.modelLabel, musicModel: p.musicModel, savedAt: p.savedAt } : { id, configured: false, enabled: false };
+    }) };
+  }
+  private mockKey(id: ApiProviderId, apiKey?: string) {
+    const key = apiKey ?? this.providers[id]?.apiKey;
+    if (!key) throw new ScarletApiError(400, "api_key_required", "Enter an API key first.");
+    return key;
+  }
+  async testApiKey(id: ApiProviderId, apiKey?: string) {
+    await new Promise(r => setTimeout(r, 400));
+    const key = this.mockKey(id, apiKey);
+    return key.startsWith("bad") ? { ok: false, error: "The key was refused. API key not valid." } : { ok: true, detail: id === "openrouter" ? "Key accepted: $4.20 of $5.00 left." : "Key accepted by Google AI Studio." };
+  }
+  async apiProviderModels(id: ApiProviderId, apiKey?: string) {
+    this.mockKey(id, apiKey);
+    await new Promise(r => setTimeout(r, 300));
+    const models: ApiProviderModel[] = id === "aistudio"
+      ? [{ id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", contextLength: 1048576, tools: true }, { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", contextLength: 1048576, tools: true }, { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", contextLength: 1048576, tools: true }]
+      : [{ id: "anthropic/claude-sonnet-4.5", label: "Anthropic: Claude Sonnet 4.5", contextLength: 1000000, tools: true }, { id: "google/gemini-2.5-pro", label: "Google: Gemini 2.5 Pro", contextLength: 1048576, tools: true }, { id: "openai/gpt-5", label: "OpenAI: GPT-5", contextLength: 400000, tools: true }, { id: "meta-llama/llama-3-8b-instruct", label: "Meta: Llama 3 8B Instruct", contextLength: 8192, tools: false }];
+    return { models };
+  }
+  async testApiModel(id: ApiProviderId, model: string, apiKey?: string) {
+    this.mockKey(id, apiKey);
+    await new Promise(r => setTimeout(r, 700));
+    return model.includes("llama") ? { ok: false, error: "No endpoints found that support tool use.", ms: 700 } : { ok: true, reply: "Ready to cut your video!", ms: 812, tools: true };
+  }
+  async saveApiProvider(id: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean; musicModel?: string }) {
+    const apiKey = this.mockKey(id, body.apiKey);
+    this.providers[id] = { apiKey, model: body.model, modelLabel: body.modelLabel, enabled: body.enabled ?? true, savedAt: new Date().toISOString(), ...(body.musicModel && { musicModel: body.musicModel }) };
+    return { provider: (await this.apiProviders()).providers.find(p => p.id === id)! };
+  }
+  async musicModels() {
+    return { models: [{ id: "google/lyria-3-pro-preview", label: "Google: Lyria 3 Pro Preview" }, { id: "google/lyria-3-clip-preview", label: "Google: Lyria 3 Clip Preview" }] };
+  }
+  async testMusic(_model: string) {
+    await new Promise(r => setTimeout(r, 600));
+    return { ok: false, error: "The demo can't compose music." };
+  }
+  private instructionsSaved: { editing?: string; music?: string } = {};
+  private prompts: Array<{ id: string; kind: "edit" | "music"; title: string; text: string; createdAt: string }> = [];
+  async instructions() {
+    return { ...this.instructionsSaved, defaults: { editing: "# You are editing a video in AirWaves\n\n(The demo shows a shortened version of the built-in instructions.)", music: "" } };
+  }
+  async saveInstructions(body: { editing?: string | null; music?: string | null }) {
+    for (const k of ["editing", "music"] as const) {
+      if (body[k] === undefined) continue;
+      if (!body[k]?.trim()) delete this.instructionsSaved[k];
+      else this.instructionsSaved[k] = body[k]!;
+    }
+    return this.instructions();
+  }
+  async savedPrompts() {
+    return { prompts: this.prompts };
+  }
+  async savePrompt(body: { kind: "edit" | "music"; title?: string; text: string }) {
+    const prompt = { id: `prm_${Date.now()}`, kind: body.kind, title: body.title || body.text.slice(0, 60), text: body.text, createdAt: new Date().toISOString() };
+    this.prompts.unshift(prompt);
+    return { prompt };
+  }
+  async deletePrompt(id: string) {
+    this.prompts = this.prompts.filter(p => p.id !== id);
+    return { ok: true as const };
+  }
+  async improvePrompt(body: { kind: "edit" | "music"; text: string }) {
+    await new Promise(r => setTimeout(r, 500));
+    const text = body.kind === "music"
+      ? `${body.text.trim()}. Instrumental background track, 110 BPM, warm synth pads, soft drums, gentle build in the middle and a calm fade-out.`
+      : `${body.text.trim()}\n\n- Keep it under 60 seconds and cut long pauses and filler words.\n- Keep the strongest moments in their original order.\n- Add captions and soft background music under the voice.`;
+    return { text, provider: "openrouter", model: "openai/gpt-5" };
+  }
+  async removeApiProvider(id: ApiProviderId) {
+    delete this.providers[id];
+    return { ok: true as const };
+  }
   private trashed: Array<{ project: Project; deletedAt: string }> = [];
 
   constructor(tokenSource: () => string | undefined, private readonly chatLayouts = false) {
@@ -88,7 +170,7 @@ export class MockClient implements ScarletApi {
     const q = (t: string) => `“${t.length > 80 ? `${t.slice(0, 79)}…` : t}”`;
     const add = (projectId: string | null, actor: Author, type: string, summary: string, at: string | undefined, data: Record<string, unknown> = {}) =>
       this.activityLog.push({ id: newId("act"), projectId, actor, type, summary, data, createdAt: at ?? now() });
-    for (const [pid, list] of Object.entries(this.db.media)) for (const m of list) add(pid, { type: "scarlet", name: "Scarlet" }, "media.added", `${q(m.name)} was added`, m.provenance?.createdAt ?? new Date(Date.now() - 86400000 * 2).toISOString(), { mediaId: m.id });
+    for (const [pid, list] of Object.entries(this.db.media)) for (const m of list) add(pid, { type: "scarlet", name: "AirWaves" }, "media.added", `${q(m.name)} was added`, m.provenance?.createdAt ?? new Date(Date.now() - 86400000 * 2).toISOString(), { mediaId: m.id });
     for (const t of this.db.tasks) add(t.projectId, t.createdBy, "request.created", `${t.createdBy.name} asked ${AGENT_NAMES[t.agent]}: ${q(t.context.message ?? t.instruction)}`, t.createdAt, { taskId: t.id });
     for (const n of this.db.notes) add(n.projectId, n.author, "note.added", `${n.author.name} noted at ${Math.floor(n.time / 60)}:${String(Math.floor(n.time % 60)).padStart(2, "0")}: ${q(n.text)}`, n.createdAt, { noteId: n.id });
     for (const c of this.db.changes) {
@@ -413,12 +495,12 @@ export class MockClient implements ScarletApi {
     const list = this.db.media[projectId] ?? [];
     const media = list.find(m => m.id === mediaId);
     if (!media) throw notFound("Media");
-    if (media.status !== "failed") throw new ScarletApiError(409, "media_readable", `Scarlet read ${media.name}, and can only remove a file it couldn’t read.`);
+    if (media.status !== "failed") throw new ScarletApiError(409, "media_readable", `AirWaves read ${media.name}, and can only remove a file it couldn’t read.`);
     if (Object.values(this.db.timelines).some(tl => tl.projectId === projectId && JSON.stringify(tl).includes(JSON.stringify(mediaId)))) {
       throw new ScarletApiError(409, "media_in_use", `${media.name} is in the video or its history, so it can’t be removed.`);
     }
     if (this.db.tasks.some(t => t.projectId === projectId && t.kind !== "transcribe" && ["claimed", "running", "waiting_for_user"].includes(t.state))) {
-      throw new ScarletApiError(409, "media_busy", `Scarlet is working on a request, so ${media.name} can’t be removed until it’s done.`);
+      throw new ScarletApiError(409, "media_busy", `AirWaves is working on a request, so ${media.name} can’t be removed until it’s done.`);
     }
     this.db.media[projectId] = list.filter(m => m.id !== mediaId);
     this.projectById(projectId).media = this.db.media[projectId]!;
@@ -449,7 +531,7 @@ export class MockClient implements ScarletApi {
       this.db.timelines[tl.version] = tl;
       project.head = tl.version;
       this.summary(projectId).head = tl.version;
-      (this.db.versions[projectId] ??= []).push({ version: tl.version, parent: null, name: "Main", author: { type: "scarlet", name: "Scarlet" }, changeId: null, description: `Imported ${probed.name}`, duration: timelineDuration(tl), isHead: true, createdAt: tl.createdAt });
+      (this.db.versions[projectId] ??= []).push({ version: tl.version, parent: null, name: "Main", author: { type: "scarlet", name: "AirWaves" }, changeId: null, description: `Imported ${probed.name}`, duration: timelineDuration(tl), isHead: true, createdAt: tl.createdAt });
       this.emitProject(projectId);
     }
     if (this.db.settings.transcription.provider !== "none" && probed.hasAudio && bytes > 0) {
@@ -489,7 +571,7 @@ export class MockClient implements ScarletApi {
     this.requireAuth();
     const projectId = Object.entries(this.db.media).find(([, list]) => list.some((m) => m.id === mediaId))?.[0];
     if (!projectId) throw notFound("Media");
-    if (this.db.settings.transcription.provider === "none") throw new ScarletApiError(400, "transcription_off", "Transcription isn't available in this build of Scarlet.");
+    if (this.db.settings.transcription.provider === "none") throw new ScarletApiError(400, "transcription_off", "Transcription isn't available in this build of AirWaves.");
     const task: Task = { id: newId("task"), projectId, kind: "transcribe", agent: "api", model: provider, instruction: `Transcribe ${mediaId}`, context: { mediaId }, state: "running", createdBy: this.human(), hostId: null, changeIds: [], question: null, summary: null, createdAt: now(), startedAt: now() };
     this.db.tasks.unshift(task);
     void (async () => {
@@ -543,7 +625,7 @@ export class MockClient implements ScarletApi {
     const list = (this.db.versions[projectId] ?? []).map((v) => ({ ...v, isHead: v.version === head }));
     return this.latency({ versions: list });
   }
-  /** The sample project has no engine to put an edit back: the × asks Scarlet, as it does wherever the engine can't. */
+  /** The sample project has no engine to put an edit back: the × asks AirWaves, as it does wherever the engine can't. */
   async rejectEdits(): Promise<{ project: Project; change: Change }> {
     this.requireAuth();
     throw new ScarletApiError(409, "needs_scarlet", "This edit can’t be put back as it was.");
@@ -752,7 +834,7 @@ export class MockClient implements ScarletApi {
     let target = change.toVersion;
     let outcome: ApproveResponse["outcome"] = "applied";
     if (restoredCuts) {
-      if (head !== change.fromVersion || change.state !== "ready") throw new Error("This pass wasn’t applied because the video changed since Scarlet made it: ask Scarlet to redo the pass on the video as it is now.");
+      if (head !== change.fromVersion || change.state !== "ready") throw new Error("This pass wasn’t applied because the video changed since AirWaves made it: ask AirWaves to redo the pass on the video as it is now.");
       const { review, draft } = await this.cutReview(changeId, restoredCuts);
       if (!draft || !review) throw new Error("No individually restorable cuts.");
       change.appliedReview = appliedCutReview(review, restoredCuts);
@@ -763,8 +845,8 @@ export class MockClient implements ScarletApi {
         if (plan.spotsUnsupported) throw new ScarletApiError(400, "spots_unsupported", `Can't approve spots one by one: ${plan.reason}.`);
         const agent = (change.author.id as AgentId | undefined) ?? "claude";
         const task = this.makeTask(project.id, { kind: "revise", agent, model: change.author.model, instruction: `Redo on the current edit: ${change.description}`, context: { changeId, version: head, threadId: change.threadId ?? change.id, message: "Redo on the current edit" } });
-        // As in the engine, the redo is Scarlet's own: the chat carries it on under the request that made the suggestion.
-        task.createdBy = { type: "scarlet", name: "Scarlet" };
+        // As in the engine, the redo is AirWaves's own: the chat carries it on under the request that made the suggestion.
+        task.createdBy = { type: "scarlet", name: "AirWaves" };
         Object.assign(change, beginRevision(change, task), { error: `Sent back: ${plan.reason}`, updatedAt: now() });
         void this.runTask(task, { fromVersion: head, description: change.description, supersedes: change });
         this.emit({ type: "change.updated", projectId: project.id, change: { ...change } });
@@ -899,7 +981,7 @@ export class MockClient implements ScarletApi {
   }
   async speechToText(_audio: Blob): Promise<{ text: string }> {
     this.requireAuth();
-    if (this.db.settings.transcription.provider === "none") throw new ScarletApiError(400, "transcription_off", "Transcription isn't available in this build of Scarlet.");
+    if (this.db.settings.transcription.provider === "none") throw new ScarletApiError(400, "transcription_off", "Transcription isn't available in this build of AirWaves.");
     await sleep(500);
     return { text: "Keep the pause a little longer, maybe a third of a second, so it still breathes." };
   }
@@ -1156,7 +1238,7 @@ export class MockClient implements ScarletApi {
     this.projectById(projectId);
     if (body.kind === "skill_from_change") throw new ScarletApiError(400, "use_skill_from_change", "Create skill tasks from an approved change");
     if (body.kind === "skill_edit") throw new ScarletApiError(400, "use_skill_edit", "Ask for a change to a skill from its page");
-    if (body.kind === "learning_check") throw new ScarletApiError(400, "not_a_request", "Scarlet starts this check itself, with each request.");
+    if (body.kind === "learning_check") throw new ScarletApiError(400, "not_a_request", "AirWaves starts this check itself, with each request.");
     const followUp = body.context?.threadId;
     this.log(projectId, "request.created", `${this.currentUser().name} asked ${AGENT_NAMES[body.agent]}: “${body.context?.message ?? body.instruction}”${followUp ? " (follow-up)" : ""}`);
     // As the engine does: what the person said is the request itself, unless the app sent their words apart from what
@@ -1202,7 +1284,7 @@ export class MockClient implements ScarletApi {
     if (!task) throw notFound("Task");
     if (["done", "failed", "cancelled"].includes(task.state)) return { task };
     if (queuedOnly && (task.state !== "queued" || task.startedAt || (task.resumeRootId && !task.resumesAfterProjectStop))) {
-      throw new ScarletApiError(409, "already_started", "Scarlet has already started on this request.");
+      throw new ScarletApiError(409, "already_started", "AirWaves has already started on this request.");
     }
     this.stopTask(task);
     return this.latency({ task });
@@ -1211,15 +1293,15 @@ export class MockClient implements ScarletApi {
   private waitingToReword(taskId: string): Task {
     const task = this.db.tasks.find(t => t.id === taskId);
     if (!task) throw notFound("Task");
-    if (task.state !== "queued" || task.startedAt || task.resumeRootId) throw new ScarletApiError(409, "already_started", "Scarlet has already started on this request.");
-    if (task.createdBy.type !== "human") throw new ScarletApiError(409, "not_yours", "This request is Scarlet’s own, so its words can’t be changed.");
+    if (task.state !== "queued" || task.startedAt || task.resumeRootId) throw new ScarletApiError(409, "already_started", "AirWaves has already started on this request.");
+    if (task.createdBy.type !== "human") throw new ScarletApiError(409, "not_yours", "This request is AirWaves’s own, so its words can’t be changed.");
     return task;
   }
   async startBeforeCalls(taskId: string): Promise<{ task: Task }> {
     this.requireAuth();
     const task = this.db.tasks.find(t => t.id === taskId);
     if (!task) throw notFound("Task");
-    if (task.state !== "queued") throw new ScarletApiError(409, "already_started", "Scarlet has already started on this request.");
+    if (task.state !== "queued") throw new ScarletApiError(409, "already_started", "AirWaves has already started on this request.");
     if (!task.startsBeforeCalls) this.updateTask(task, { startsBeforeCalls: true });
     return this.latency({ task });
   }
@@ -1378,10 +1460,10 @@ export class MockClient implements ScarletApi {
     const skill = this.db.skills.find((s) => s.id === skillId);
     if (!skill) throw notFound("Skill");
     if (this.db.tasks.some(t => isSkillEdit(t) && t.context.skillId === skillId && !["done", "failed", "cancelled"].includes(t.state))) {
-      throw new ScarletApiError(409, "skill_edit_running", "Scarlet is already revising this skill");
+      throw new ScarletApiError(409, "skill_edit_running", "AirWaves is already revising this skill");
     }
     const home = this.db.projects[0];
-    if (!home) throw new ScarletApiError(409, "no_project", "Create a project first. Scarlet runs its requests from one.");
+    if (!home) throw new ScarletApiError(409, "no_project", "Create a project first. AirWaves runs its requests from one.");
     const task = this.makeTask(home.id, { kind: "skill_edit", agent: body.agent ?? this.db.settings.defaultAgent, model: body.model, effort: body.effort,
       serviceTier: body.serviceTier, instruction: body.prompt, context: { skillId } });
     const isCancelled = () => task.state === "cancelled";

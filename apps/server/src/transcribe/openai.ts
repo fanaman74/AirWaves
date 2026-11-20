@@ -127,7 +127,7 @@ export class OpenAIProvider implements TranscriptionProvider {
       if (signal?.aborted) throw error;
       const cause = (error as { cause?: unknown }).cause;
       this.opts.log?.(`[transcribe] couldn’t reach OpenAI: ${error}${cause ? ` (${cause})` : ""}`);
-      throw new Error("Scarlet couldn’t reach OpenAI: check your internet connection, then try again.");
+      throw new Error("AirWaves couldn’t reach OpenAI: check your internet connection, then try again.");
     });
     if (!res.ok) {
       const answer = await res.text();

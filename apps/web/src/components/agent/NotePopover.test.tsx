@@ -7,7 +7,7 @@ import { useProjectStore } from "../../stores/project";
 import { useUiStore } from "../../stores/ui";
 import { NotePopover } from "./NotePopover";
 
-it("names Scarlet on the switch that sends the note", async () => {
+it("names AirWaves on the switch that sends the note", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const oldProject = useProjectStore.getState();
   const oldUi = useUiStore.getState();
@@ -24,7 +24,7 @@ it("names Scarlet on the switch that sends the note", async () => {
   try {
     await act(async () => root.render(<NotePopover />));
     const toggle = container.querySelector('[role="switch"]')!;
-    expect(toggle.getAttribute("aria-label")).toBe("Send to Scarlet");
+    expect(toggle.getAttribute("aria-label")).toBe("Send to AirWaves");
   } finally {
     await act(async () => root.unmount());
     container.remove();

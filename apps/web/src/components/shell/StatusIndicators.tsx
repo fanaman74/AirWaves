@@ -13,7 +13,7 @@ function Dot({ tone, pulse = false }: { tone: Tone; pulse?: boolean }) {
 }
 
 /**
- * Live connection to the Scarlet engine (pushes change clips, task progress and
+ * Live connection to the AirWaves engine (pushes change clips, task progress and
  * notes). Invisible while healthy; says what is wrong, in words, when it is not.
  * A short grace period hides the normal connect-on-startup blip.
  */
@@ -38,10 +38,10 @@ export function ConnectionStatus() {
     <span
       role="status"
       className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ${reconnecting ? "bg-warn/10 text-warn" : "bg-bad/10 text-bad"}`}
-      title="Live updates from the Scarlet engine (previews, progress, notes). Your work is saved either way."
+      title="Live updates from the AirWaves engine (previews, progress, notes). Your work is saved either way."
     >
       <Dot tone={reconnecting ? "warn" : "bad"} pulse={reconnecting} />
-      {reconnecting ? "Reconnecting to Scarlet…" : "Offline: live updates paused"}
+      {reconnecting ? "Reconnecting to AirWaves…" : "Offline: live updates paused"}
     </span>
   );
 }
