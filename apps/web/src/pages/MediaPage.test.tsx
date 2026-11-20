@@ -709,7 +709,7 @@ it("offers no transcript for a video with no audio track", async () => {
   });
 });
 
-it("asks before taking a file Scarlet couldn't read out of the project, from a small × on its row, and says in the dialog why the engine won't", async () => {
+it("asks before taking a file AirWaves couldn't read out of the project, from a small × on its row, and says in the dialog why the engine won't", async () => {
   const media = [fixtureVideo({ id: "cam", name: "cam.mov" }), fixtureVideo({ id: "broken", name: "broken.mov", status: "failed", error: "moov atom not found" })];
   const refusal = "broken.mov is in the video or its history, so it can’t be removed.";
   let refuse!: () => void;
@@ -733,7 +733,7 @@ it("asks before taking a file Scarlet couldn't read out of the project, from a s
     await act(async () => x().click());
     expect(remove).not.toHaveBeenCalled();
     expect([dialog()!.querySelector("h2")?.textContent, dialog()!.querySelector(".text-muted")?.textContent, [...dialog()!.querySelectorAll("button:not([data-close])")].map(b => [b.textContent, b.className])])
-      .toEqual(["Remove “broken.mov”?", "Scarlet deletes the project's copy of this file. This cannot be undone.", [["Cancel", "btn-ghost"], ["Remove", "btn-danger"]]]);
+      .toEqual(["Remove “broken.mov”?", "AirWaves deletes the project's copy of this file. This cannot be undone.", [["Cancel", "btn-ghost"], ["Remove", "btn-danger"]]]);
     await press("Cancel");
     expect([dialog(), remove.mock.calls.length, rows().length]).toEqual([null, 0, 2]);
 

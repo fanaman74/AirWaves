@@ -73,7 +73,7 @@ it.each(["\n", "\r\n"])("says unsaved only while the page differs from what was 
     const body = el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
     const enabled = el.querySelector<HTMLButtonElement>('[role="switch"][aria-label="Enabled"]')!;
     expect([unsaved(), button("Save").disabled, draft()]).toEqual([false, true, null]);
-    // A letter typed in the name is unsaved, and kept in case Scarlet quits.
+    // A letter typed in the name is unsaved, and kept in case AirWaves quits.
     await type(name, `${skill.name}x`);
     expect([unsaved(), button("Save").disabled]).toEqual([true, false]);
     expect(draft()).toContain(`${skill.name}x`);
@@ -144,14 +144,14 @@ it("sends the editor's words to the chosen model and shows the revision it saved
 
     const box = el.querySelector<HTMLTextAreaElement>(".skill-chat textarea")!;
     const body = el.querySelector<HTMLTextAreaElement>('[aria-label="Skill markdown"]')!;
-    expect(box.placeholder).toBe("Tell Scarlet what to change…");
+    expect(box.placeholder).toBe("Tell AirWaves what to change…");
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(box, "Never cut laughter.");
       box.dispatchEvent(new Event("input", { bubbles: true }));
     });
     await act(async () => box.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     expect(editSkill).toHaveBeenCalledWith(skill.id, expect.objectContaining({ prompt: "Never cut laughter.", agent: "codex", model }));
-    // While Scarlet works the request is over the box, and the skill can't be changed under it.
+    // While AirWaves works the request is over the box, and the skill can't be changed under it.
     // The conversation is the left column, with the name and description over the instructions.
     expect(el.querySelector(".skill-chat")!.compareDocumentPosition(el.querySelector(".skill-details")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The name is edited in the toolbar, and one line over its field says what the description is for.
@@ -164,7 +164,7 @@ it("sends the editor's words to the chosen model and shows the revision it saved
     expect(box.value).toBe("");
     expect(box.disabled).toBe(true);
     expect(body.readOnly).toBe(true);
-    // Scarlet saves its revision as the next version and says what it changed.
+    // AirWaves saves its revision as the next version and says what it changed.
     const content = `${skill.content.trimEnd()}\n\nNever cut laughter.\n`;
     skill = { ...skill, content, version: skill.version + 1 };
     versions = [...versions, { version: skill.version, content }];
@@ -172,7 +172,7 @@ it("sends the editor's words to the chosen model and shows the revision it saved
     await act(async () => { await vi.advanceTimersByTimeAsync(1100); });
     expect([...el.querySelectorAll(".skill-chat .req-say")].map(p => p.textContent)).toEqual(["Added a rule for the cold open.", "Added a rule to keep laughter."]);
     expect(el.querySelector('.skill-chat [role="status"]')).toBeNull();
-    // The version Scarlet saved opens as the history shows it, with what it changed marked, and the message box
+    // The version AirWaves saved opens as the history shows it, with what it changed marked, and the message box
     // still takes the next request.
     const changes = el.querySelector(`[aria-label="Skill markdown, v${skill.version}"]`)!;
     expect([...changes.querySelectorAll("ins")].map(i => i.textContent).filter(Boolean)).toEqual(["Never cut laughter."]);
@@ -184,7 +184,7 @@ it("sends the editor's words to the chosen model and shows the revision it saved
     expect(edited.value).toContain("Never cut laughter.");
     expect(edited.readOnly).toBe(false);
     expect(box.disabled).toBe(false);
-    // The history leads with the version Scarlet saved, as the skill stands now.
+    // The history leads with the version AirWaves saved, as the skill stands now.
     await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="Version history"]')!.click());
     expect(document.querySelector('[role="option"]')!.textContent).toMatch(new RegExp(`v${skill.version}Now$`));
   } finally {
@@ -245,7 +245,7 @@ async function open(path: string) {
   const router = createMemoryRouter([{ path: "/settings/skills/new", element: page }, { path: "/settings/skills/:skillId", element: page }, { path: "/settings/skills", element: <p>Skill library</p> }],
     { initialEntries: [path] });
   await act(async () => root.render(<RouterProvider router={router} />));
-  /** Scarlet quits with the page as it is: what it kept on this computer is still there for the next visit. */
+  /** AirWaves quits with the page as it is: what it kept on this computer is still there for the next visit. */
   const quit = async () => {
     await act(async () => root.unmount());
     el.remove();
@@ -365,7 +365,7 @@ it("lists what each version changed, newest first, and shows a picked one with i
     expect(el.querySelector('button[aria-label="Show replace"], button[aria-label="Hide replace"]')).toBeNull();
     // The newest shows what it changed from the one before, with the way to undo it.
     await pick(0);
-    expect(said()).toMatch(/^What Scarlet changed in v2/);
+    expect(said()).toMatch(/^What AirWaves changed in v2/);
     expect(el.querySelector('[aria-label="Skill markdown, v2"] [data-changed] del')!.textContent).toContain("(v1)");
     expect(named(el, "Undo this change")).toBeDefined();
     expect(named(el, "Restore v2")).toBeUndefined();
@@ -441,7 +441,7 @@ it("has no version history on a skill with one version", async () => {
   }
 });
 
-/** A skill at v2 with unsaved edits, left by quitting. Returns how Scarlet saves it again as the next version, as an approved Learning does. */
+/** A skill at v2 with unsaved edits, left by quitting. Returns how AirWaves saves it again as the next version, as an approved Learning does. */
 async function leaveUnsaved() {
   const db = buildDb();
   let skill = db.skills.find(s => s.version === 2)!;
@@ -596,7 +596,7 @@ it("keeps edits from before the saved version until they are discarded, whatever
   }
 });
 
-it("takes an answer to Scarlet's question whichever version is showing, and a new request only on the current one", async () => {
+it("takes an answer to AirWaves's question whichever version is showing, and a new request only on the current one", async () => {
   const db = buildDb();
   const skill = db.skills.find(s => s.version === 2)!;
   const asked = { ...db.tasks[0]!, id: "task_q", kind: "skill_edit" as const, state: "waiting_for_user", instruction: "Tighten the pauses.", context: { skillId: skill.id }, summary: null,
@@ -613,7 +613,7 @@ it("takes an answer to Scarlet's question whichever version is showing, and a ne
   };
   let view = await open(`/settings/skills/${skill.id}`);
   try {
-    // Scarlet revises the skill as saved, so the box takes no new request while an older version shows.
+    // AirWaves revises the skill as saved, so the box takes no new request while an older version shows.
     await showOlder();
     expect(box().disabled).toBe(true);
     await view.quit();
@@ -628,14 +628,14 @@ it("takes an answer to Scarlet's question whichever version is showing, and a ne
     await act(async () => box().dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     expect(answer).toHaveBeenCalledWith("task_q", "A quarter.");
     expect(view.el.querySelector('[aria-label="Skill markdown, v1"]')!.textContent).toContain("(v1)");
-    // With the answer sent, Scarlet has the request again and the box waits.
+    // With the answer sent, AirWaves has the request again and the box waits.
     expect(box().disabled).toBe(true);
   } finally {
     await view.close();
   }
 });
 
-it("draws each request as a project's chat does: its words in a band with where it stands, and Scarlet's lines under it", async () => {
+it("draws each request as a project's chat does: its words in a band with where it stands, and AirWaves's lines under it", async () => {
   const db = buildDb();
   const skill = db.skills[0]!;
   const ask = (id: string, instruction: string, over: object) => ({ ...db.tasks[0]!, id, kind: "skill_edit" as const, instruction, context: { skillId: skill.id }, summary: null, question: null, error: undefined, ...over });
@@ -669,10 +669,10 @@ it("draws each request as a project's chat does: its words in a band with where 
     await act(async () => words().click());
     expect(words().className).toBe("said is-clipped");
     tooLong.mockRestore();
-    // Under the heading: Scarlet's reply, nothing for a request that was stopped, why one couldn't finish, what Scarlet is doing.
+    // Under the heading: AirWaves's reply, nothing for a request that was stopped, why one couldn't finish, what AirWaves is doing.
     expect(units().map(u => u.querySelector(".req")?.textContent)).toEqual(["Added a rule for the cold open.", undefined, "stalled: no output for 10 minutes", "Revising the skill…"]);
     expect(units()[2]!.querySelector(".req-say")!.className).toBe("req-say is-note is-bad");
-    // Stop is in the heading of the request Scarlet has, and no row under it has another.
+    // Stop is in the heading of the request AirWaves has, and no row under it has another.
     expect([...view.el.querySelectorAll(".skill-chat button")].filter(b => b.textContent === "Stop")).toHaveLength(1);
     await act(async () => units()[3]!.querySelector<HTMLElement>(".unit-msg > .unit-stop")!.click());
     expect(cancel).toHaveBeenCalledWith("task_4");
@@ -688,7 +688,7 @@ it("draws each request as a project's chat does: its words in a band with where 
     expect(asking.querySelector(".req-say")!.textContent).toBe("A quarter of a second, or a third?Answer");
     expect(view.el.textContent).not.toContain("Needs your answer");
     const box = view.el.querySelector<HTMLTextAreaElement>(".skill-chat textarea")!;
-    expect(box.placeholder).toBe("Answer Scarlet…");
+    expect(box.placeholder).toBe("Answer AirWaves…");
     await act(async () => asking.querySelector<HTMLElement>(".req-say > .simple-link.is-warn")!.click());
     expect(document.activeElement).toBe(box);
   } finally {
@@ -718,7 +718,7 @@ it("keeps the toolbar quiet: Delete is plain beside Save, the chip says Unsaved,
     // Once the connection has been down a while the window says so, after Save, where the other pages have it.
     await act(async () => { await vi.advanceTimersByTimeAsync(2600); });
     const status = toolbar.querySelector('[role="status"]')!;
-    expect(status.textContent).toBe("Reconnecting to Scarlet…");
+    expect(status.textContent).toBe("Reconnecting to AirWaves…");
     expect(named(toolbar, "Save")!.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(toolbar.lastElementChild!.contains(status)).toBe(true);
   } finally {
@@ -966,7 +966,7 @@ it("marks each /skill of the editor's in a skill's instructions, leaves $ as pla
     expect(marked()).toEqual(["/dialogue-pass"]);
     expect(el.querySelector(".skill-instructions-text")!.textContent).toBe(`${body.value}​`);
     // The skill's own message box has no list for / or $.
-    const ask = el.querySelector<HTMLTextAreaElement>('[aria-label="Tell Scarlet what to change in this skill"]')!;
+    const ask = el.querySelector<HTMLTextAreaElement>('[aria-label="Tell AirWaves what to change in this skill"]')!;
     await act(async () => ask.focus());
     await type(ask, "/dial");
     expect(el.querySelector(".skill-chat [role='listbox']")).toBeNull();

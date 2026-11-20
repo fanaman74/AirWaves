@@ -42,7 +42,7 @@ it("preserves unrelated files and permissions when --data points to a populated 
   openDb(paths.db).close();
   writeFileSync(join(paths.root, "unrelated.txt"), "fixture");
   if (process.platform !== "win32") chmodSync(paths.root, 0o755);
-  expect(() => paths.ensureRoot()).toThrow(/Choose an empty directory or an existing Scarlet library/);
+  expect(() => paths.ensureRoot()).toThrow(/Choose an empty directory or an existing AirWaves library/);
   if (process.platform !== "win32") expect(statSync(paths.root).mode & 0o777).toBe(0o755);
   expect(existsSync(paths.tmp)).toBe(false);
 });
@@ -100,7 +100,7 @@ it.runIf(process.platform === "win32")("applies owner-only library access to exi
     "$acl.AddAccessRule([System.Security.AccessControl.FileSystemAccessRule]::new($everyone,'Read','Allow'))",
     "[System.IO.File]::SetAccessControl($file,$acl)",
   ].join(";"));
-  expect(windowsAccessFailure(paths)).toMatch(/^The Scarlet library still grants access to another account/);
+  expect(windowsAccessFailure(paths)).toMatch(/^The AirWaves library still grants access to another account/);
 });
 
 it.runIf(process.platform === "win32")("refuses an existing database owned by another principal", ({ skip }) => {
@@ -120,7 +120,7 @@ it.runIf(process.platform === "win32")("refuses an existing database owned by an
     "$acl.SetOwner([System.Security.Principal.SecurityIdentifier]::new('S-1-5-32-544'))",
     "[System.IO.File]::SetAccessControl($file,$acl)",
   ].join("\n"));
-  expect(windowsAccessFailure(paths)).toMatch(/^A Scarlet library item belongs to another account/);
+  expect(windowsAccessFailure(paths)).toMatch(/^A AirWaves library item belongs to another account/);
 });
 
 it.skipIf(process.platform === "win32")("sweeps ordinary temporary files and skips linked storage directories", () => {

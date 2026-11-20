@@ -68,7 +68,7 @@ function workerPid(render: Pick<Render, "queuePid" | "demandPid" | "export">): n
 
 /**
  * Why a render failed, in words the editor can act on. ffmpeg's own output, and the filter graph the renderer adds to
- * it, names files by their place in Scarlet's library and means nothing to the editor: that stays in the log. The
+ * it, names files by their place in AirWaves's library and means nothing to the editor: that stays in the log. The
  * queue's own reasons, such as a source that changed while the render waited, are sentences already.
  * `sources`: the files the render read, by the names the editor gave them.
  */
@@ -79,13 +79,13 @@ function renderFailure(error: unknown, sources: ReadonlyArray<{ name: string; fi
   if (NO_DRAWTEXT.test(said)) return missingTextFilterMessage("draw the video’s captions");
   if ((error as NodeJS.ErrnoException | undefined)?.code === "ENOSPC" || /no space left on device/i.test(said))
     return "There isn’t enough free disk space to render this: free some space, then try again.";
-  // Every source is Scarlet's own copy in the project's files. Only the one ffmpeg names is the one it couldn't use.
+  // Every source is AirWaves's own copy in the project's files. Only the one ffmpeg names is the one it couldn't use.
   const named = sources.find(source => said.includes(source.file) || said.includes(basename(source.file)));
   const present = (file: string) => { try { return !!statSync(file, { throwIfNoEntry: false })?.size; } catch { return false; } };
-  if (named && !present(named.file)) return `Scarlet can’t find “${named.name}” in this project’s files: export the logs from Settings → Advanced to report it.`;
+  if (named && !present(named.file)) return `AirWaves can’t find “${named.name}” in this project’s files: export the logs from Settings → Advanced to report it.`;
   if (named && /invalid data|moov atom not found|error opening input|permission denied/i.test(said))
-    return `Scarlet can’t read “${named.name}” in this project’s files: export the logs from Settings → Advanced to report it.`;
-  return `Scarlet couldn’t render ${what}: try once more, or export the logs from Settings → Advanced to report it.`;
+    return `AirWaves can’t read “${named.name}” in this project’s files: export the logs from Settings → Advanced to report it.`;
+  return `AirWaves couldn’t render ${what}: try once more, or export the logs from Settings → Advanced to report it.`;
 }
 
 type RenderFormat = { height: number; hwaccel: NonNullable<Render["hwaccel"]> };

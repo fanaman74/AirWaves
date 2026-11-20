@@ -319,10 +319,10 @@ it("treats a left-over export whose destination is gone as already settled, with
   expect(lines).toEqual([]);
 });
 
-it("leaves settlement to the other Scarlet window when it already has the resumed export", async () => {
+it("leaves settlement to the other AirWaves window when it already has the resumed export", async () => {
   const kept: Render = { ...render, state: "done", export: { owner: "11111111-1111-4111-8111-111111111111", name: NAME, ...DESTINATION } };
   vi.spyOn(api, "exports").mockResolvedValue({ renders: [kept] });
-  asked.save.mockRejectedValue("Export is already saving in another Scarlet window.");
+  asked.save.mockRejectedValue("Export is already saving in another AirWaves window.");
   await resumeExports();
   await vi.waitFor(() => expect(job()).toBeUndefined());
   expect(asked.save).toHaveBeenCalledTimes(1);
@@ -331,10 +331,10 @@ it("leaves settlement to the other Scarlet window when it already has the resume
   expect(lines).toEqual([]);
 });
 
-it("leaves settlement to another Scarlet window that resumed an export this window started", async () => {
+it("leaves settlement to another AirWaves window that resumed an export this window started", async () => {
   // The other window picked up every export the engine owed, this one too, and claimed its save first.
   render = { ...render, state: "done", progress: 1 };
-  asked.save.mockRejectedValue("Export is already saving in another Scarlet window.");
+  asked.save.mockRejectedValue("Export is already saving in another AirWaves window.");
   await exportFile(project, video);
   expect(job()).toBeUndefined();
   expect(asked.release).not.toHaveBeenCalled();

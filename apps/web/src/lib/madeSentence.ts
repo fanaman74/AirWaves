@@ -20,7 +20,7 @@ const NAMED = 3;
  * What a request changed in the video, as one sentence with its figures in bold. Every figure is counted from the
  * request's edits, so the sentence is right whatever the request was: cuts say how much came out, and anything else
  * is counted by what it did. A few edits that aren't cuts are named instead of counted. A request that made one edit
- * says what Scarlet said about that edit. An edit made in several places is one edit, unless the list under the
+ * says what AirWaves said about that edit. An edit made in several places is one edit, unless the list under the
  * sentence has a row for each place (`eachPlace`): then the sentence counts what that list shows.
  */
 export function madeSentence(listed: readonly Listed[], length: (seconds: number) => string, eachPlace = false): SentencePart[] {

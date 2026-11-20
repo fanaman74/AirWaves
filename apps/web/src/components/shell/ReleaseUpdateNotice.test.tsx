@@ -9,7 +9,7 @@ import { UpdateSettings } from "./UpdateSettings";
 
 function release(version: string, channel: ReleaseChannel = "stable") {
   const suffix = { stable: "", "early-access": "-early-access.1", "linux-preview": "-linux-preview.1" }[channel];
-  const prefix = channel === "early-access" ? "Scarlet-Early-Access-" : "Scarlet-";
+  const prefix = channel === "early-access" ? "AirWaves-Early-Access-" : "AirWaves-";
   const files = channel === "linux-preview" ? ["Ubuntu-24.04-amd64.deb"]
     : ["macOS-Apple-Silicon.dmg", "macOS-Intel.dmg", "Windows-x64-Setup.exe", "Windows-x64.msi"];
   return { tag_name: "v" + version + suffix, draft: false, prerelease: !!suffix,
@@ -66,7 +66,7 @@ it("automatically retries after going online and discovers a release while the e
   await act(async () => { window.dispatchEvent(new Event("online")); });
   expect(element.textContent).toBe("");
   await act(async () => { await vi.advanceTimersByTimeAsync(6 * 60 * 60 * 1000); });
-  expect(element.textContent).toContain("Get Scarlet 9.1.100");
+  expect(element.textContent).toContain("Get AirWaves 9.1.100");
   expect(open).not.toHaveBeenCalled();
   await act(async () => element.querySelector("button")!.click());
   expect(open).toHaveBeenCalledExactlyOnceWith("https://github.com/Forward-Future/scarlet/releases/tag/v9.1.100");
@@ -81,9 +81,9 @@ it("checks the published edition from About and offers the same release as the n
   await act(async () => root.render(<UpdateSettings />));
   const check = element.querySelector("button")!;
   await act(async () => check.click());
-  expect(element.textContent).toContain("Couldn’t check Scarlet releases");
+  expect(element.textContent).toContain("Couldn’t check AirWaves releases");
   await act(async () => check.click());
-  expect(element.textContent).toContain("Scarlet 9.0.1 is available.");
+  expect(element.textContent).toContain("AirWaves 9.0.1 is available.");
   await act(async () => element.querySelectorAll("button")[1]!.click());
   expect(open).toHaveBeenCalledExactlyOnceWith("https://github.com/Forward-Future/scarlet/releases/tag/v9.0.1");
   expect(git).not.toHaveBeenCalled();

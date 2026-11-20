@@ -1,5 +1,5 @@
 /**
- * Token usage from each CLI's final report, normalized to Scarlet's AgentUsage.
+ * Token usage from each CLI's final report, normalized to AirWaves's AgentUsage.
  * `inputTokens` never includes cache reads or writes, so totals add up the same
  * way for every agent. Mirrors apps/desktop/src-tauri/src/host/usage.rs.
  */

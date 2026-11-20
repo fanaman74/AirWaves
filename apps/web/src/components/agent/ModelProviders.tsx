@@ -7,7 +7,7 @@ import { Icon } from "../ui/primitives";
 
 export type ModelScope = AgentId | "favorites";
 
-const logos = { claude: claudeLogo, codex: openaiLogo, gemini: geminiLogo };
+const logos = { claude: claudeLogo, codex: openaiLogo, gemini: geminiLogo, aistudio: geminiLogo };
 
 export function ModelProviders<T extends ModelScope>({ providers, active, onChange, compact = false }: {
   providers: T[]; active?: T; onChange: (value: T) => void; compact?: boolean;
@@ -33,5 +33,6 @@ export function ModelProviders<T extends ModelScope>({ providers, active, onChan
 function ProviderIcon({ id }: { id: ModelScope }) {
   if (id === "favorites") return <Icon name="star" size={16} />;
   if (id === "api") return <span aria-hidden className="font-mono font-semibold">{"{}"}</span>;
+  if (id === "openrouter") return <span aria-hidden className="font-mono text-[10px] font-bold">OR</span>;
   return <img src={logos[id]} alt="" className="size-4 shrink-0" />;
 }

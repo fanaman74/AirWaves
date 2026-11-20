@@ -2,7 +2,7 @@
  * What the recording holds between two transcript words. A transcript says nothing there, and a pass that reads only
  * the transcript takes every such stretch for a pause: on one pass "You can <1.7 s> see" was trimmed as a pause that
  * held two bursts of speech the transcript had missed, a first "see" and a second "you can", and half the restart
- * stayed in the cut. An editor cutting by ear and waveform sees it at once. Scarlet measures; the model decides.
+ * stayed in the cut. An editor cutting by ear and waveform sees it at once. AirWaves measures; the model decides.
  */
 import type { TimeRange, TranscriptWord } from "@scarlet/timeline";
 import { dbfs, isTag } from "./analysis.js";

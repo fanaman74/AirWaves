@@ -63,7 +63,7 @@ export function LocalModelNotice({ model, status }: { model: LocalTranscriptionM
     case "ready": text = status.active === "crisperwhisper" ? "CrisperWhisper is ready." : model === "custom" ? "Custom model available" : "Model available"; break;
     case "downloading": text = `Downloading model · ${Math.min(99, Math.floor(status.received * 100 / status.total))}%`; break;
     case "failed": text = "Download failed. Retry transcription to download again."; break;
-    case "invalid": text = model === "custom" ? "Check your model file and adapter in Advanced." : "Model file is damaged. Scarlet will download it again on first use."; break;
+    case "invalid": text = model === "custom" ? "Check your model file and adapter in Advanced." : "Model file is damaged. AirWaves will download it again on first use."; break;
     case "missing": text = model === "custom" ? "Choose a model file in Advanced." : "First transcription downloads up to 998 MB."; break;
     default: text = status === null ? "Model status unavailable" : "Checking model…";
   }
@@ -81,7 +81,7 @@ export function LocalModelNotice({ model, status }: { model: LocalTranscriptionM
     </div>
     <span className="transcription-privacy">
       <Icon name="monitor" size={14} />
-      {model === "custom" ? "Scarlet passes audio to the selected local runtime." : "Audio stays on this computer."}
+      {model === "custom" ? "AirWaves passes audio to the selected local runtime." : "Audio stays on this computer."}
     </span>
   </div>;
 }
@@ -122,7 +122,7 @@ export function TranscriptionGuide({ crisper = false }: { crisper?: boolean }) {
         <p>Setup requires 64-bit Python 3.12 on Windows, Ubuntu 24.04 x86-64 or Apple silicon with macOS 14 or later. On Ubuntu, install <code>python3.12-venv</code>.</p>
         <ol className="list-decimal space-y-2 pl-5">
           <li>Download the <button type="button" className="underline" onClick={() => open(crisperWeights)}>CrisperWhisper 2.0 large model files</button> into one folder.</li>
-          <li>Choose that folder below. Scarlet verifies the files and downloads the runtime libraries.</li>
+          <li>Choose that folder below. AirWaves verifies the files and downloads the runtime libraries.</li>
         </ol>
         <CrisperSetupButton />
       </> : <p>Choose a whisper.cpp model file, or supply a local adapter that writes word-timed JSON. You can leave the model file empty when the adapter manages its own weights. Save your selection in Advanced.</p>}

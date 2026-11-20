@@ -26,7 +26,7 @@ it("names a few edits that aren't cuts, and counts many by kind", () => {
   expect(say(["One", "Two", "Three", "Four"].map(label => ({ label })))).toBe("Made 4 edits.");
 });
 
-it("says what Scarlet said about the one edit a request made", () => {
+it("says what AirWaves said about the one edit a request made", () => {
   expect(say([{ label: "Camera full-frame for the intro", summary: "Made the host camera fill the frame for the intro lines." }])).toBe("Made the host camera fill the frame for the intro lines.");
   const flagged = { label: "Trim the pause", check: "The join lands on a breath", reason: "The gap interrupts the answer." };
   expect(say([flagged])).toBe("Trim the pause.");
@@ -46,7 +46,7 @@ it("says nothing for a request with no edits, and counts cuts whose length isn't
   expect(say([cut(5, 5), cut(9, 9)])).toBe("Made 2 cuts.");
 });
 
-it("counts the graphics a request made, and says what Scarlet said about a single one", () => {
+it("counts the graphics a request made, and says what AirWaves said about a single one", () => {
   const lower = (name: string) => ({ label: `Lower third: ${name}`, kind: "graphic" as const });
   expect(say([lower("Daniel"), lower("Matt")])).toBe("Made 2 graphics.");
   expect(say([cut(0, 60), lower("Daniel"), lower("Matt")])).toBe("Took out 1:00 in 1 cut, and made 2 graphics.");
@@ -60,7 +60,7 @@ it("counts transitions beside the other edits a request made", () => {
   expect(say([zoom(1), zoom(2), zoom(3), zoom(4), swipe(1), swipe(2), swipe(3), swipe(4)])).toBe("Made 4 zooms and 4 transitions.");
 });
 
-it("counts the spots Scarlet marked for the editor on their own, since they changed nothing in the video", () => {
+it("counts the spots AirWaves marked for the editor on their own, since they changed nothing in the video", () => {
   const spot = (label: string) => ({ label, kind: "other" as const, marker: true as const });
   expect(say([cut(0, 60), cut(100, 171), { label: "Punch in", kind: "zoom" }, spot("Fall Guys comparison footage"), spot("Boat comparison footage")]))
     .toBe("Took out 2:11 in 2 cuts, and made 1 zoom, and marked 2 spots for you.");

@@ -51,7 +51,7 @@ export function overlapSignificantly(a: TimeRange, b: TimeRange) {
 
 /**
  * A moment is named for its largest cut, else its longest edit, else its first. Between two that are as large, the one
- * Scarlet said more about names it: a cut it described, not one that only reads "Cut".
+ * AirWaves said more about names it: a cut it described, not one that only reads "Cut".
  */
 function mainOf<T extends MomentEdit>(members: T[]) {
   const removed = (e: T) => e.beforeCut ? Math.round((e.beforeCut.removed.end - e.beforeCut.removed.start) * 100) : -1;
@@ -62,7 +62,7 @@ function mainOf<T extends MomentEdit>(members: T[]) {
 }
 
 /**
- * A request's edits as the moments its list shows, in the order they come in the video. An edit Scarlet asks the editor
+ * A request's edits as the moments its list shows, in the order they come in the video. An edit AirWaves asks the editor
  * to look at, or a spot it marked for them, is always a moment of its own: those are decided one by one.
  */
 export function listMoments<T extends MomentEdit>(edits: readonly T[]): Moment<T>[] {

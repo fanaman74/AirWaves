@@ -57,7 +57,7 @@ it("analyses speakers on the GPU runtime first, and on the CPU once it has finis
   expect(await analyse("third")).toEqual([]);
   expect(workers).toEqual(["gpu", "gpu", "cpu", "cpu"]);
   // The failure is logged when it happens, and the switch once the CPU has finished the analysis.
-  expect(said()).toEqual([expect.stringContaining("the gpu worker failed"), expect.stringContaining("until Scarlet restarts")]);
+  expect(said()).toEqual([expect.stringContaining("the gpu worker failed"), expect.stringContaining("until AirWaves restarts")]);
 });
 
 it("keeps the GPU speaker runtime in use when the CPU can't finish the analysis either", async () => {
@@ -69,7 +69,7 @@ it("keeps the GPU speaker runtime in use when the CPU can't finish the analysis 
   expect(await analyse("next")).toEqual([]);
   expect(workers).toEqual(["gpu", "cpu", "gpu"]);
   expect(said()).toEqual([expect.stringContaining("the gpu worker failed")]);
-  expect(said().join(" ")).not.toContain("until Scarlet restarts");
+  expect(said().join(" ")).not.toContain("until AirWaves restarts");
 });
 
 it("runs speaker analysis beside the audio lane only on the CPU with cores to spare", () => {

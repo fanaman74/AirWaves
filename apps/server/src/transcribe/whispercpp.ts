@@ -179,7 +179,7 @@ export class WhisperCppProvider implements TranscriptionProvider {
         // a full disk or a missing program fails there too: that error is thrown, and the next run tries the GPU again.
         const result = await this.runWhisper(this.opts.binary, model, wav, tmpDir, signal, language, prompt, onProgress);
         failedGpu.add(gpu);
-        this.opts.log?.("[whisper] That run finished on the CPU build, so transcription uses the CPU until Scarlet restarts.");
+        this.opts.log?.("[whisper] That run finished on the CPU build, so transcription uses the CPU until AirWaves restarts.");
         return result;
       }
     }

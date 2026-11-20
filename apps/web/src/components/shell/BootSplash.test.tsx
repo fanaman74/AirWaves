@@ -63,7 +63,7 @@ async function shell(path: string) {
   await act(async () => root!.render(<RouterProvider router={router} />));
   return router;
 }
-/** The project Scarlet reopens, read when the test says: its store's state is set by hand. */
+/** The project AirWaves reopens, read when the test says: its store's state is set by hand. */
 async function reopened() {
   const { useProjectStore } = await import("../../stores/project");
   const { buildDb, PRJ } = await import("../../lib/mock/fixtures");
@@ -108,10 +108,10 @@ it("says a line it is given instead, and keeps it", async () => {
   vi.useFakeTimers();
   const { BootSplash } = await import("./BootSplash");
   root = createRoot(host);
-  await act(async () => root!.render(<BootSplash line="Reconnecting to Scarlet…" />));
+  await act(async () => root!.render(<BootSplash line="Reconnecting to AirWaves…" />));
   expect(vi.getTimerCount()).toBe(0);
   await act(async () => { vi.advanceTimersByTime(60_000); });
-  expect(startupLine()).toBe("Reconnecting to Scarlet…");
+  expect(startupLine()).toBe("Reconnecting to AirWaves…");
 });
 
 it("is what the window shows while its first page's code loads", async () => {
@@ -133,9 +133,9 @@ it("stays as it is while the engine starts and the library's projects load, and 
   expect(startupLine()).toMatch(starting);
   await answer();
   expect(host.textContent).toBe("Project library");
-  // An engine replaced later takes the window for a moment. Scarlet isn't starting then.
+  // An engine replaced later takes the window for a moment. AirWaves isn't starting then.
   await becomes("loading");
-  expect(startupLine()).toBe("Reconnecting to Scarlet…");
+  expect(startupLine()).toBe("Reconnecting to AirWaves…");
   await becomes("ready");
   expect(host.textContent).toBe("Project library");
 });
@@ -150,7 +150,7 @@ it("gives way at once to what went wrong when the engine can't start, and goes o
   // The engine has given up. The window says why straight away, not after the slow-start wait.
   await act(async () => useAuthStore.setState({ status: "offline", error: "Error: scarlet-engine sidecar not found", failed: true }));
   expect(host.querySelector('main[aria-busy="true"]')).toBeNull();
-  expect(host.querySelector("h1")?.textContent).toBe("Scarlet couldn’t start");
+  expect(host.querySelector("h1")?.textContent).toBe("AirWaves couldn’t start");
   expect(host.textContent).toContain("Error: scarlet-engine sidecar not found");
   expect([...host.querySelectorAll("button")].map(b => b.textContent)).toEqual(["Open logs", "Copy diagnostics"]);
   // An engine started again later, by a rebuild or a fix, still brings the window up.
@@ -159,7 +159,7 @@ it("gives way at once to what went wrong when the engine can't start, and goes o
   expect(host.textContent).toBe("Project library");
 });
 
-it("says Scarlet lost its engine when it crashes, that it couldn't start when it keeps failing, and comes back when it is up", async () => {
+it("says AirWaves lost its engine when it crashes, that it couldn't start when it keeps failing, and comes back when it is up", async () => {
   const { desktop } = await import("../../lib/desktop");
   const { ScarletClient } = await import("@scarlet/shared");
   const { buildDb } = await import("../../lib/mock/fixtures");
@@ -180,20 +180,20 @@ it("says Scarlet lost its engine when it crashes, that it couldn't start when it
   await shell("/");
   await vi.waitFor(() => expect(host.textContent).toBe("Project library"));
 
-  // The engine crashes. The window says Scarlet is reconnecting, and why, rather than failing each action without a word.
-  await engine({ state: "starting", url: null, token: undefined, restarts: 1, error: "Scarlet’s engine stopped unexpectedly (exit code 1). Starting it again…" });
-  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("Reconnecting to Scarlet…"));
-  expect(host.textContent).toContain("Scarlet’s engine stopped unexpectedly (exit code 1). Starting it again…");
+  // The engine crashes. The window says AirWaves is reconnecting, and why, rather than failing each action without a word.
+  await engine({ state: "starting", url: null, token: undefined, restarts: 1, error: "AirWaves’s engine stopped unexpectedly (exit code 1). Starting it again…" });
+  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("Reconnecting to AirWaves…"));
+  expect(host.textContent).toContain("AirWaves’s engine stopped unexpectedly (exit code 1). Starting it again…");
   expect([...host.querySelectorAll("button")].map(b => b.textContent)).toEqual(["Open logs", "Copy diagnostics"]);
-  // It fails to start again and again: Scarlet couldn't start, and why.
+  // It fails to start again and again: AirWaves couldn't start, and why.
   await engine({ state: "error", url: null, token: undefined, restarts: 4, error: "engine exited before reporting ready (see log for its output)" });
-  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("Scarlet couldn’t start"));
+  await vi.waitFor(() => expect(host.querySelector("h1")?.textContent).toBe("AirWaves couldn’t start"));
   expect(host.textContent).toContain("engine exited before reporting ready (see log for its output)");
   // A start gets through, and the window is back where it was.
   await engine({ restarts: 4 });
   await vi.waitFor(() => expect(host.textContent).toBe("Project library"));
 
-  // A restart Scarlet asked for, to load a dev rebuild, is over in a moment: the window carries on through it.
+  // A restart AirWaves asked for, to load a dev rebuild, is over in a moment: the window carries on through it.
   await engine({ state: "starting", url: null, token: undefined });
   expect(host.textContent).toBe("Project library");
   await vi.waitFor(() => expect(exports).toHaveBeenCalledTimes(2));
@@ -208,10 +208,10 @@ it("leaves for a page other than the library as soon as the engine is up, and as
   expect(projects).toHaveBeenCalledTimes(1);
 });
 
-it("stays as it is while the project Scarlet reopens is opening, and leaves a project opened later to its own line", async () => {
+it("stays as it is while the project AirWaves reopens is opening, and leaves a project opened later to its own line", async () => {
   const { becomes } = await engine("loading");
   const project = await reopened();
-  // Restart to update brings Scarlet back where it was. With History open, the page needs the project's edits too.
+  // Restart to update brings AirWaves back where it was. With History open, the page needs the project's edits too.
   const router = await shell(`/p/${project.id}?panel=history`);
   expect(startupLine()).toMatch(starting);
   // The engine is up and the project is being read. That wait is the startup screen's too, with no spinner after it.
@@ -233,7 +233,7 @@ it("stays as it is while the project Scarlet reopens is opening, and leaves a pr
   expect(host.textContent).toContain("Opening project…");
 });
 
-it("gives way to the project's own word when the project Scarlet reopens can't open", async () => {
+it("gives way to the project's own word when the project AirWaves reopens can't open", async () => {
   await engine("ready");
   const project = await reopened();
   await shell(`/p/${project.id}`);
@@ -241,7 +241,7 @@ it("gives way to the project's own word when the project Scarlet reopens can't o
   await project.fails();
   expect(host.querySelector('main[aria-busy="true"]')).toBeNull();
   expect(host.textContent).toContain("Couldn’t open the project");
-  // Asked again, it waits under its own line: Scarlet isn't starting any more.
+  // Asked again, it waits under its own line: AirWaves isn't starting any more.
   await project.opening();
   expect(host.querySelector('main[aria-busy="true"]')).toBeNull();
   expect(host.textContent).toContain("Opening project…");

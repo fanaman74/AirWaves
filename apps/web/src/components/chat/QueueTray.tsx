@@ -8,12 +8,12 @@ export interface QueuedRequest {
   text: string;
   /** What it revises, when it's about one edit or cut: "Revising the cut at 2:05". */
   target?: string;
-  /** Scarlet made this request itself, so its words aren't the editor's to change. */
+  /** AirWaves made this request itself, so its words aren't the editor's to change. */
   fixed?: boolean;
 }
 
 /**
- * The requests waiting their turn, as a tray attached to the top of the message box they were sent from. Scarlet runs
+ * The requests waiting their turn, as a tray attached to the top of the message box they were sent from. AirWaves runs
  * one request at a time, except those that are each about their own cut or edit, which start at once and never wait
  * here for one another. The tray reads in running order, which isn't always the order asked: the one marked Next
  * runs first.
@@ -26,7 +26,7 @@ export interface QueuedRequest {
  * A request's pencil, or a click on its words, hands them to the message box to change (`onReword`). While they're
  * there (`rewording`) its row is lit and stays in view, and its pencil, lit too, puts them back as they were.
  *
- * Pause, Resume and Stop are at the right of the band of the request Scarlet has. While editing is `paused` the tray
+ * Pause, Resume and Stop are at the right of the band of the request AirWaves has. While editing is `paused` the tray
  * says so ("Editing paused · 2 queued"), and holds Resume itself (`onContinue`) only when no band does: editing paused
  * with nothing under way, only requests waiting their turn.
  */
@@ -111,7 +111,7 @@ const RETRY_HOLD_MS = 3_000;
 
 /**
  * Keep the queued request `id` from starting while its words are being changed, so it can't run with the words being
- * replaced, and let it go once `id` is unset. `onLost` runs when it can't be held: Scarlet began it first. Any other
+ * replaced, and let it go once `id` is unset. `onLost` runs when it can't be held: AirWaves began it first. Any other
  * failure keeps the words where they are and asks again shortly, since the hold outlasts a missed renewal.
  */
 export function useRewordingHold(id: string | undefined, hold: (id: string, on: boolean) => Promise<void>, onLost: () => void) {

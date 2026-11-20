@@ -19,7 +19,7 @@ const loadSkillEditor = async () => ({ Component: (await import("./pages/SkillEd
 
 const router = createBrowserRouter(createRoutesFromElements(
   <>
-    {/* Older links from when Scarlet had accounts */}
+    {/* Older links from when AirWaves had accounts */}
     <Route path="/login" element={<Navigate to="/" replace />} />
     <Route path="/register" element={<Navigate to="/" replace />} />
     <Route element={<AppShell />} hydrateFallbackElement={<BootSplash />}>

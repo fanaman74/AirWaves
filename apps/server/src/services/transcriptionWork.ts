@@ -14,7 +14,7 @@ export type TranscriptionResume = { interrupted?: Task; stranded?: string };
 export async function transcriptionIdentity(ctx: Ctx, asset: MediaAsset, source: Stats | undefined, provider: TranscriptionProvider) {
   const { settings, revision } = ctx.repos.settings.transcriptionPolicy();
   const runtime = provider.name === "whispercpp" ? resolveLocalRuntime(ctx, settings) : undefined;
-  // Custom weights or an adapter can be replaced in place while Scarlet is closed. A bundled executable can
+  // Custom weights or an adapter can be replaced in place while AirWaves is closed. A bundled executable can
   // move or be re-signed on an ordinary app update; its preset and pinned weights identify the model.
   const file = (path?: string) => {
     if (!path) return;

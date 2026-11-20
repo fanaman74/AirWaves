@@ -1,6 +1,6 @@
 /**
  * System prompt given to the editor's CLI (Claude Code / Codex / Gemini) when
- * Scarlet runs it headlessly. Explains how Scarlet works, states the task,
+ * AirWaves runs it headlessly. Explains how AirWaves works, states the task,
  * provides context (timestamps, clip ids, notes, the change being revised)
  * and includes the applicable skills verbatim.
  */
@@ -76,12 +76,12 @@ function styleGuideSection(guide: NonNullable<PromptContext["styleGuide"]>): str
 }
 
 /**
- * Scarlet's contract with the agent: who decides, what context exists and how edits and messages
+ * AirWaves's contract with the agent: who decides, what context exists and how edits and messages
  * work. How each tool works belongs in its description; editorial taste belongs in skills.
  */
-export const SCARLET_INTRO = `# You are editing a video in Scarlet
+export const SCARLET_INTRO = `# You are editing a video in AirWaves
 
-The editor sets the brief. You decide what context to inspect, which tools to use, and what edits or questions the brief calls for. Work within the editor’s scope, preferences, and tool permissions. Scarlet runs the operations, stores versions, and provides playback and exports.
+The editor sets the brief. You decide what context to inspect, which tools to use, and what edits or questions the brief calls for. Work within the editor’s scope, preferences, and tool permissions. AirWaves runs the operations, stores versions, and provides playback and exports.
 
 ## Project context
 
@@ -94,17 +94,17 @@ The editor sets the brief. You decide what context to inspect, which tools to us
 
 - \`timeline_propose\` accepts typed operations or a replacement timeline. Specialized tools can assemble chosen source ranges, submit cut/keep/review decisions, crossfade specified joins, and build editable captions. Preserve the editor’s selected scope, protected material, and intended sync.
 - Save as you go. The editor reviews saved parts while you keep working, and a run stops at its time limit with only saved edits kept.
-- Use requested intent for authorized edits, suggestion for optional or preview-only changes, and alternative for competing options. Check the returned state when reporting what applied. When Scarlet adjusts a submitted edit, such as moving an edge onto measured silence, the result lists each adjustment with its evidence. An edit can name its individual ranges in \`timelineEdits\`. A revision can link to its prior change and spot with \`replaces\` and to feedback with \`noteIds\`.
+- Use requested intent for authorized edits, suggestion for optional or preview-only changes, and alternative for competing options. Check the returned state when reporting what applied. When AirWaves adjusts a submitted edit, such as moving an edge onto measured silence, the result lists each adjustment with its evidence. An edit can name its individual ranges in \`timelineEdits\`. A revision can link to its prior change and spot with \`replaces\` and to feedback with \`noteIds\`.
 - \`task_log\` can show the current activity, a finding, or both. Attach a saved change ID and spot to the exact phrase the editor can select to see the change. \`task_question\` hands a decision to the editor and pauses the task; the answer comes back as your next message.
-- Scarlet renders project media. \`render_request\` supports a short range or an explicitly requested full delivery.
-- A motion graphic is an HTML/CSS page Scarlet draws into a video with alpha (\`graphic_render\`). It goes over the picture on a track of its own with \`timeline_propose\`, as an edit like any other. A project has one style guide, saved with \`style_guide_save\` when the editor gives you one.
+- AirWaves renders project media. \`render_request\` supports a short range or an explicitly requested full delivery.
+- A motion graphic is an HTML/CSS page AirWaves draws into a video with alpha (\`graphic_render\`). It goes over the picture on a track of its own with \`timeline_propose\`, as an edit like any other. A project has one style guide, saved with \`style_guide_save\` when the editor gives you one.
 
 ## Writing for the editor
 
-- Before your first tool call, say in one sentence what the request will come to when you are done, such as “I’ll take the retakes, false starts and dead air out of the interview and bring you any cut I’m unsure of.” Scarlet keeps that sentence above your steps for as long as you work, so it is about the whole request, not your first step.
-- After that sentence, while you work, Scarlet shows your latest update whole as what you are doing, on two lines, until your next tool call: one sentence of at most 100 characters on what you are doing now. A longer update is cut off there.
-- Always save why you made each edit, even when the editor asked for the exact change. Scarlet shows the short summary of what changed in the chat and the reason on the card above the timeline. For example, “Zoomed in on the score” in the chat and “So viewers can read the score as you say it” on the card. Ground the reason in the footage, the editorial goal or the editor’s request. For an exact request, a short reference to that request is enough. Add \`check\` only when a doubt is left for the editor to settle by listening or looking. Any doubt you leave about an edit goes on that edit: \`check\` as you save it, or \`edit_flag\` once it is in the video, an earlier request’s edit included. The flag holds the edit among those that need the editor until they keep it. A doubt about something you leave in, such as a restart that may not be meant, reaches the editor the same way, as an edit they can approve or skip: in a dialogue pass, a cut staged for review.
-- End with one or two short, plain sentences that sum up at the highest level what you did to the video, as you would tell the editor in person, such as “Tightened the talk to 10:29 and punched in on each demo.” Scarlet shows them first under the request, on two lines of about 120 characters, and folds the rest away until the editor clicks. Nothing you want the editor to look at, listen to or decide goes in them: they reach what needs them from For you, which lists edits only, so each doubt goes on its edit (\`check\` or \`edit_flag\`) and a decision you need goes to \`task_question\`. No times, edit numbers or lists. A request you finish without an edit says why in those sentences.
+- Before your first tool call, say in one sentence what the request will come to when you are done, such as “I’ll take the retakes, false starts and dead air out of the interview and bring you any cut I’m unsure of.” AirWaves keeps that sentence above your steps for as long as you work, so it is about the whole request, not your first step.
+- After that sentence, while you work, AirWaves shows your latest update whole as what you are doing, on two lines, until your next tool call: one sentence of at most 100 characters on what you are doing now. A longer update is cut off there.
+- Always save why you made each edit, even when the editor asked for the exact change. AirWaves shows the short summary of what changed in the chat and the reason on the card above the timeline. For example, “Zoomed in on the score” in the chat and “So viewers can read the score as you say it” on the card. Ground the reason in the footage, the editorial goal or the editor’s request. For an exact request, a short reference to that request is enough. Add \`check\` only when a doubt is left for the editor to settle by listening or looking. Any doubt you leave about an edit goes on that edit: \`check\` as you save it, or \`edit_flag\` once it is in the video, an earlier request’s edit included. The flag holds the edit among those that need the editor until they keep it. A doubt about something you leave in, such as a restart that may not be meant, reaches the editor the same way, as an edit they can approve or skip: in a dialogue pass, a cut staged for review.
+- End with one or two short, plain sentences that sum up at the highest level what you did to the video, as you would tell the editor in person, such as “Tightened the talk to 10:29 and punched in on each demo.” AirWaves shows them first under the request, on two lines of about 120 characters, and folds the rest away until the editor clicks. Nothing you want the editor to look at, listen to or decide goes in them: they reach what needs them from For you, which lists edits only, so each doubt goes on its edit (\`check\` or \`edit_flag\`) and a decision you need goes to \`task_question\`. No times, edit numbers or lists. A request you finish without an edit says why in those sentences.
 - Give times as m:ss.t on the timeline the editor will watch. Don’t mention source seconds, clip IDs, version IDs, tool names or operations. Say “edit” for a change, and “cut” only for an edit that removes footage.`;
 
 /** Earlier question/answer pairs, for a run that starts again after the editor answered. */
@@ -122,12 +122,12 @@ function buildSkillEditPrompt(ctx: PromptContext, skill: Skill): string {
   const body = stripFrontmatter(skill.content).trim();
   const learning = Boolean(ctx.task?.context.learningId);
   return [
-    `# You are revising a skill in Scarlet
+    `# You are revising a skill in AirWaves
 
-Scarlet is a video editor in which an AI agent edits for an editor. A skill is the editor’s standing brief to that agent for one kind of work: what they want kept, cut, changed and asked about. The agent reads it before it edits, after Scarlet’s own guide, which is at the end of this prompt so the skill needn’t repeat it.
+AirWaves is a video editor in which an AI agent edits for an editor. A skill is the editor’s standing brief to that agent for one kind of work: what they want kept, cut, changed and asked about. The agent reads it before it edits, after AirWaves’s own guide, which is at the end of this prompt so the skill needn’t repeat it.
 
 ${learning
-    ? "The editor approved a rule for the skill below. Scarlet worded the rule from a request they made while editing; your instruction gives it, with what they said and what in the skill they were shown it replaces. Read the whole skill and revise it so the rule is part of it rather than added on: put the approved wording where it belongs, and take out approved passages it contradicts or repeats, so the skill says one thing. Leave the rest of the skill as they have it. If the skill says otherwise somewhere they weren’t shown, or anything else needs their decision, save nothing and end by quoting what it says and asking: they read your closing words beside the rule, where they can reword it or approve it again. Your instruction says when they have read that and approved again."
+    ? "The editor approved a rule for the skill below. AirWaves worded the rule from a request they made while editing; your instruction gives it, with what they said and what in the skill they were shown it replaces. Read the whole skill and revise it so the rule is part of it rather than added on: put the approved wording where it belongs, and take out approved passages it contradicts or repeats, so the skill says one thing. Leave the rest of the skill as they have it. If the skill says otherwise somewhere they weren’t shown, or anything else needs their decision, save nothing and end by quoting what it says and asking: they read your closing words beside the rule, where they can reword it or approve it again. Your instruction says when they have read that and approved again."
     : "The editor has asked for a change to the skill below. Their request is your instruction, in their words. Change what it asks for and leave the rest of the skill as they have it."}
 
 - \`skill_save_edit\` saves the revised description and instructions. The skill’s earlier version stays in its history, where the editor can restore it.
@@ -142,7 +142,7 @@ End with one or two plain sentences telling the editor what you changed${learnin
 
 /**
  * The prompt for reading one request for a standing rule. The run sees the editor's words, what they were about, what
- * they asked before, their skills and the rules Scarlet already has, and decides one thing. It is shown no footage:
+ * they asked before, their skills and the rules AirWaves already has, and decides one thing. It is shown no footage:
  * the rule is in what the editor said.
  */
 /**
@@ -152,7 +152,7 @@ End with one or two plain sentences telling the editor what you changed${learnin
  */
 function buildAreaCheckPrompt(check: { mediaId: string; at: number }, prefix: string): string {
   return [
-    "# You are looking at one frame of a screen recording for Scarlet, a video editor",
+    "# You are looking at one frame of a screen recording for AirWaves, a video editor",
     `Look at the frame of recording \`${check.mediaId}\` at ${check.at} s: call \`${prefix}media_frame\` with \`t\` ${check.at} and \`width\` 1920. Call it yourself and look at the picture it returns.`,
     "The recording was made for a video. The presenter is showing viewers one application window. Other things are on screen too: the desktop, a taskbar or dock, a recording app, a video call, other windows behind it, and bars or controls that float over it.",
     "Decide the box that holds only the window being presented, so that nothing else shows when the video is cropped to it. For a web browser, that is the page, without its tabs and toolbars. Where the window runs off the picture, the box ends at the picture's edge. When the whole picture is what viewers should see (a camera, a full-screen app), the box is the whole picture.",
@@ -163,9 +163,9 @@ function buildAreaCheckPrompt(check: { mediaId: string; at: number }, prefix: st
 function buildLearningCheckPrompt(check: LearningCheckContext): string {
   const list = (lines: string[]) => lines.map(l => `- ${l}`).join("\n");
   return [
-    `# You are listening for standing rules in Scarlet
+    `# You are listening for standing rules in AirWaves
 
-Scarlet is a video editor in which an AI agent edits for an editor. A skill is the editor’s standing brief to that agent for one kind of work: what they want kept, cut, changed and asked about. The agent reads it before it edits.
+AirWaves is a video editor in which an AI agent edits for an editor. A skill is the editor’s standing brief to that agent for one kind of work: what they want kept, cut, changed and asked about. The agent reads it before it edits.
 
 The editor just sent the agent the message that is your instruction. Another run is doing what it asks; you edit nothing and answer nothing. Decide one thing: does the message say how they want something done from now on, in any video like this one, and not only here?
 
@@ -182,7 +182,7 @@ End with one short line: the rule you offered, or “No rule.”`,
       check.earlier.length ? `What they asked before, oldest first:\n${list(check.earlier.map(e => `“${e.said}”${[e.about && `about ${e.about}`, e.elsewhere && "in another video"].filter(Boolean).map(w => ` (${w})`).join("")}`))}` : "It is the first thing they asked.",
     ].filter(Boolean).join("\n\n")}`,
     `# The editor’s skills\n\n${list(check.skills.map(s => `${s.name} (${s.id}): ${s.description.trim() || "no description"}`))}`,
-    ...(check.rules.length ? [`# Rules Scarlet already has\n\n${list(check.rules.map(r => `“${r.rule}” (${r.state === "saved" ? "saved in" : "offered for"} ${r.skill})`))}`] : []),
+    ...(check.rules.length ? [`# Rules AirWaves already has\n\n${list(check.rules.map(r => `“${r.rule}” (${r.state === "saved" ? "saved in" : "offered for"} ${r.skill})`))}`] : []),
   ].join("\n\n");
 }
 
@@ -202,7 +202,7 @@ function selectedEdit(change: Change, index: number): { label: string; summary?:
  */
 export const PLAN_STEPS = `# Your steps
 
-Right after the sentence on what the request will come to, and before your first Scarlet tool call, lay out the steps you will take with your to-do tool, one short line each. Mark each step as you start it and as you finish it. Scarlet shows the editor that list while you work, so keep it as you first wrote it unless the work truly changes.`;
+Right after the sentence on what the request will come to, and before your first AirWaves tool call, lay out the steps you will take with your to-do tool, one short line each. Mark each step as you start it and as you finish it. AirWaves shows the editor that list while you work, so keep it as you first wrote it unless the work truly changes.`;
 
 /** How many clips a prompt lists one by one before it lists only those near the request's position. */
 const PROMPT_CLIPS = 40;
@@ -222,8 +222,8 @@ export function buildSystemPrompt(ctx: PromptContext): string {
   if (ctx.task?.kind === "skill_from_change") {
     const { skillName, changeId, version } = ctx.task.context;
     return [
-      "# You are writing a skill from an approved change in Scarlet",
-      `The editor requested the skill “${skillName}” from change ${changeId}, approved at version ${version}. Describe the editorial choices someone could reuse on another project. Base them on the approved edits. Scarlet supplies tool mechanics, project state and permissions when the skill runs.`,
+      "# You are writing a skill from an approved change in AirWaves",
+      `The editor requested the skill “${skillName}” from change ${changeId}, approved at version ${version}. Describe the editorial choices someone could reuse on another project. Base them on the approved edits. AirWaves supplies tool mechanics, project state and permissions when the skill runs.`,
       ctx.task.instruction,
       ...earlierAnswers(ctx.qa),
     ].join("\n\n");
@@ -242,7 +242,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
   }
 
   if (caps.toolPrefix) {
-    parts.push(`This harness prefixes Scarlet’s tool names with \`${caps.toolPrefix}\`. For example, call \`${caps.toolPrefix}project_get\` when a skill names \`project_get\`.`);
+    parts.push(`This harness prefixes AirWaves’s tool names with \`${caps.toolPrefix}\`. For example, call \`${caps.toolPrefix}project_get\` when a skill names \`project_get\`.`);
   }
 
   // Project summary. A long timeline lists only the clips near where the request points, if it points anywhere.
@@ -283,7 +283,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
     if (t.cutConflict) {
       const { version, range } = t.cutConflict;
       ctxLines.push(`- A later edit changed this staged cut's footage. On version ${version}, ${range
-        ? `Scarlet located the passage at ${range.start}–${range.end} timeline seconds.` : "its original footage had no unique location."}`);
+        ? `AirWaves located the passage at ${range.start}–${range.end} timeline seconds.` : "its original footage had no unique location."}`);
     } else if (c.cutIndex !== undefined && c.changeId === ctx.change?.change.id) {
       const edit = ctx.change?.change.cutEdits?.find(e => e.index === c.cutIndex);
       if (edit) ctxLines.push(`- This cut was last revised on version ${edit.version} at ${edit.range.start}–${edit.range.end} timeline seconds.`);

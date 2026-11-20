@@ -62,7 +62,7 @@ it("bounds streamed recordings and metadata before storing a note and keeps both
 });
 
 it("refuses a voice request it has no words for, and still keeps a voice note that isn't sent to an agent", async () => {
-  // Transcription is off: there is nothing to send Scarlet, and the recording isn't left behind.
+  // Transcription is off: there is nothing to send AirWaves, and the recording isn't left behind.
   const off = await voice("claude");
   expect(off.status).toBe(400);
   expect(off.body.error).toMatchObject({ code: "transcription_not_configured", message: expect.stringMatching(/Settings/) });
@@ -168,7 +168,7 @@ const send = (engine: ScarletApp, method: string, path: string, body?: object) =
   method, body: body && JSON.stringify(body), headers: { Authorization: `Bearer ${accessToken(engine.ctx)}`, "content-type": "application/json" },
 });
 const spoken = "um, trim the, uh, intro";
-/** A note to Scarlet, dictated or recorded, as the composer sends it. */
+/** A note to AirWaves, dictated or recorded, as the composer sends it. */
 const ask = (kind: "dictated" | "recorded", version?: string) => kind === "recorded" ? voice("claude")
   : send(app, "POST", `/projects/${project.id}/notes`, { time: 1, text: spoken, voiceTranscript: spoken, assignTo: "claude", version })
     .then(async res => ({ status: res.status, body: await res.json() as Sent }));

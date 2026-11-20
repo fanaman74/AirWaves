@@ -72,10 +72,10 @@ it("shows tokens in the chat until the editor turns them off", () => {
   view.unmount();
 });
 
-it("adds no row that repeats what Scarlet's own words already say, unless it opens an edit the request made", () => {
+it("adds no row that repeats what AirWaves's own words already say, unless it opens an edit the request made", () => {
   openProject();
   const reply = <p className="req-say">Tightened the intro by two seconds.</p>;
-  // Scarlet's reply says what the request came to: there is no second line under it saying so again, cut short.
+  // AirWaves's reply says what the request came to: there is no second line under it saying so again, cut short.
   const view = render(<RunBundle task={task} events={[]} changes={[]} say={reply} told />);
   expect(view.host.querySelector(".req-say")?.textContent).toBe("Tightened the intro by two seconds.");
   expect(view.host.querySelector(".req-result")).toBeNull();
@@ -86,8 +86,8 @@ it("adds no row that repeats what Scarlet's own words already say, unless it ope
   const made = { id: "chg_1", state: "approved", description: "Tightened the intro.", cutReasons: [], ranges: [] } as unknown as Parameters<typeof RunBundle>[0]["finalChange"];
   view.rerender(<RunBundle task={task} events={[]} changes={[]} finalChange={made} say={reply} told onOpen={() => {}} />);
   expect(view.host.querySelector("button.req-summary")?.textContent).toBe("Tightened the intro");
-  // A run that stopped early says so, and Scarlet's words stand for what it left: no cut-off copy of them under it.
-  // With no words from Scarlet, the row says what the run saved.
+  // A run that stopped early says so, and AirWaves's words stand for what it left: no cut-off copy of them under it.
+  // With no words from AirWaves, the row says what the run saved.
   view.rerender(<RunBundle task={{ ...task, state: "cancelled" }} events={[]} changes={[]} say={reply} told />);
   expect([view.host.querySelector(".req-state")?.textContent, !!view.host.querySelector(".req-result")]).toEqual(["Stopped", false]);
   view.rerender(<RunBundle task={{ ...task, state: "cancelled", summary: null }} events={[]} changes={[]} />);
@@ -198,7 +198,7 @@ it("keeps the ring of the work under way fading with motion reduced, the line un
     expect(reduced(sheet, mark), mark).toMatch(/(^|; )animation: .+ infinite !important;$/);
 });
 
-it("says what Scarlet is doing this moment on one line under its opening sentence, and nothing else while it works", () => {
+it("says what AirWaves is doing this moment on one line under its opening sentence, and nothing else while it works", () => {
   openProject();
   const running: Task = { ...task, state: "running", summary: null, finishedAt: undefined };
   const at = (seconds: number) => new Date(Date.parse(task.startedAt!) + seconds * 1000).toISOString();
@@ -224,18 +224,18 @@ it("says what Scarlet is doing this moment on one line under its opening sentenc
   expect(view.host.querySelector(".req-now [role=status]")!.className).toContain("working-text");
   expect(view.host.querySelector(".req-stages, .req-steps, .req-toggle")).toBeNull();
   expect(view.host.textContent).not.toMatch(/%/);
-  // Counts the engine keeps in the background are not what Scarlet is doing.
+  // Counts the engine keeps in the background are not what AirWaves is doing.
   const counting = [...reading, scanPage(754, 812), { type: "log" as const, at: at(41), text: "", data: { kind: "join_progress", mediaId: "med_1", through: 90 } }];
   view.rerender(<RunBundle task={running} events={counting} changes={[]} banded />);
   expect(now(view.host)).toBe("Reading the dialogue at 12:34");
-  // Each call takes the line as it comes, and so does Scarlet's own sentence when it comes after.
+  // Each call takes the line as it comes, and so does AirWaves's own sentence when it comes after.
   const joins = [...counting, tool("dialogue_check_join", 50, { cuts: [{}, {}, {}, {}] })];
   view.rerender(<RunBundle task={running} events={joins} changes={[]} banded />);
   expect(now(view.host)).toBe("Checking how 4 joins sound");
   const spoken = [...joins, said("The opening is saved, and I’ve found the retake of the letter.", 60)];
   view.rerender(<RunBundle task={running} events={spoken} changes={[]} banded />);
   expect(now(view.host)).toBe("The opening is saved, and I’ve found the retake of the letter.");
-  // A cut Scarlet asked about is named by its call's number, not by where it comes among the pass's cuts.
+  // A cut AirWaves asked about is named by its call's number, not by where it comes among the pass's cuts.
   const asked = [{ id: "chg", cutAssessments: [{ index: 1, verdict: "ask", askOrder: 1 }, { index: 7, verdict: "ask", askOrder: 0 }] }] as never;
   view.rerender(<RunBundle task={running} events={[...spoken, tool("dialogue_review_inspect", 70, { changeId: "chg", index: 1, count: 1 })]} changes={asked} banded />);
   expect(now(view.host)).toBe("Listening to Cut 2");
@@ -249,7 +249,7 @@ it("says what Scarlet is doing this moment on one line under its opening sentenc
   // A run not yet started says so; done, the sentence and the line go.
   bare.rerender(<RunBundle task={{ ...running, state: "claimed" }} events={[]} changes={[]} onStop={() => {}} />);
   expect(now(bare.host)).toBe("Getting started");
-  // A run that carries on after Scarlet closed or restarted says so until its first call, which then takes the line.
+  // A run that carries on after AirWaves closed or restarted says so until its first call, which then takes the line.
   const again: Task = { ...running, id: "tsk_again", resumeRootId: running.id };
   for (const state of ["claimed", "running"] as const) {
     bare.rerender(<RunBundle task={{ ...again, state }} events={[]} changes={[]} onStop={() => {}} />);
@@ -407,7 +407,7 @@ it("keeps the figure of a paused run's transcripts going on when one of them is 
   view.unmount();
 });
 
-it("leaves a question under a heading to the heading, opens the steps before it from its line with none, and says what Scarlet does with the answer", () => {
+it("leaves a question under a heading to the heading, opens the steps before it from its line with none, and says what AirWaves does with the answer", () => {
   openProject();
   const running: Task = { ...task, state: "running", summary: null, finishedAt: undefined };
   const asking: Task = { ...running, state: "waiting_for_user" };
@@ -420,7 +420,7 @@ it("leaves a question under a heading to the heading, opens the steps before it 
   // Under a heading the block is the question alone.
   const view = render(<RunBundle task={asking} events={asked} changes={[]} banded say={question} />);
   expect(view.host.querySelector(".req")!.textContent).toBe("Purple or white?");
-  // Answered, the line says what Scarlet is doing with it.
+  // Answered, the line says what AirWaves is doing with it.
   view.rerender(<RunBundle task={running} events={[...asked, { type: "answer" as const, at: at(90), text: "White" }]} changes={[]} banded />);
   expect(view.host.querySelector(".req-now [role=status]")?.textContent).toBe("Reading your answer");
   view.unmount();
@@ -532,7 +532,7 @@ it("leaves the word for how a run ended to its heading when the block has one, w
   expect(view.host.querySelector(".req-result")!.textContent).toBe("Nothing savedResume");
   act(() => view.host.querySelector<HTMLButtonElement>(".req-result > .req-recover")!.click());
   expect(resume).toHaveBeenCalledTimes(1);
-  // Under Scarlet's own words, which can run to several lines, the action has the line after them.
+  // Under AirWaves's own words, which can run to several lines, the action has the line after them.
   view.rerender(<RunBundle task={stopped} events={[]} changes={[]} recovery={{ label: "Resume", run: resume }} banded told
     say={<p className="req-say">I stopped before placing the second clip.</p>} />);
   expect([...view.host.querySelector(".req")!.children].map(row => row.className)).toEqual(["req-say", "req-row req-act"]);
@@ -555,10 +555,10 @@ it("says Done for a finished request whose closing words were commands or its ow
     view.unmount();
     return text;
   };
-  // Nothing of such a reply is shown as Scarlet's words, so the request's one row doesn't start with them either.
+  // Nothing of such a reply is shown as AirWaves's words, so the request's one row doesn't start with them either.
   expect(row("Ran `pnpm test` && checked the JSON output.")).toBe("Done");
   expect(row("Tighten the intro.")).toBe("Done");
-  // The words that are Scarlet's own still say what the request came to.
+  // The words that are AirWaves's own still say what the request came to.
   expect(row("Ran `git status`. Both pauses are under a second, so I left them in.")).toBe("Both pauses are under a second…");
   expect(row("Tightened the intro.")).toBe("Tightened the intro");
 });

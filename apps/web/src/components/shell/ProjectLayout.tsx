@@ -97,7 +97,7 @@ export function ProjectLayout() {
     };
   }, [id]);
 
-  // Scarlet reopens the project that was on screen when it closed. The library forgets it once it is shown: this
+  // AirWaves reopens the project that was on screen when it closed. The library forgets it once it is shown: this
   // view also unmounts while the engine restarts or the app quits, which must not forget the project.
   useEffect(() => {
     if (!opened || !id) return;
@@ -105,7 +105,7 @@ export function ProjectLayout() {
     void resumeImports(id, useProjectStore.getState().current?.media ?? []);
   }, [opened, id, projectLoad]);
 
-  // Where the editor is in it is kept as they go, and as the window goes away: Scarlet can close without a word.
+  // Where the editor is in it is kept as they go, and as the window goes away: AirWaves can close without a word.
   useEffect(() => {
     if (!opened || !id) return;
     const every = window.setInterval(rememberPlace, PLACE_EVERY_MS);
@@ -145,7 +145,7 @@ export function ProjectLayout() {
   const needsHistory = query.has("note") || query.get("panel") === "history";
   const failed = trashedProject?.id === id || (status === "error" && !opened);
   const waiting = failed ? null : !opened ? "Opening project…" : needsHistory && reviewStatus === "loading" ? "Loading edit history…" : null;
-  // Scarlet reopening its last project is still starting, so the startup screen stays up until the project can show
+  // AirWaves reopening its last project is still starting, so the startup screen stays up until the project can show
   // or says why it can't. A project opened after that waits under a line of its own.
   if (waiting) return startup.done ? <Loading label={waiting} /> : <BootSplash />;
   startup.done = true;

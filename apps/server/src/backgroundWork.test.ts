@@ -108,7 +108,7 @@ it("logs an import whose preparation broke off without being marked failed", asy
   await settle();
   expect(lines.filter(line => line.startsWith("[ingest]"))).toEqual([
     `[ingest] ${media.id} failed: database is locked`,
-    `[ingest] ${media.id} stopped part-way and stays unfinished until Scarlet restarts: database is locked`,
+    `[ingest] ${media.id} stopped part-way and stays unfinished until AirWaves restarts: database is locked`,
   ]);
   expect(ctx.repos.projects.getMedia(media.id)?.status).toBe("ingesting");
 });

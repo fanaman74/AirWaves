@@ -47,7 +47,7 @@ it("exports each cut of a dialogue pass with what it removed from the source and
     { index: 1, removed: { start: 7, end: 10 }, sources: [{ mediaId: "camera", start: 7, end: 10 }], reasons: ["First cut"], decision: "pending" },
   ]);
 
-  // Scarlet's second look at a cut travels with it.
+  // AirWaves's second look at a cut travels with it.
   const assessed = await api("POST", `/changes/${change.id}/cut-assessments`, { fromVersion: change.fromVersion, toVersion: change.toVersion,
     assessments: [{ index: 1, start: 7, end: 10, verdict: "keep", inspected: true, reason: "The retake is cleaner." }] });
   expect(assessed.status).toBe(200);

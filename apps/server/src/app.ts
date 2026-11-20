@@ -21,6 +21,7 @@ import { projectRoutes } from "./routes/projects.js";
 import { renderRoutes } from "./routes/renders.js";
 import { storageRoutes } from "./routes/storage.js";
 import { settingsRoutes } from "./routes/settings.js";
+import { providerRoutes } from "./routes/providers.js";
 import { skillRoutes } from "./routes/skills.js";
 import { graphicRoutes } from "./routes/graphics.js";
 import { historyRoutes } from "./routes/history.js";
@@ -77,13 +78,13 @@ export function createApp(options: ServerOptions): ScarletApp {
   wireChangeRenderCompletion(ctx);
   // Before anything is recovered or claimed: an engine that was killed may have had the process id this one was given.
   ctx.renders.recover(noteEngineStart(ctx));
-  // Never keeps Scarlet from starting: what it couldn't recover is tried again in half a minute.
+  // Never keeps AirWaves from starting: what it couldn't recover is tried again in half a minute.
   try {
     recoverTasks(ctx, true);
   } catch (err) {
     ctx.log(`[task] recovering interrupted runs failed and will run again: ${(err as Error).message}`);
   }
-  // A repair of earlier builds' leftovers. It must never keep Scarlet from starting.
+  // A repair of earlier builds' leftovers. It must never keep AirWaves from starting.
   try {
     retireLeftoverPasses(ctx);
   } catch (err) {
@@ -304,6 +305,7 @@ export function createApp(options: ServerOptions): ScarletApp {
   api.route("/", skillRoutes(ctx));
   api.route("/", graphicRoutes(ctx));
   api.route("/", settingsRoutes(ctx));
+  api.route("/", providerRoutes(ctx));
   api.route("/", storageRoutes(ctx));
   api.route("/", evalExportRoutes(ctx));
   app.route("/api", api);

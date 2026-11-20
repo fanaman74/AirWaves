@@ -91,7 +91,7 @@ beforeEach(() => {
     fullRenderKeys: { context: fullRenderContext(project), preview: db.renders.find(r => r.kind === "full")!.key, delivery: "current-delivery" },
   };
   useProjectStore.setState({ current: data, status: "ready", load: vi.fn(), refreshHead: vi.fn(), loadTaskEvents: vi.fn().mockResolvedValue(undefined),
-    // No engine here puts a rejected edit back itself, so the × asks Scarlet. Tests of the engine's own put-back answer it.
+    // No engine here puts a rejected edit back itself, so the × asks AirWaves. Tests of the engine's own put-back answer it.
     rejectEdits: vi.fn().mockRejectedValue(new ScarletApiError(409, "needs_scarlet", "This edit can’t be put back as it was.")) });
 });
 
@@ -339,7 +339,7 @@ it("turns the Before clip's play button while its stream waits for a section, an
 });
 
 const CHECK = "The last word may be clipped";
-/** Scarlet's sentence on what the flagged edit did: all its card says. */
+/** AirWaves's sentence on what the flagged edit did: all its card says. */
 const SUMMARY = "Tightened the wrap, which may clip its last word";
 /** The applied change's named edits, with a reason to check the last one, as the chat and the player see them. */
 const appliedEdits = () => {
@@ -362,7 +362,7 @@ const press = (key: string) => act(async () => { window.dispatchEvent(new Keyboa
 /** Zooms settle at once, as they do with reduced motion, so a test knows what the timeline shows when it reads it. */
 const zoomAtOnce = () => { const reduced = window.matchMedia("(prefers-reduced-motion: reduce)"); vi.spyOn(window, "matchMedia").mockReturnValue(Object.create(reduced, { matches: { value: true } })); };
 
-it("sets the sentence on what a request made in the type of Scarlet's replies, no larger", async () => {
+it("sets the sentence on what a request made in the type of AirWaves's replies, no larger", async () => {
   // A test lays nothing out, so the two sizes are read from the simple view's stylesheet, a rule to a line.
   const { readFileSync } = await import("node:fs");
   const rules = readFileSync(`${import.meta.dirname}/../simple.css`, "utf8").split("\n");
@@ -443,7 +443,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   expect(panel.closest(".simple-edits")).toBeNull();
   expect(turn.querySelector(".simple-edits .review-actions, .simple-edits .edit-card-before")).toBeNull();
   expect(openTitle()).toBe("captions");
-  // One line: Scarlet's note as the caption, Before/After, Revise and Keep. The card has no picker, and an edit with
+  // One line: AirWaves's note as the caption, Before/After, Revise and Keep. The card has no picker, and an edit with
   // nothing to check has no count.
   expect(panel.firstElementChild?.matches(".edit-card-bar")).toBe(true);
   expect(panel.querySelector(".edit-card-bar > .edit-card-title:first-child")?.textContent).toBe("captions");
@@ -479,7 +479,7 @@ it("lists a thread's edits once, numbered, and opens one with its decisions unde
   const note = () => editPanel()!.querySelector<HTMLElement>(".edit-card-title")!;
   expect([note().className, note().getAttribute("aria-expanded")]).toEqual(["edit-card-title", null]);
 
-  // ↓ steps to the next edit, which opens in its place. A flagged edit's note is Scarlet's summary of it, like any other's.
+  // ↓ steps to the next edit, which opens in its place. A flagged edit's note is AirWaves's summary of it, like any other's.
   // A note longer than two lines opens in full on a click and folds on the next. There's no button, only the pointer.
   const tooLong = vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(900);
   await press("ArrowDown");
@@ -952,7 +952,7 @@ it("steps ↑ and ↓ among the flagged edits from one that still waits, and thr
 });
 
 it("counts and steps through a flagged edit made in several places as one edit, as its list does, and keeps it in all of them", async () => {
-  // The captions went on in two places, and Scarlet flagged both. The wrap asks for a look too.
+  // The captions went on in two places, and AirWaves flagged both. The wrap asks for a look too.
   appliedEdits().mockImplementation(async (_project, threadId) => ({ version: data.project.head!,
     edits: threadId !== threadWith("chg_approved_2").id ? [] : [
       { changeId: "chg_approved_2", spot: 0, label: "captions", range: { start: 0.2, end: 2.4 }, previous: [], check: "The first line runs long" },
@@ -1148,7 +1148,7 @@ it("keeps a flagged edit's row to its amber number and its name: the reason is o
   // No line under the row says why it asks for a look. Hovering the row does, as on a pass's row.
   expect([row().querySelector(".edit-badge")?.className, row().textContent, row().title]).toEqual(["edit-badge is-check", "3wrapEdit", CHECK]);
   expect(turn.querySelector(".simple-edits")!.textContent).not.toContain(CHECK);
-  // Its card says it, inside Scarlet's sentence.
+  // Its card says it, inside AirWaves's sentence.
   await click(row());
   await act(async () => {});
   expect(editPanel()!.querySelector(".edit-card-title")?.textContent).toBe(SUMMARY);
@@ -1157,7 +1157,7 @@ it("keeps a flagged edit's row to its amber number and its name: the reason is o
   expect([row().querySelector(".edit-badge")?.className, row().textContent, row().title]).toEqual(["edit-badge is-kept", "3wrapEdit", CHECK]);
 });
 
-it("reviews only the edits Scarlet flagged, then leaves nothing to press", async () => {
+it("reviews only the edits AirWaves flagged, then leaves nothing to press", async () => {
   appliedEdits();
   await show();
   const turn = turnFor("chg_approved_2");
@@ -1170,14 +1170,14 @@ it("reviews only the edits Scarlet flagged, then leaves nothing to press", async
   expect(buttonIn(turn, "Done")).toBeUndefined();
 });
 
-it("gives the timeline to the latest request when its edit lands, though the editor looked at an earlier one while Scarlet worked", async () => {
+it("gives the timeline to the latest request when its edit lands, though the editor looked at an earlier one while AirWaves worked", async () => {
   earlierRequestOnly();
   const later = laterRequest("task_later");
   const landed = later.lists.task_later!;
   later.lists.task_later = [];
   await show();
   await act(async () => {});
-  // The editor sends a request. Scarlet starts on it, and it has no edits yet.
+  // The editor sends a request. AirWaves starts on it, and it has no edits yet.
   const base = buildDb().tasks.find(t => t.id === "task_done")!;
   const now = new Date().toISOString();
   await event(d => ({ ...d, tasks: [...d.tasks, { ...base, id: "task_later", state: "running" as const, createdAt: now, startedAt: now, finishedAt: undefined,
@@ -1446,7 +1446,7 @@ it("stops asking for a look at a flagged edit once its revision is queued", asyn
   expect(dots.every(d => d.dataset.state !== "check")).toBe(true);
 });
 
-it("says Revising… on the row of an edit the editor had kept while Scarlet revises it", async () => {
+it("says Revising… on the row of an edit the editor had kept while AirWaves revises it", async () => {
   earlierRequestOnly();
   const thread = threadWith("chg_approved_2");
   // The editor kept "wrap" when it played, then opened it again and sent it back for revision.
@@ -1459,7 +1459,7 @@ it("says Revising… on the row of an edit the editor had kept while Scarlet rev
   await show();
   await act(async () => {});
   // The version they kept is on its way out: its row says so, as any edit's does while it is revised (2026-11-10: a kept
-  // edit's row went on reading as kept, with its amount, while Scarlet revised it).
+  // edit's row went on reading as kept, with its amount, while AirWaves revised it).
   const wrap = [...container.querySelectorAll<HTMLElement>(".simple-edits .simple-edit")].find(r => r.getAttribute("aria-label")?.startsWith("Edit 3: wrap"))!;
   expect([wrap.getAttribute("aria-label"), wrap.querySelector(".simple-edit-check")?.textContent]).toEqual(["Edit 3: wrap, revising", "Revising…"]);
 });
@@ -1468,7 +1468,7 @@ it("takes the card off an edit sent back for revision until its new version land
   earlierRequestOnly();
   await show();
   await act(async () => {});
-  // The request's block is in the chat, and above the message box while Scarlet is on its edit.
+  // The request's block is in the chat, and above the message box while AirWaves is on its edit.
   const wrap = () => [...container.querySelectorAll<HTMLElement>(".simple-edits .simple-edit")].find(r => r.getAttribute("aria-label")?.startsWith("Edit 3: wrap"))!;
   await click(wrap());
   await act(async () => {});
@@ -1476,7 +1476,7 @@ it("takes the card off an edit sent back for revision until its new version land
   expect(editPanel()!.querySelector(".edit-card-count")?.textContent).toBe("1 of 1");
   const tag = boxTag();
   // The editor sends it back. Its note and decisions are about the version on its way out, so the card goes; the edit
-  // stays open, with the message box still aimed at it, and its row says Scarlet is on it.
+  // stays open, with the message box still aimed at it, and its row says AirWaves is on it.
   const base = buildDb().tasks.find(t => t.id === "task_done")!;
   const thread = threadWith("chg_approved_2");
   await event(d => ({ ...d, tasks: [...d.tasks, { ...base, id: "task_revise_wrap", state: "running" as const, createdAt: new Date().toISOString(),
@@ -1492,7 +1492,7 @@ it("takes the card off an edit sent back for revision until its new version land
   // Keep has nothing to keep meanwhile.
   await press("k");
   expect(wrap().getAttribute("aria-label")).toBe("Edit 3: wrap, revising");
-  // The new version lands in the edit's place. Scarlet gave it no reason of its own, and it is still the editor's to
+  // The new version lands in the edit's place. AirWaves gave it no reason of its own, and it is still the editor's to
   // check: the card is back on it with its note, its place among the ones waiting and Keep.
   const old = data.changes.find(c => c.id === "chg_approved_2")!;
   const revised = { ...old, id: "chg_revised_wrap", taskId: "task_revise_wrap", fromVersion: old.toVersion, toVersion: "ver_revised_wrap", appliedVersion: "ver_revised_wrap",
@@ -1557,7 +1557,7 @@ it("opens a located review check where it needs a look, then replays the edit fr
   await click(turn.querySelector(".simple-pass-need")!);
   // The card has a Check pill after the note, like the edit's kind but amber, and the timeline marks where, the same way;
   // the times are on hover.
-  // The note leaves out the time Scarlet wrote, which a later save may have moved.
+  // The note leaves out the time AirWaves wrote, which a later save may have moved.
   const checkButton = () => editPanel()!.querySelector<HTMLButtonElement>("button.edit-card-length.is-check");
   expect([checkButton()?.textContent, checkButton()?.title]).toEqual(["Check", "Play the part to check, 0:10"]);
   expect(editPanel()?.querySelector(".edit-card-title")?.textContent).toBe(`${says} ${reason}`);
@@ -1643,7 +1643,7 @@ it("numbers every cut of a dialogue pass that is the latest request, from the st
 });
 
 /**
- * A later request Scarlet applied, with one edit that asks for a look, beside the earlier one with its three. The engine
+ * A later request AirWaves applied, with one edit that asks for a look, beside the earlier one with its three. The engine
  * lists each request's edits for that request only. `lists` can be changed mid-test, set to an error, or held back.
  */
 const laterRequest = (request = "chg_later", flagged = true) => {
@@ -1697,7 +1697,7 @@ it("shows unresolved flags from older requests on the default full timeline and 
   expect(flags().map(dot => dot.style.left)).toEqual(["81.25%"]);
 });
 
-it("flags a request's applied edit while Scarlet still works on it, and follows it to the final version", async () => {
+it("flags a request's applied edit while AirWaves still works on it, and follows it to the final version", async () => {
   const { change, lists, hold, release } = laterRequest("task_fade");
   const earlier = data.changes.find(c => c.id === "chg_approved_2")!;
   const task = { ...data.tasks.find(t => t.id === "task_done")!, id: "task_fade", kind: "edit" as const,
@@ -1709,7 +1709,7 @@ it("flags a request's applied edit while Scarlet still works on it, and follows 
   const fade = () => container.querySelector<HTMLElement>('.unit[data-run="task_fade"]')!;
   const flag = () => fade().querySelector(".simple-pass-need")?.getAttribute("title");
   expect(turnFor(earlier.id).querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
-  // For you counts flagged edits while Scarlet is still at work.
+  // For you counts flagged edits while AirWaves is still at work.
   expect(flag()).toBe("1 needs you");
   expect(numbered()).toEqual([["3", "check"], ["1", "check"]]);
   await click(fade().querySelector(".simple-pass-need")!);
@@ -1814,7 +1814,7 @@ it("marks a new request's edits when it arrives, wherever the editor had been be
   expect(openTitle()).toBe("captions");
   await press("Escape");
   expect(numbered()).toEqual([["1", undefined], ["2", undefined], ["3", "check"]]);
-  // They ask for something else, and Scarlet applies it with a reason to check. The timeline is on the new request.
+  // They ask for something else, and AirWaves applies it with a reason to check. The timeline is on the new request.
   const later = laterRequest().change;
   await act(async () => { data = { ...data, changes: [...data.changes, later] }; useProjectStore.setState({ current: data }); });
   await act(async () => {});
@@ -1848,7 +1848,7 @@ it("goes back to the latest request once the request the editor went to has noth
   expect(numbered()).toEqual([["1", "check"]]);
 });
 
-it("keeps the message box aimed at an edit while Scarlet works in that request, until the message is sent", async () => {
+it("keeps the message box aimed at an edit while AirWaves works in that request, until the message is sent", async () => {
   appliedEdits();
   await show();
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
@@ -1857,7 +1857,7 @@ it("keeps the message box aimed at an edit while Scarlet works in that request, 
   const target = () => container.querySelector(".simple-target")?.textContent;
   expect(target()).toContain("Revising “captions” at 0:00");
   await act(async () => useUiStore.getState().setAgentDraft("Make the captions smaller"));
-  // Scarlet picks this request's run up again as a new attempt while the editor is still typing. The box stays aimed
+  // AirWaves picks this request's run up again as a new attempt while the editor is still typing. The box stays aimed
   // at the edit, with what was typed.
   const base = data.tasks.find(t => t.kind !== "transcribe")!;
   data = { ...data, tasks: [...data.tasks, { ...base, id: "task_resumed", state: "queued", createdAt: new Date().toISOString(), startedAt: undefined,
@@ -1866,7 +1866,7 @@ it("keeps the message box aimed at an edit while Scarlet works in that request, 
   expect(threadWith("chg_approved_2").tasks.map(t => t.id)).toContain("task_resumed");
   expect(target()).toContain("Revising “captions” at 0:00");
   expect(useUiStore.getState().agentDraft).toBe("Make the captions smaller");
-  // The same when Scarlet asks a question in that request.
+  // The same when AirWaves asks a question in that request.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_resumed" ? { ...t, state: "waiting_for_user" as const,
     question: "Smaller by how much?" } : t) }));
   expect(threadWith("chg_approved_2").question?.id).toBe("task_resumed");
@@ -1875,7 +1875,7 @@ it("keeps the message box aimed at an edit while Scarlet works in that request, 
   // Once the message is sent, the box follows what's open again: the edit still is, so it stays aimed at it.
   await act(async () => { useUiStore.getState().setAgentDraft(""); composer.props!.onSent!(); });
   expect(target()).toContain("Revising “captions” at 0:00");
-  // Closing the edit leaves the question Scarlet asked first as what the next message answers.
+  // Closing the edit leaves the question AirWaves asked first as what the next message answers.
   await press("Escape");
   expect(target()).toContain("Answering");
   expect(boxTag()).toBe("Answer");
@@ -1900,7 +1900,7 @@ it("keeps the box on Answer when a revision sent before it lands", async () => {
   await click(buttonIn(editPanel()!, "Revise")!);
   const target = () => container.querySelector(".simple-target")?.textContent;
   expect(target()).toContain("Revising “captions” at 0:00");
-  // The revision is on its way when the editor turns to Scarlet's question in the same request.
+  // The revision is on its way when the editor turns to AirWaves's question in the same request.
   const landed = composer.props!.onSent!;
   await click(buttonIn(turnFor("chg_approved_2"), "Answer")!);
   expect(target()).toContain("Answering");
@@ -1913,7 +1913,7 @@ it("keeps the box on Answer when a revision sent before it lands", async () => {
   expect(target()).toContain("Revising “captions” at 0:00");
 });
 
-it("answers Scarlet's question with the next message when nothing is open, until the tag is taken off the box", async () => {
+it("answers AirWaves's question with the next message when nothing is open, until the tag is taken off the box", async () => {
   appliedEdits();
   // The only question in the project.
   data = { ...data, tasks: data.tasks.filter(t => t.state !== "waiting_for_user") };
@@ -1999,7 +1999,7 @@ it("stops aiming the message box at a request that is no longer in the project",
   const gone = threadWith("chg_approved_2");
   expect(useUiStore.getState().draftOwner).toBe(JSON.stringify([PRJ, gone.id]));
   await event(d => ({ ...d, changes: d.changes.filter(c => !gone.changes.includes(c)), tasks: d.tasks.filter(t => !gone.tasks.includes(t)) }));
-  // The box moves on to what's next, Scarlet's question in another request, not a draft kept for a request that isn't there.
+  // The box moves on to what's next, AirWaves's question in another request, not a draft kept for a request that isn't there.
   expect(container.querySelector(".simple-target")?.textContent).toContain("Answering");
   expect(useUiStore.getState().draftOwner).not.toBe(JSON.stringify([PRJ, gone.id]));
   expect(boxTag()).toBe("Answer");
@@ -2029,7 +2029,7 @@ it("leaves the message box where it is now aimed when an earlier message lands",
 /** Reject edit on an applied edit's card: a small × after Keep, named on hover. */
 const rejectIcon = () => openHead()!.querySelector<HTMLButtonElement>('.edit-card-acts > .edit-card-reject[aria-label="Reject edit"]')!;
 
-it("rejects one applied edit with the × after Keep, asking Scarlet to put back just that edit, and goes on as Keep does", async () => {
+it("rejects one applied edit with the × after Keep, asking AirWaves to put back just that edit, and goes on as Keep does", async () => {
   appliedEdits();
   let sent!: () => void;
   const createTask = vi.fn(() => new Promise(resolve => { sent = () => resolve({ id: "task_reject" }); }));
@@ -2047,7 +2047,7 @@ it("rejects one applied edit with the × after Keep, asking Scarlet to put back 
   expect(createTask).toHaveBeenCalledWith(PRJ, expect.objectContaining({
     kind: "edit", agent: "claude", model: "opus",
     instruction: "The editor rejected edit 2, “captions”. Put back exactly what it changed and leave every other edit as it is.",
-    // The editor's own words for it are "Reject edit": the instruction is what Scarlet is told.
+    // The editor's own words for it are "Reject edit": the instruction is what AirWaves is told.
     context: expect.objectContaining({ changeId: "chg_approved_2", editIndex: 1, editNumber: 2, threadId: threadWith("chg_approved_2").id, message: "Reject edit" }),
   }));
   await act(async () => { sent(); });
@@ -2105,7 +2105,7 @@ const rejectedCard = () => container.querySelector<HTMLElement>('.cut-transport 
 const rejectedSays = () => rejectedCard() && [rejectedCard()!.querySelector(".edit-card-length")!.textContent, rejectedCard()!.querySelectorAll("button").length];
 const leavingBand = () => container.querySelector(".simple-timeline-band.is-leaving, .simple-timeline-cut.is-leaving");
 
-it("puts a rejected cut back on the engine at once, with no request to Scarlet, and ⌘Z takes that version out", async () => {
+it("puts a rejected cut back on the engine at once, with no request to AirWaves, and ⌘Z takes that version out", async () => {
   appliedEdits();
   const listed = withCut();
   const head = data.project.head;
@@ -2218,7 +2218,7 @@ it("rejects just the edit a moment's card is named for, and stays on what is lef
   expect([openPassRow(), editPanel()?.querySelector(".edit-card-length")?.textContent]).toEqual(["Cube reveal", "2 edits"]);
 });
 
-it("asks Scarlet to put a rejected cut back when the engine can't", async () => {
+it("asks AirWaves to put a rejected cut back when the engine can't", async () => {
   appliedEdits();
   withCut();
   const createTask = vi.fn().mockResolvedValue({ id: "task_reject" });
@@ -2273,7 +2273,7 @@ it("keeps a rejected edit's row in the list with a × and Rejected, counts it no
 
 it("says on the edit's card why Reject edit couldn't be sent, and leaves the edit open", async () => {
   appliedEdits();
-  const createTask = vi.fn().mockRejectedValueOnce(new Error("Scarlet can’t take requests right now.")).mockResolvedValue({ id: "task_reject" });
+  const createTask = vi.fn().mockRejectedValueOnce(new Error("AirWaves can’t take requests right now.")).mockResolvedValue({ id: "task_reject" });
   useProjectStore.setState({ createTask });
   await show();
   await click(turnFor("chg_approved_2").querySelectorAll(".simple-edits .simple-edit")[1]!);
@@ -2282,7 +2282,7 @@ it("says on the edit's card why Reject edit couldn't be sent, and leaves the edi
   expect(createTask).toHaveBeenCalledTimes(1);
   expect(openTitle()).toBe("captions");
   expect(buttonIn(editPanel()!, "Keep")).not.toBeUndefined();
-  expect(openHead()!.querySelector('.edit-card-acts .simple-error[role="alert"]')?.textContent).toBe("Scarlet can’t take requests right now.");
+  expect(openHead()!.querySelector('.edit-card-acts .simple-error[role="alert"]')?.textContent).toBe("AirWaves can’t take requests right now.");
   expect([rejectIcon().disabled, rejectIcon().title]).toEqual([false, "Reject edit"]);
   expect(api.recordEditReview).not.toHaveBeenCalled();
 });
@@ -2310,7 +2310,7 @@ it("names a graphic's card Graphic, with Revise, Keep and Reject edit and nothin
   expect(createTask).not.toHaveBeenCalled();
 });
 
-it("opens a marker Scarlet left for the editor as a to-do: what to add first, nothing to compare or undo, and Done", async () => {
+it("opens a marker AirWaves left for the editor as a to-do: what to add first, nothing to compare or undo, and Done", async () => {
   appliedEdits();
   vi.mocked(api.threadEdits).mockImplementation(async (_project, threadId) => ({ version: data.project.head!,
     edits: threadId !== threadWith("chg_approved_2").id ? [] : [
@@ -2411,7 +2411,7 @@ it("opens a suggestion in the card on top of the timeline, with Before and After
   const decide = container.querySelector('[aria-label="Suggestion"]')!;
   expect(decide.classList.contains("edit-card")).toBe(true);
   expect(container.querySelector(".simple-stage > .player-review")).toBeNull();
-  // One row, as an edit's: Scarlet's words for it, Before/After, Revise and Apply. No Close button: Esc closes it.
+  // One row, as an edit's: AirWaves's words for it, Before/After, Revise and Apply. No Close button: Esc closes it.
   expect(decide.querySelector(".edit-card-title")?.textContent).toBe(data.changes.find(c => c.id === "chg_ready")!.description);
   expect(buttonIn(decide, "Close")).toBeUndefined();
   // The suggestion's own line plays it: there is no Play link under it, and the line stays pressed while it shows.
@@ -2605,7 +2605,7 @@ const reviewCalls = async () => {
   await click(passCard().querySelector(".simple-pass-need")!);
   if (!passRows().some(r => r.getAttribute("aria-current"))) await click(passRows().find(r => !r.disabled)!);
 };
-/** A call's row in the pass's list, by Scarlet's note on it. */
+/** A call's row in the pass's list, by AirWaves's note on it. */
 const passRow = (note: string) => passRows().find(r => r.querySelector(".simple-pass-label")?.textContent?.includes(note))!;
 const call = () => container.querySelector<HTMLElement>('[aria-label="Call"]')!;
 
@@ -2617,7 +2617,7 @@ it("keeps a call the editor sent back with them once its revision leaves the foo
   useProjectStore.setState({ current: data, approve });
   await show();
   await act(async () => {});
-  // The revised call still needs the editor, as the one Scarlet never revised does.
+  // The revised call still needs the editor, as the one AirWaves never revised does.
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Left the breath in, as asked.");
@@ -2640,11 +2640,11 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
   expect(passCard().querySelector(".simple-made")).toBeNull();
   expect(seeAll(passCard())).toBeNull();
-  // The third cut is Scarlet's own pick. It goes in with the last call, and no line under the pass counts it.
+  // The third cut is AirWaves's own pick. It goes in with the last call, and no line under the pass counts it.
   expect(passCard().textContent).not.toMatch(/more cuts? appl|Apply adds|proposed/);
   expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
   expect(container.querySelector(".simple-on-video")).toBeNull();
-  // The short list is a call's number, amber while it waits, and Scarlet's note: no time, mark, version or amount.
+  // The short list is a call's number, amber while it waits, and AirWaves's note: no time, mark, version or amount.
   expect([passCard().querySelector(".simple-pass-list")!.className, passCard().querySelector(".simple-pass-list")!.getAttribute("aria-label")])
     .toEqual(["simple-pass-list is-short", "Calls that need you"]);
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-check"), r.querySelector(".simple-pass-label")?.textContent]))
@@ -2657,7 +2657,7 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   // The call opens in the same card an applied edit uses, right on top of the timeline.
   expect(call().closest(".cut-transport > .edit-card")).toBe(call());
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 2 · After");
-  // Like an applied edit, a call is one row: its number, the same as on its line in the chat, then Scarlet's reason.
+  // Like an applied edit, a call is one row: its number, the same as on its line in the chat, then AirWaves's reason.
   // How many still wait is on hover. It has no picker and no script.
   expect([...call().querySelectorAll(".edit-card-bar > .edit-card-count, .edit-card-bar > .edit-card-title")].map(e => e.textContent))
     .toEqual(["Cut 1", "Breath before the price."]);
@@ -2719,7 +2719,7 @@ it("sums a dialogue pass up on one card, and makes its calls in the card on the 
   await press("\\");
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · Before");
 
-  // The last call applies the pass: Scarlet's pick for the cut it was sure of, and the footage this one skips.
+  // The last call applies the pass: AirWaves's pick for the cut it was sure of, and the footage this one skips.
   await click(call().querySelector('[aria-label="Skip"]')!);
   await act(async () => {});
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 1, choice: "cut" }, { index: 2, choice: "keep" }] }));
@@ -2740,7 +2740,7 @@ it("says nothing under a pass's stages while it works and asks about no cut, and
   await show();
   await act(async () => {});
   expect(container.querySelector('[aria-label="Dialogue pass"]')).toBeNull();
-  // Its first part stages three cuts. Scarlet hasn't checked them, so none is a call yet. Nothing needs the editor, so
+  // Its first part stages three cuts. AirWaves hasn't checked them, so none is a call yet. Nothing needs the editor, so
   // the block is the pass's stages: no count of the staged cuts under them, and nothing to apply or schedule.
   await act(async () => {
     data = { ...data, changes: [...data.changes, { ...ready, intent: "suggestion" as const, cutReasons: STAGED }],
@@ -2750,7 +2750,7 @@ it("says nothing under a pass's stages while it works and asks about no cut, and
   await act(async () => {});
   const says = () => [passCard().querySelector(".simple-made")?.textContent, [...passCard().querySelectorAll("button")].map(b => b.textContent)];
   expect(says()).toEqual([undefined, []]);
-  // Scarlet checks them and is sure of each. It still asks about none, and is still at work.
+  // AirWaves checks them and is sure of each. It still asks about none, and is still at work.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: askAll(STAGED).map(a => ({ ...a, verdict: "cut" as const })) } : c) }));
   expect(says()).toEqual([undefined, []]);
   // With no calls to make, the pass goes in automatically once editing continues.
@@ -2764,7 +2764,7 @@ it("says nothing under a pass's stages while it works and asks about no cut, and
 });
 
 it("hands the editor the cuts a finished pass never checked, as calls, instead of Apply", async () => {
-  // The pass finished, and Scarlet checked one of its three staged cuts: it is sure of it. Nobody looked at the other two.
+  // The pass finished, and AirWaves checked one of its three staged cuts: it is sure of it. Nobody looked at the other two.
   const ready = data.changes.find(c => c.id === "chg_ready")!;
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...ready, intent: "suggestion" as const, cutReasons: STAGED,
       cutAssessments: askAll(STAGED).slice(0, 1).map(a => ({ ...a, verdict: "cut" as const })) } : c),
@@ -3118,8 +3118,8 @@ it("applies a pass once its calls are all made, though a cut it already applied 
 
 it("holds back the cuts a running pass hasn't checked, and applies the calls it asked for the moment it finishes", async () => {
   const save = flagged();
-  // Scarlet has checked one cut so far and asks about it. The other two are staged but not checked yet. They are still
-  // Scarlet's to check, and it settles most itself, so they aren't calls: listed now, they would be gone a moment later.
+  // AirWaves has checked one cut so far and asks about it. The other two are staged but not checked yet. They are still
+  // AirWaves's to check, and it settles most itself, so they aren't calls: listed now, they would be gone a moment later.
   data = { ...data,
     changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, intent: "suggestion" as const, taskId: "task_done",
       cutReasons: [0, 1, 2].map(i => ({ start: i, end: i + 1, reason: ["A clean retake.", "Breath before the price.", "Repeated aside."][i]! })),
@@ -3134,32 +3134,32 @@ it("holds back the cuts a running pass hasn't checked, and applies the calls it 
   await reviewCalls();
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 3:50 · 1 of 1 · After");
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("Breath before the price.");
-  // Scarlet is still checking, so the last call schedules the pass to apply the moment it finishes.
+  // AirWaves is still checking, so the last call schedules the pass to apply the moment it finishes.
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({
     choices: [{ index: 0, choice: "cut" }, { index: 1, choice: "cut" }], applyWhenDone: true }));
   expect(container.querySelector('[aria-label="Call"]')).toBeNull();
   // It says so, with no guess at how long that will be: the chat carries no time. It is a status, not a button: there
   // is nothing to press and no way to hold the pass back.
-  expect(passCard().querySelector(".simple-pass-ok")?.textContent).toBe("Goes in when Scarlet finishes");
+  expect(passCard().querySelector(".simple-pass-ok")?.textContent).toBe("Goes in when AirWaves finishes");
   expect(passCard().querySelector(".simple-pass-line")?.querySelectorAll("button").length).toBe(0);
-  // Going back to change that call keeps the schedule: the pass still goes in when Scarlet finishes, with the new call.
+  // Going back to change that call keeps the schedule: the pass still goes in when AirWaves finishes, with the new call.
   await click(passRows().find(r => r.textContent?.includes("Breath before the price."))!);
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({
     choices: [{ index: 0, choice: "cut" }, { index: 1, choice: "keep" }], applyWhenDone: true }));
-  expect(passCard().textContent).toContain("Goes in when Scarlet finishes");
-  // Scarlet then asks about another cut. The engine takes the schedule back, and the line follows it: the pass waits
+  expect(passCard().textContent).toContain("Goes in when AirWaves finishes");
+  // AirWaves then asks about another cut. The engine takes the schedule back, and the line follows it: the pass waits
   // for the editor again instead of going on saying it applies by itself.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, applyWhenDone: undefined, cutAssessments: [...c.cutAssessments!,
     { index: 2, start: 598, end: 602.5, verdict: "ask" as const, reason: "The corrected image-input take belongs here." }] } : c) }));
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
-  expect(passCard().textContent).not.toContain("Goes in when Scarlet finishes");
+  expect(passCard().textContent).not.toContain("Goes in when AirWaves finishes");
 });
 
 it("doesn't send a pass's old schedule along with a call once its run has stopped", async () => {
   const save = flagged();
-  // The pass was set to apply when Scarlet finished. Its run was then stopped, so its calls are the editor's to make.
+  // The pass was set to apply when AirWaves finished. Its run was then stopped, so its calls are the editor's to make.
   data = { ...data,
     changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, intent: "suggestion" as const, taskId: "task_done",
       applyWhenDone: { userId: "usr_editor", at: new Date().toISOString() } } : c),
@@ -3239,7 +3239,7 @@ it("says nothing when an earlier save fails after a later one carrying its calls
 type Staged = { start: number; end: number; reason: string };
 const ripples = (cuts: readonly Staged[]) => [...cuts].reverse().map(r => ({ op: "rippleDelete" as const, start: r.start, end: r.end }));
 const STAGED: Staged[] = [{ start: 2, end: 3, reason: "A clean retake." }, { start: 6, end: 7, reason: "Breath before the price." }, { start: 11, end: 12, reason: "Repeated aside." }];
-/** Scarlet's note on every cut a pass lists, each one a call: it has checked them and asks the editor about each. */
+/** AirWaves's note on every cut a pass lists, each one a call: it has checked them and asks the editor about each. */
 const askAll = (cuts: readonly Staged[]) => {
   const listed: Staged[] = [];
   for (const cut of [...cuts].sort((x, y) => x.start - y.start)) {
@@ -3250,7 +3250,7 @@ const askAll = (cuts: readonly Staged[]) => {
   return listed.map((cut, index) => ({ index, start: cut.start, end: cut.end, verdict: "ask" as const, reason: cut.reason }));
 };
 /**
- * A pass still running that Scarlet has checked so far, with its staged cuts as the engine saves and lists them, each
+ * A pass still running that AirWaves has checked so far, with its staged cuts as the engine saves and lists them, each
  * one a call. The cut list comes from the engine's own planner, so staged cuts that touch are one cut there. `hold`
  * keeps a proposal's list from arriving until `release`.
  */
@@ -3301,7 +3301,7 @@ const nextPart = async (over: Partial<ProjectData["changes"][number]>, applied?:
     await event(d => ({ ...d, changes: d.changes.map(c => c.id === part.id ? { ...part, state: "approved" as const } : c) }));
     await event(d => ({ ...d, project: { ...d.project, head: "ver_part2" } }));
   }
-  // Scarlet's notes carry onto the new proposal, and it asks about the cuts this part staged too, unless the test says otherwise.
+  // AirWaves's notes carry onto the new proposal, and it asks about the cuts this part staged too, unless the test says otherwise.
   const next = { ...old, id: "chg_ready_part2", toVersion: "ver_part2_review", createdAt: new Date().toISOString(), ...(applied && { fromVersion: "ver_part2" }),
     ...(over.cutReasons && { cutAssessments: askAll(over.cutReasons) }), ...over };
   await event(d => ({ ...d, changes: [...d.changes, { ...next, cutAssessments: undefined }],
@@ -3314,7 +3314,7 @@ const nextPart = async (over: Partial<ProjectData["changes"][number]>, applied?:
 };
 /** Two staged cuts that share an edge. The pass lists them as one cut. */
 const PAIR: Staged[] = [{ start: 2, end: 3, reason: "An um." }, { start: 3, end: 4, reason: "A false start." }];
-/** Open one call by Scarlet's note on it, from the pass's full list: "N need you" would open the first call that waits. */
+/** Open one call by AirWaves's note on it, from the pass's full list: "N need you" would open the first call that waits. */
 const openCall = async (reason: string) => {
   if (!passCard().querySelector(".simple-pass-list")) await click(seeAll(passCard())!);
   await click(passRows().find(r => r.textContent?.includes(reason))!);
@@ -3332,7 +3332,7 @@ it("appends published calls while holding back provisional notes and keeps the o
   expect(passRows()).toHaveLength(0);
   expect(container.querySelector(".simple-timeline-mark.is-numbered")).toBeNull();
   expect(passCard().querySelector(".simple-pass-need")).toBeNull();
-  expect(buttonIn(passCard(), "Apply when Scarlet finishes")).toBeUndefined();
+  expect(buttonIn(passCard(), "Apply when AirWaves finishes")).toBeUndefined();
   await press("ArrowDown");
   expect(call()).toBeNull();
 
@@ -3575,7 +3575,7 @@ it("plays a call of a pass that has no cut list of its own", async () => {
   vi.spyOn(api, "cutReview").mockResolvedValue({ review: null });
   await show();
   await act(async () => {});
-  // Without a list only the cut Scarlet asked about is a call.
+  // Without a list only the cut AirWaves asked about is a call.
   await openCall("Breath before the price.");
   expect(listen).toHaveBeenLastCalledWith({ start: 4, end: 10, skips: [{ start: 6, end: 7, removed: true }] }, expect.any(Number));
 });
@@ -4393,7 +4393,7 @@ it("closes a call when the next part applies that very cut and stages the line a
   await show();
   await act(async () => {});
   await openCall("Repeated aside.");
-  // Scarlet is sure of the aside now and takes it out. The second after it is staged, and on the new version it sits
+  // AirWaves is sure of the aside now and takes it out. The second after it is staged, and on the new version it sits
   // where the aside was, just as long. It is another cut: the card closes instead of taking it for the aside.
   await nextPart({ cutReasons: [STAGED[0]!, STAGED[1]!, { start: 11, end: 12, reason: "The line after it." }] }, [{ start: 11, end: 12, reason: "Repeated aside." }]);
   await act(async () => {});
@@ -4436,7 +4436,7 @@ it("doesn't move a revision aimed at an applied pass's cut onto another request'
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_ready", cutIndex: 2 });
 });
 
-/** A pass that finished, with Scarlet's note on every cut. */
+/** A pass that finished, with AirWaves's note on every cut. */
 const finishedPass = (cuts: Staged[] = STAGED) => {
   const { hold, release, save } = runningPass(cuts);
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready"
@@ -4445,7 +4445,7 @@ const finishedPass = (cuts: Staged[] = STAGED) => {
   useProjectStore.setState({ current: data });
   return { hold, release, save };
 };
-/** A request about one call of the pass, as the message box sends it. Scarlet revises one cut at a time, so a second one waits in the queue. */
+/** A request about one call of the pass, as the message box sends it. AirWaves revises one cut at a time, so a second one waits in the queue. */
 const callRequest = (id: string, index: number, over: Partial<ProjectData["tasks"][number]>) => {
   const base = data.tasks.find(t => t.id === "task_done")!, cut = STAGED[index]!;
   return { ...base, id, state: "queued" as const, startedAt: undefined, finishedAt: undefined, summary: null, changeIds: [], instruction: "Start it later.",
@@ -4455,7 +4455,7 @@ const callRequest = (id: string, index: number, over: Partial<ProjectData["tasks
 it("lists the queue in the order it will run while one call is revised, and says the calls hold a request once it is next", async () => {
   finishedPass();
   idle();
-  // Scarlet is revising the first call. Asked since: a new edit, then a note on the second call.
+  // AirWaves is revising the first call. Asked since: a new edit, then a note on the second call.
   const at = (ms: number) => new Date(Date.now() + ms).toISOString();
   const revising = callRequest("task_revise", 0, { kind: "revise" as const, state: "running" as const, createdAt: at(0), startedAt: at(0) });
   const base = data.tasks.find(t => t.id === "task_done")!;
@@ -4470,7 +4470,7 @@ it("lists the queue in the order it will run while one call is revised, and says
   const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
   // The note on the call runs next, though the new edit was asked first: a new edit waits until the calls are made.
   expect(tray().querySelector(".queue-head")?.textContent).toBe("NextCut 2Keep the breath.2 queued");
-  // It is about another call than the one Scarlet is on, so it waits for nothing: it is here only until Scarlet picks it up.
+  // It is about another call than the one AirWaves is on, so it waits for nothing: it is here only until AirWaves picks it up.
   expect(tray().getAttribute("title")).toBeNull();
   // Opened, the rows read in that order. Every row starts at the same place: only the first carries a word, and the
   // new edit says what holds it once it is next.
@@ -4479,7 +4479,7 @@ it("lists the queue in the order it will run while one call is revised, and says
   expect([...tray().querySelectorAll(".queue-row")].map(r => [r.querySelector(".queue-next")?.textContent, r.querySelector(".queue-next")?.classList.contains("is-waiting"),
     r.querySelector(".queue-target")?.textContent, r.querySelector(".queue-text")?.textContent]))
     .toEqual([["Next", false, "Cut 2", "Keep the breath."], ["", false, undefined, "Add a lower third with my name."]]);
-  // The revision ends with the cut as it was, and Scarlet starts on the note. Only the new edit is queued, and its line
+  // The revision ends with the cut as it was, and AirWaves starts on the note. Only the new edit is queued, and its line
   // says what it waits for while the note still runs: it won't start when that ends.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "ready" as const } : c),
     tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: at(3000) } : t.id === "task_note" ? { ...t, state: "running" as const, startedAt: at(3000) } : t) }));
@@ -4494,14 +4494,14 @@ it("lists the queue in the order it will run while one call is revised, and says
   expect(line()).toEqual(held);
 });
 
-it("doesn't say a queued request waits for the calls once they're all made and Scarlet rechecks one", async () => {
+it("doesn't say a queued request waits for the calls once they're all made and AirWaves rechecks one", async () => {
   finishedPass();
   idle();
   const at = (ms: number) => new Date(Date.now() + ms).toISOString();
-  // Every call is made. Applying found the first cut's footage changed, so Scarlet rechecks it, and the pass goes in
+  // Every call is made. Applying found the first cut's footage changed, so AirWaves rechecks it, and the pass goes in
   // after (2026-11-14: the tray said "Waits for your calls" with nothing left to call).
   const recheck = callRequest("task_recheck", 0, { kind: "revise" as const, state: "running" as const, createdAt: at(0), startedAt: at(0),
-    createdBy: { type: "scarlet" as const, name: "Scarlet" }, cutConflict: { version: "v_head", approved: true as const } });
+    createdBy: { type: "scarlet" as const, name: "AirWaves" }, cutConflict: { version: "v_head", approved: true as const } });
   const base = data.tasks.find(t => t.id === "task_done")!;
   const next = { ...base, id: "task_next", kind: "edit" as const, state: "queued" as const, instruction: "/frame-screen", changeIds: [], summary: null,
     context: { threadId: "task_next", message: "/frame-screen" }, createdAt: at(1000), startedAt: undefined, finishedAt: undefined };
@@ -4512,7 +4512,7 @@ it("doesn't say a queued request waits for the calls once they're all made and S
   await act(async () => {});
   const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
   expect(tray.textContent).not.toContain("Waits for your calls");
-  expect(tray.getAttribute("title")).toBe("Starts when Scarlet finishes what it’s on");
+  expect(tray.getAttribute("title")).toBe("Starts when AirWaves finishes what it’s on");
   // Nothing of the editor's holds it, so it has no mark to start it before the calls.
   expect(tray.querySelector('[aria-label="Start now, before your calls"], [title="Start now, before your calls"]')).toBeNull();
 });
@@ -4691,7 +4691,7 @@ it("keeps a second call Revising… when the first revised cut comes back, and d
   useProjectStore.setState({ approve });
   await show();
   await act(async () => {});
-  // The editor sends the first cut back: Scarlet starts revising it, and the pass waits as "revising".
+  // The editor sends the first cut back: AirWaves starts revising it, and the pass waits as "revising".
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_revise", 0, { kind: "revise" as const, state: "running" as const, startedAt: new Date().toISOString() })] }));
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   // They send the aside back too. That request waits in the queue and names the pass it saw.
@@ -4707,7 +4707,7 @@ it("keeps a second call Revising… when the first revised cut comes back, and d
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === revised.id ? revised : c) }));
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
   await act(async () => {});
-  // The aside still waits on Scarlet: no amber dot, and it can't be opened.
+  // The aside still waits on AirWaves: no amber dot, and it can't be opened.
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
   await click(passCard().querySelector(".simple-pass-need")!);
   const aside = passRows().find(r => r.textContent?.includes("Repeated aside."))!;
@@ -4722,7 +4722,7 @@ it("keeps a second call Revising… when the first revised cut comes back, and d
   expect(approve).not.toHaveBeenCalled();
 });
 
-it("shows Scarlet on two calls at once: each row has its own actions, alongside project Stop", async () => {
+it("shows AirWaves on two calls at once: each row has its own actions, alongside project Stop", async () => {
   finishedPass();
   const cancelTask = vi.fn().mockResolvedValue(undefined);
   useProjectStore.setState({ cancelTask });
@@ -4730,7 +4730,7 @@ it("shows Scarlet on two calls at once: each row has its own actions, alongside 
   await act(async () => {});
   const block = () => passCard().closest<HTMLElement>(".unit")!;
   const started = () => ({ state: "running" as const, startedAt: new Date().toISOString() });
-  // The editor sends back the first cut and then the aside. They are different cuts, so Scarlet starts on both.
+  // The editor sends back the first cut and then the aside. They are different cuts, so AirWaves starts on both.
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_revise", 0, { kind: "revise" as const, ...started() })] }));
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   // One at work says nothing of doing several.
@@ -4738,13 +4738,13 @@ it("shows Scarlet on two calls at once: each row has its own actions, alongside 
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_aside", 2, { kind: "edit" as const, instruction: "Keep the aside.", ...started() })] }));
   await act(async () => {});
   expect(document.querySelector(".queue-row")).toBeNull();
-  // Pause sits with Stop at the right of each request Scarlet has. Nothing sits over the message box.
+  // Pause sits with Stop at the right of each request AirWaves has. Nothing sits over the message box.
   expect(container.querySelector(".queue-tray")).toBeNull();
   expect([...container.querySelectorAll(".subunit .unit-pause-edit")].map(b => b.getAttribute("aria-label"))).toEqual(["Pause editing", "Pause editing"]);
-  // The pass's heading says how many Scarlet is on, beside what still needs the editor.
+  // The pass's heading says how many AirWaves is on, beside what still needs the editor.
   const word = block().querySelector(".unit-msg .unit-word")!;
   expect(word.textContent).toBe("Working on 2 at once");
-  expect(word.getAttribute("title")).toBe("Scarlet is working on 2 cuts or edits at the same time.");
+  expect(word.getAttribute("title")).toBe("AirWaves is working on 2 cuts or edits at the same time.");
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
   // Each call has its own menu under its row.
   const working = [...passCard().querySelectorAll(".simple-pass-value.working-text")];
@@ -4807,7 +4807,7 @@ const revisedCut = async (taskId: string, from: string, index: number, range: { 
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, changeIds: [...t.changeIds, next.id] } : t) }));
   await act(async () => {});
 };
-/** Scarlet finishes the pass with a note on every cut, and the next run in line starts. */
+/** AirWaves finishes the pass with a note on every cut, and the next run in line starts. */
 const passEnds = async (proposal: string, cuts: Staged[], starts: string) => {
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === proposal
     ? { ...c, cutAssessments: cuts.map((r, index) => ({ index, start: r.start, end: r.end, verdict: "ask" as const, reason: r.reason })) } : c) }));
@@ -4831,7 +4831,7 @@ it("keeps a call Revising… when a request that waited its turn revised it and 
   await revisedCut("task_note1", "chg_ready", 0, { start: 1.5, end: 3 }, "Starts in the pause.");
   await runPasses("task_note1", "task_note2");
   await act(async () => {});
-  // The second note is about that cut still: it waits on Scarlet, and the pass doesn't apply over it.
+  // The second note is about that cut still: it waits on AirWaves, and the pass doesn't apply over it.
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
   await click(passCard().querySelector(".simple-pass-need")!);
   const row = passRows().find(r => r.textContent?.includes("Starts in the pause."))!;
@@ -4951,7 +4951,7 @@ it("reads a revised call's earlier version by the pass's cut list when staged cu
   const cuts = [...PAIR, STAGED[1]!, STAGED[2]!];
   runningPass(cuts);
   const first = data.changes.find(c => c.id === "chg_ready")!;
-  // The aside is the third cut of four staged ranges. It was sent back and came back shorter, with Scarlet's note.
+  // The aside is the third cut of four staged ranges. It was sent back and came back shorter, with AirWaves's note.
   const revised = { ...first, id: "chg_revised", taskId: "task_revise", toVersion: "ver_revised", createdAt: new Date().toISOString(),
     cutReasons: [...PAIR, STAGED[1]!, { start: 11.2, end: 12, reason: "The aside, from the breath." }],
     cutAssessments: [{ index: 2, start: 11.2, end: 12, verdict: "ask" as const, reason: "The aside, from the breath." }] };
@@ -4987,7 +4987,7 @@ it("keeps a call Revising… when its revision named an earlier part and a later
 });
 
 /**
- * Scarlet's own edit between two parts of the pass: crossfades on the video's joins. Each join's sound is copied onto a
+ * AirWaves's own edit between two parts of the pass: crossfades on the video's joins. Each join's sound is copied onto a
  * dialogue track of its own, run a quarter of a second into the clip on the other side and faded, and the video's own
  * sound is turned down. Clips' times change, the video's footage stays where it was, and the edit stages no cuts.
  */
@@ -5010,7 +5010,7 @@ const crossfadesBetweenParts = async () => {
 const partAfterCrossfades = () => nextPart({ fromVersion: "ver_fades",
   cutReasons: [STAGED[0]!, STAGED[1]!, { start: 8.5, end: 9.5, reason: "A second try at the line." }, STAGED[2]!] });
 
-it("keeps the call on screen on its cut when the pass saves its next part after crossfades of Scarlet's own", async () => {
+it("keeps the call on screen on its cut when the pass saves its next part after crossfades of AirWaves's own", async () => {
   const { save } = runningPass();
   await show();
   await act(async () => {});
@@ -5028,7 +5028,7 @@ it("keeps the call on screen on its cut when the pass saves its next part after 
   expect(save).toHaveBeenLastCalledWith("chg_ready_part2", expect.objectContaining({ fromVersion: "ver_fades", choices: [{ index: 3, choice: "keep" }] }));
 });
 
-it("keeps a call Revising… and its number when its revision named the part before Scarlet's own crossfades", async () => {
+it("keeps a call Revising… and its number when its revision named the part before AirWaves's own crossfades", async () => {
   runningPass();
   const threadId = threadWith("chg_ready").id;
   // The editor sent the aside back while the pass ran, so the request waits in the queue and names the part it saw.
@@ -5045,7 +5045,7 @@ it("keeps a call Revising… and its number when its revision named the part bef
   await crossfadesBetweenParts();
   await partAfterCrossfades();
   await act(async () => {});
-  // The aside is the fourth call now. It still waits on Scarlet, not the editor, and can't be opened from the list.
+  // The aside is the fourth call now. It still waits on AirWaves, not the editor, and can't be opened from the list.
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
   expect(tag()).toBe("Cut 4");
   await click(passCard().querySelector(".simple-pass-need")!);
@@ -5080,7 +5080,7 @@ it("marks a call Revising… in the need-you list once its revision is queued be
   expect(passRows().map(r => r.querySelector(".simple-pass-label")?.textContent).sort()).toEqual(["Breath before the price.", "Repeated aside."].sort());
   const row = passRows().find(r => r.textContent?.includes("Breath before the price."))!;
   expect(row.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
-  // Its number is no longer amber: it waits on Scarlet now. The call that still waits keeps its amber number.
+  // Its number is no longer amber: it waits on AirWaves now. The call that still waits keeps its amber number.
   expect(passRows().map(r => r.querySelector(".edit-badge")?.classList.contains("is-check"))).toEqual(passRows().map(r => r !== row));
   expect(row.disabled).toBe(true);
 });
@@ -5104,7 +5104,7 @@ it("changes a queued revision's words in the message box, holding it from starti
   await click(pencil());
   expect(composer.props?.rewording).toMatchObject({ id: "task_queued_revision", text: "Keep the aside." });
   expect(composer.props?.rewording).not.toHaveProperty("tag");
-  // Scarlet doesn't start it while they're there. Its row is lit to say which request the box holds, and its pencil
+  // AirWaves doesn't start it while they're there. Its row is lit to say which request the box holds, and its pencil
   // is lit as the way back.
   expect(holdForRewording).toHaveBeenCalledWith("task_queued_revision", true);
   expect(tray().querySelector(".queue-row.is-rewording")).not.toBeNull();
@@ -5166,7 +5166,7 @@ it("keeps a queued request's new words when holding it fails for another reason,
   } finally { vi.useRealTimers(); }
 });
 
-it("puts a queued request's words back in the box as they stood when Scarlet quit while they were being changed", async () => {
+it("puts a queued request's words back in the box as they stood when AirWaves quit while they were being changed", async () => {
   runningPass();
   data = { ...data, tasks: [...data.tasks, callRequest("task_queued_revision", 2, { kind: "edit" as const, instruction: "Keep the aside.",
     context: { ...callRequest("task_queued_revision", 2, {}).context, message: "Keep the aside." } })] };
@@ -5176,7 +5176,7 @@ it("puts a queued request's words back in the box as they stood when Scarlet qui
   await act(async () => {});
   await click(container.querySelector('[aria-label="Queued requests"] .queue-reword')!);
   await act(async () => composer.props!.rewording!.onChange("Keep the aside, but trim the breath before it."));
-  // Scarlet quits. Opened again, the request is in the box with the new words, and held again so it can't start with the old ones.
+  // AirWaves quits. Opened again, the request is in the box with the new words, and held again so it can't start with the old ones.
   holdForRewording.mockClear();
   await reopen(`/p/${PRJ}`);
   await act(async () => {});
@@ -5187,7 +5187,7 @@ it("puts a queued request's words back in the box as they stood when Scarlet qui
   await reopen(`/p/${PRJ}`);
   await act(async () => {});
   expect(composer.props?.rewording).toBeUndefined();
-  // Words kept for a request Scarlet has started since are let go.
+  // Words kept for a request AirWaves has started since are let go.
   localStorage.setItem(`scarlet.rewording.v1:${PRJ}`, JSON.stringify({ projectId: PRJ, id: "task_started_since", text: "Too late" }));
   await reopen(`/p/${PRJ}`);
   await act(async () => {});
@@ -5260,19 +5260,19 @@ it("keeps newer wording in the box when an earlier save finishes", async () => {
   expect(composer.props?.rewording?.text).toBe("Keep the breath after it.");
 });
 
-it("lets go of a queued request's words when Scarlet began it before they reached the box", async () => {
+it("lets go of a queued request's words when AirWaves began it before they reached the box", async () => {
   runningPass();
   data = { ...data, tasks: [...data.tasks, callRequest("task_queued_revision", 2, { kind: "edit" as const })] };
-  const holdForRewording = vi.fn().mockRejectedValue(new ScarletApiError(409, "already_started", "Scarlet has already started on this request."));
+  const holdForRewording = vi.fn().mockRejectedValue(new ScarletApiError(409, "already_started", "AirWaves has already started on this request."));
   useProjectStore.setState({ current: data, holdForRewording, rewordTask: vi.fn() });
   await show();
   await act(async () => {});
   await click(container.querySelector('[aria-label="Queued requests"] .queue-reword')!);
   await act(async () => {});
   expect(composer.props?.rewording).toBeUndefined();
-  expect(container.querySelector(".simple-banner")?.textContent).toContain("Scarlet has already started on this request.");
-  // A request Scarlet queued itself, such as a redo of a change that no longer fits, has no pencil: only its ×.
-  await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_queued_revision" ? { ...t, createdBy: { type: "scarlet" as const, name: "Scarlet" } } : t) }));
+  expect(container.querySelector(".simple-banner")?.textContent).toContain("AirWaves has already started on this request.");
+  // A request AirWaves queued itself, such as a redo of a change that no longer fits, has no pencil: only its ×.
+  await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_queued_revision" ? { ...t, createdBy: { type: "scarlet" as const, name: "AirWaves" } } : t) }));
   const row = container.querySelector('[aria-label="Queued requests"] .queue-row')!;
   expect(row.querySelector(".queue-reword")).toBeNull();
   expect(row.querySelector(".queue-text")?.classList.contains("is-rewordable")).toBe(false);
@@ -5287,7 +5287,7 @@ it("hands an interrupted pass's unchecked cuts to the editor, and takes them bac
   const cutReasons = [0, 1, 2].map(i => ({ start: i * 2, end: i * 2 + 1, reason: ["A clean retake.", "Breath before the price.", "Repeated aside."][i]! }));
   vi.spyOn(api, "cutReview").mockResolvedValue({ review: { original: data.timeline!, proposed: data.timeline!, firstCut: false,
     cuts: cutReasons.map((r, at) => ({ at, removed: { start: r.start, end: r.end }, beforeClip: 0 })) } });
-  // Scarlet quit mid-pass: one cut checked, one decided by the editor, one staged and never checked.
+  // AirWaves quit mid-pass: one cut checked, one decided by the editor, one staged and never checked.
   data = { ...data,
     changes: [{ ...ready, id: "chg_part", state: "rejected" as const, intent: "suggestion" as const, taskId: "task_done", replacedBy: "chg_ready",
         cutReasons: cutReasons.slice(0, 2), createdAt: new Date(Date.parse(ready.createdAt ?? "") - 1000).toISOString() },
@@ -5309,15 +5309,15 @@ it("hands an interrupted pass's unchecked cuts to the editor, and takes them bac
       context: { threadId, changeId: "chg_part", cutIndex: 1, time: 230, end: 233, message: "Keep the breath." } },
     { ...queued, id: "task_resumed", resumeRootId: "task_done", createdAt: new Date().toISOString(), context: { ...base.context, threadId } }] };
   await act(async () => { useProjectStore.setState({ current: data }); });
-  // Scarlet is on the pass again and will check the cut it never reached, so that one is no longer a call. The call
-  // sent back is with Scarlet too: nothing waits on the editor.
+  // AirWaves is on the pass again and will check the cut it never reached, so that one is no longer a call. The call
+  // sent back is with AirWaves too: nothing waits on the editor.
   expect(passCard().querySelector(".simple-review-tab-count")).toBeNull();
   const row = passRows().find(r => r.textContent?.includes("Breath before the price."))!;
   expect(row.querySelector(".simple-pass-value")?.textContent).toBe("Revising…");
   expect(passRows().some(r => r.textContent?.includes("Repeated aside."))).toBe(false);
 });
 
-it("keeps a pass's other calls open while Scarlet revises one of them, and waits for it before applying", async () => {
+it("keeps a pass's other calls open while AirWaves revises one of them, and waits for it before applying", async () => {
   const save = flagged();
   const approve = vi.fn().mockResolvedValue({ outcome: "applied" });
   const threadId = threadWith("chg_ready").id;
@@ -5333,17 +5333,17 @@ it("keeps a pass's other calls open while Scarlet revises one of them, and waits
   // The cut under revision leaves the calls. The other one stays open.
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
   // The revision sits directly under the call it revises, named by that call's number among the pass's calls, with
-  // the editor's words and Scarlet at work on it. It is no block of its own in the conversation.
+  // the editor's words and AirWaves at work on it. It is no block of its own in the conversation.
   const under = passRows()[0]!.closest("li")!.querySelector<HTMLElement>(".subunit")!;
   expect([under.getAttribute("data-run"), tagIn(under), wordsOf(under.querySelector(".subunit-msg p"))])
     .toEqual(["task_revise", "Cut 1", "The words don't line up."]);
-  expect(under.querySelector('[aria-label="Scarlet’s work"]')).not.toBeNull();
+  expect(under.querySelector('[aria-label="AirWaves’s work"]')).not.toBeNull();
   expect(units().map(u => u.dataset.run)).not.toContain("task_revise");
-  // Its row's word moves while Scarlet is on it.
+  // Its row's word moves while AirWaves is on it.
   expect([passRows()[0]!.querySelector(".simple-pass-value")?.textContent, passRows()[0]!.querySelector(".simple-pass-value")?.classList.contains("working-text")]).toEqual(["Revising…", true]);
   expect(passCard().querySelector(".simple-pass-quiet")).toBeNull();
   await reviewCalls();
-  // It is numbered among all the pass's calls, the one with Scarlet included, as its row in the list is.
+  // It is numbered among all the pass's calls, the one with AirWaves included, as its row in the list is.
   expect(container.querySelector(".simple-on-video")?.textContent).toBe("Showing cut at 9:58 · 2 of 2 · After");
   await press("a");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 2, choice: "cut" }] }));
@@ -5455,7 +5455,7 @@ it("waits for a staged revision to finish while the editor decides the other cal
   await act(async () => {});
   // The editor sends the first call back. Its revision stages the new cut and is still at work: it checks the cut and
   // says what it found after that (2026-11-09: the last call applied the pass over it, and the engine refused
-  // Scarlet's verdict on the cut as stale).
+  // AirWaves's verdict on the cut as stale).
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_revise", 0, { kind: "revise" as const, state: "running" as const, startedAt: new Date().toISOString(), expectedSeconds: undefined })] }));
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   await revisedCut("task_revise", "chg_ready", 0, { start: 1.5, end: 3 }, "Starts in the pause.");
@@ -5632,7 +5632,7 @@ it("says on a pass's row when its cut is being revised, kept or not, and that it
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  // Scarlet is on a request in the pass's block, so the block is fixed above the message box.
+  // AirWaves is on a request in the pass's block, so the block is fixed above the message box.
   const pass = () => container.querySelector<HTMLElement>(".simple-pin .simple-pass")!;
   await click(seeAll(pass())!);
   await act(async () => {});
@@ -5698,13 +5698,13 @@ it("takes a finished revision out of the conversation: what it did is on its cut
   await act(async () => {});
   expect(editPanel()?.textContent).toContain("The cut now starts in the pause.");
   expect(listed()[2]!.getAttribute("aria-current")).toBe("true");
-  // Scarlet's note is on the card, and nowhere in the chat as a message.
+  // AirWaves's note is on the card, and nowhere in the chat as a message.
   expect(openHead()?.querySelector(".simple-msg")).toBeNull();
   await press("Escape");
   expect(editPanel()).toBeNull();
 });
 
-it("runs one request at a time: what Scarlet is on stays pinned above the message box, and queued requests wait in its tray", async () => {
+it("runs one request at a time: what AirWaves is on stays pinned above the message box, and queued requests wait in its tray", async () => {
   const now = new Date().toISOString();
   const pass = { ...data.tasks.find(t => t.id === "task_done")!, id: "task_pass", kind: "edit" as const, instruction: "/dialogue-pass",
     context: { threadId: "task_pass", message: "/dialogue-pass" }, state: "running" as const, changeIds: [], createdAt: now, startedAt: now, finishedAt: undefined };
@@ -5717,17 +5717,17 @@ it("runs one request at a time: what Scarlet is on stays pinned above the messag
   data = { ...data, tasks: [...data.tasks.map(t => ["queued", "claimed", "running", "waiting_for_user"].includes(t.state) ? { ...t, state: "done" as const } : t), pass, title, zoom] };
   useProjectStore.setState({ current: data, cancelTask });
   await show();
-  // The request Scarlet is on is pinned above the message box: its message joined to its card.
+  // The request AirWaves is on is pinned above the message box: its message joined to its card.
   const pinned = container.querySelector<HTMLElement>(".simple-pin .unit")!;
   expect(pinned.querySelector(".unit-msg")?.textContent).toContain("/dialogue-pass");
-  // Under it, one line says what Scarlet is doing this moment, and nothing else: no stages.
+  // Under it, one line says what AirWaves is doing this moment, and nothing else: no stages.
   expect(pinned.querySelector(".req-now .working-text")).not.toBeNull();
   expect(pinned.querySelector(".req-stage, .req-stages")).toBeNull();
   // Queued requests aren't in the chat. They wait in the tray, in running order, and the first is marked Next.
   expect(turns().some(t => t.textContent?.includes("Zoom into the browser window"))).toBe(false);
   const tray = container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
   expect(tray.querySelector(".queue-head")?.textContent).toBe("NextZoom into the browser window during the demo.2 queued");
-  expect(tray.getAttribute("title")).toBe("Starts when Scarlet finishes what it’s on");
+  expect(tray.getAttribute("title")).toBe("Starts when AirWaves finishes what it’s on");
   // It opens into every queued request, each with a way to take it out of the queue.
   await click(tray.querySelector(".queue-head")!);
   expect([...tray.querySelectorAll(".queue-row")].map(r => r.textContent)).toEqual(["NextZoom into the browser window during the demo.", "Add a lower third with my name."]);
@@ -5739,7 +5739,7 @@ it("runs one request at a time: what Scarlet is on stays pinned above the messag
   expect(container.querySelector('[aria-label="Queued requests"] .queue-row')?.textContent).toBe("NextZoom into the browser window during the demo.");
   expect(container.querySelector(".simple-thread")?.textContent).not.toContain("Add a lower third with my name.");
   expect([...container.querySelectorAll(".simple-thread button")].some(b => b.textContent === "Resume")).toBe(false);
-  // A request stopped after Scarlet began it is another matter: it stays, with its Resume.
+  // A request stopped after AirWaves began it is another matter: it stays, with its Resume.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_pass" ? { ...t, state: "cancelled" as const, finishedAt: new Date().toISOString() } : t) }));
   expect(turns().some(t => t.textContent?.includes("/dialogue-pass") && t.textContent.includes("Stopped"))).toBe(true);
   expect(container.textContent).not.toContain("Start in new thread");
@@ -5917,7 +5917,7 @@ it("plays changed footage while the editor answers the question about that cut",
   expect(listen).toHaveBeenLastCalledWith({ start: 5, end: 11, skips: [] }, expect.any(Number));
   expect(onVideo()).toBe("Current passage at 0:07");
   expect(boxTag()).toBe("Answer");
-  // When Scarlet has no unique passage, the same card can still take the editor's answer without seeking.
+  // When AirWaves has no unique passage, the same card can still take the editor's answer without seeking.
   listen.mockClear();
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === question.id ? { ...t, cutConflict: { version: shifted.version } } : t) }));
   await click(call().querySelector('button[aria-label="Answer"]')!);
@@ -6206,7 +6206,7 @@ it("shows the whole transcript, places the playhead on a clicked word, lights th
 
 it("keeps the chat in view beside the Transcript, and closes the Transcript on Esc but not on a sent message", async () => {
   appliedEdits();
-  // Scarlet has asked a question, and nothing else is running.
+  // AirWaves has asked a question, and nothing else is running.
   const base = data.tasks.find(t => t.kind !== "transcribe")!;
   const now = new Date().toISOString();
   data = { ...data, tasks: [...data.tasks.map(t => ["queued", "claimed", "running", "waiting_for_user"].includes(t.state) ? { ...t, state: "done" as const, question: null } : t),
@@ -6218,7 +6218,7 @@ it("keeps the chat in view beside the Transcript, and closes the Transcript on E
   const pin = () => container.querySelector<HTMLElement>(".simple-pin")!;
   const transcript = () => container.querySelector(".simple-transcript");
   await openTranscript();
-  // The transcript is beside the player: the chat and the request Scarlet is on stay in view, with its Stop, its question
+  // The transcript is beside the player: the chat and the request AirWaves is on stay in view, with its Stop, its question
   // and Answer, so the message box doesn't say Answer with no question on screen.
   expect(chat().hidden).toBe(false);
   expect(pin().hidden).toBe(false);
@@ -6278,7 +6278,7 @@ it("marks the Media button, not the menu, when a file couldn't be read or a tran
 });
 
 it("marks the Media button when a file failed to import, until Media's list of imports lets it go", async () => {
-  vi.spyOn(api, "importMedia").mockRejectedValue(new Error("Scarlet couldn’t read this file."));
+  vi.spyOn(api, "importMedia").mockRejectedValue(new Error("AirWaves couldn’t read this file."));
   await show();
   await act(async () => { await enqueueImports(PRJ, ["/Users/me/Movies/drone.mov"]); });
   expect(moreButton().querySelector(".needs-you")).toBeNull();
@@ -6288,7 +6288,7 @@ it("marks the Media button when a file failed to import, until Media's list of i
   await click(mediaButton());
   await act(async () => { await vi.dynamicImportSettled(); });
   await vi.waitFor(() => expect(document.querySelector('dialog[open] [aria-label="Dismiss"]')).not.toBeNull());
-  expect(document.querySelector("dialog[open]")?.textContent).toContain("Scarlet couldn’t read this file.");
+  expect(document.querySelector("dialog[open]")?.textContent).toContain("AirWaves couldn’t read this file.");
   await click(document.querySelector('dialog[open] [aria-label="Dismiss"]')!);
   expect(mediaButton().querySelector(".menu-dot")).toBeNull();
   expect(container.querySelector(".simple-banner")).toBeNull();
@@ -6827,7 +6827,7 @@ it("lets the editor reword a rule in place: Esc puts it back, Enter keeps it, an
   expect(panel()).toBeNull();
 });
 
-it("says Saving while Scarlet works an approved rule into its skill, why one wasn't saved, and when nothing waits", async () => {
+it("says Saving while AirWaves works an approved rule into its skill, why one wasn't saved, and when nothing waits", async () => {
   useSkillsStore.setState({ skills: [skillNamed("skl_dialogue", "dialogue-pass")], status: "ready", error: null });
   data = { ...data, learnings: [learning("lrn_a", { state: "saving" }), learning("lrn_b", { rule: "Keep a laugh in.", error: "It already says that." })] };
   useProjectStore.setState({ current: data });
@@ -6865,7 +6865,7 @@ it("leaves a rule's skill list open, with the keyboard on its picker, when the w
     await click(picker);
     const pickerOpen = () => [document.querySelectorAll('[role="listbox"] [role="option"]').length, picker.getAttribute("aria-expanded"), document.activeElement === picker];
     expect(pickerOpen()).toEqual([2, "true", true]);
-    // Scarlet works on, or a file transcribes or caches: each of the engine's events draws the workspace again.
+    // AirWaves works on, or a file transcribes or caches: each of the engine's events draws the workspace again.
     await event(d => ({ ...d, tasks: [...d.tasks] }));
     expect(pickerOpen()).toEqual([2, "true", true]);
     // Esc still closes the skill list first, and then Learnings.
@@ -6895,7 +6895,7 @@ it("asks for the skills again when Learnings opens after a read of them failed, 
     // Opening the list asks once. The engine is still away, so the rule has no skill yet.
     await openPanel();
     expect(read).toHaveBeenCalledTimes(1);
-    // Opened again once the engine is back, it asks again: the picker names the skill Scarlet picked, and the rule can be approved.
+    // Opened again once the engine is back, it asks again: the picker names the skill AirWaves picked, and the rule can be approved.
     await press("Escape");
     await openPanel();
     expect(saveTo()).toEqual(["dialogue-pass", false, false]);
@@ -6934,7 +6934,7 @@ const stopOne = async (taskId: string) => click(editActionsOf(taskId));
 const runOf = (taskId: string) => {
   const thread = buildThreads(data).find(t => t.tasks.some(task => task.id === taskId))!;
   const task = thread.tasks.find(t => t.id === taskId)!;
-  // The request Scarlet is on draws above the message box, not in its thread.
+  // The request AirWaves is on draws above the message box, not in its thread.
   return container.querySelector<HTMLElement>(`.unit[data-run="${task.resumeRootId ?? task.id}"] .req`)!;
 };
 
@@ -6952,7 +6952,7 @@ it("shows active time in the band before Stop this edit, with one line of what t
   expect(run.closest(".unit")!.querySelector(".unit-msg")!.lastElementChild).toBe(editActionsOf("task_running").closest(".unit-actions"));
   expect(run.querySelector(".req-now .req-right")).toBeNull();
   expect(run.closest(".unit")!.querySelector(".unit-ring")).toBeNull();
-  // It is the only line: what Scarlet did before this moment isn't listed under it, and steps carry no clock time.
+  // It is the only line: what AirWaves did before this moment isn't listed under it, and steps carry no clock time.
   expect(run.querySelectorAll(".req-row").length).toBe(1);
   expect(run.querySelector(".run-row, .req-toggle, .simple-time")).toBeNull();
   await stopOne("task_running");
@@ -7072,7 +7072,7 @@ it("says what a run picked up again is doing while a request sent in its thread 
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  // Its row names what Scarlet is doing this moment, as any working run's does.
+  // Its row names what AirWaves is doing this moment, as any working run's does.
   expect(runOf("task_zoom_again").querySelector('.req-now [role="status"]')?.textContent).toBe("Looking at the timeline");
 });
 
@@ -7080,7 +7080,7 @@ it("leaves a finished request as its heading with active time and what it made",
   await show();
   const run = runOf("task_done");
   const unit = run.closest<HTMLElement>(".unit")!;
-  // The heading is the editor's words, with no name or number: "Edit 14" anywhere is an edit Scarlet made.
+  // The heading is the editor's words, with no name or number: "Edit 14" anywhere is an edit AirWaves made.
   expect(unit.querySelector(".unit-msg > :not(.simple-who, p, .unit-state, .unit-stop, .unit-tokens)")).toBeNull();
   expect(unit.querySelector(".unit-msg > .unit-tokens > .run-work-time")?.textContent).toMatch(/^\d+m \d+s$/);
   const words = unit.querySelector(".unit-msg p")!;
@@ -7533,7 +7533,7 @@ it("stays with an earlier request's flagged edit after a look at it, though a la
 
 it("keeps every request in one conversation, and starts a new edit when nothing is open or asked", async () => {
   appliedEdits();
-  // Scarlet isn't on anything in this project, and hasn't asked anything.
+  // AirWaves isn't on anything in this project, and hasn't asked anything.
   data = { ...data, tasks: data.tasks.map(t => ["queued", "claimed", "running", "waiting_for_user"].includes(t.state) ? { ...t, state: "done" as const, question: null } : t) };
   useProjectStore.setState({ current: data });
   await show();
@@ -7549,7 +7549,7 @@ it("keeps every request in one conversation, and starts a new edit when nothing 
   expect(useUiStore.getState().draftOwner).toBe(JSON.stringify([PRJ, null]));
 });
 
-/** Scarlet is on a dialogue pass and a second request waits behind it, in a project with nothing else in flight. */
+/** AirWaves is on a dialogue pass and a second request waits behind it, in a project with nothing else in flight. */
 const passThenZoom = () => {
   const now = new Date().toISOString();
   const pass = { ...data.tasks.find(t => t.id === "task_done")!, id: "task_pass", kind: "edit" as const, instruction: "/dialogue-pass", expectedSeconds: undefined,
@@ -7560,11 +7560,11 @@ const passThenZoom = () => {
   useProjectStore.setState({ current: data });
 };
 
-it("fixes the request Scarlet is on above the message box, moves it into the conversation when it's done, and keeps a waiting one in the tray", async () => {
+it("fixes the request AirWaves is on above the message box, moves it into the conversation when it's done, and keeps a waiting one in the tray", async () => {
   passThenZoom();
   await show();
   const unit = (id: string) => container.querySelector<HTMLElement>(`.unit[data-run="${id}"]`);
-  // What Scarlet is on is fixed above the box. The request behind it isn't in the conversation: it waits in the tray.
+  // What AirWaves is on is fixed above the box. The request behind it isn't in the conversation: it waits in the tray.
   expect(unit("task_pass")!.closest(".simple-pin")).not.toBeNull();
   expect(unit("task_zoom")).toBeNull();
   expect(container.querySelector(".queue-tray")?.textContent).toContain("Zoom into the browser window.");
@@ -7573,7 +7573,7 @@ it("fixes the request Scarlet is on above the message box, moves it into the con
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_pass" ? { ...t, expectedSeconds: 600 } : t) }));
   expect(unit("task_pass")!.querySelector('[role="timer"], [role=progressbar], .req-bar')).toBeNull();
   expect(unit("task_pass")!.querySelector('[aria-label^="Stop this edit"]')).not.toBeNull();
-  // Once Scarlet finishes, the request joins the conversation and the next one takes the fixed spot, at work.
+  // Once AirWaves finishes, the request joins the conversation and the next one takes the fixed spot, at work.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_pass" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() }
     : t.id === "task_zoom" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   expect(unit("task_pass")!.closest(".simple-chat")).not.toBeNull();
@@ -7597,7 +7597,7 @@ it("fixes the request Scarlet is on above the message box, moves it into the con
   expect(unit("task_zoom")!.querySelector(".req-state")).toBeNull();
 });
 
-it("opens a call that's with Scarlet: its card says so, and its revision is at work, tagged with the cut", async () => {
+it("opens a call that's with AirWaves: its card says so, and its revision is at work, tagged with the cut", async () => {
   flagged();
   const threadId = threadWith("chg_ready").id;
   const base = data.tasks.find(t => t.id === "task_done")!;
@@ -7614,7 +7614,7 @@ it("opens a call that's with Scarlet: its card says so, and its revision is at w
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => [r.querySelector(".edit-badge")?.textContent, r.querySelector(".edit-badge")?.classList.contains("is-check"), r.querySelector(".simple-pass-value")?.textContent]))
     .toEqual([["1", false, "Revising…"], ["2", true, undefined]]);
-  // ↑ steps to it from the call beside it. The card keeps Scarlet's note and Before/After, and says Revising… where the
+  // ↑ steps to it from the call beside it. The card keeps AirWaves's note and Before/After, and says Revising… where the
   // decisions were. It isn't waiting on the editor, so it has no place among the ones that are.
   // "1 needs you" opened the one call still waiting.
   expect(passRow("The corrected image-input take belongs here.").getAttribute("aria-current")).toBe("true");
@@ -7669,7 +7669,7 @@ const boxNow = () => { const ui = useUiStore.getState(); return [ui.agentDraft, 
 
 it("leaves a message being written aimed where it was, and offers nothing above the box to move it", async () => {
   appliedEdits();
-  // Scarlet hasn't asked anything, so with nothing open the box starts a new edit.
+  // AirWaves hasn't asked anything, so with nothing open the box starts a new edit.
   data = { ...data, tasks: data.tasks.map(t => t.state === "waiting_for_user" ? { ...t, state: "done" as const, question: null } : t) };
   useProjectStore.setState({ current: data });
   await show();
@@ -7736,13 +7736,13 @@ it("puts the tag taken off an empty box back on ⌘Z, until the box is aimed aga
 
 it("keeps the box where it was while the editor speaks into it, and follows what opened once the message is sent", async () => {
   appliedEdits();
-  // Scarlet hasn't asked anything, so with nothing open the box starts a new edit.
+  // AirWaves hasn't asked anything, so with nothing open the box starts a new edit.
   data = { ...data, tasks: data.tasks.map(t => t.state === "waiting_for_user" ? { ...t, state: "done" as const, question: null } : t) };
   useProjectStore.setState({ current: data });
   await show();
   const newEdit = JSON.stringify([PRJ, null]);
   expect([boxTag(), useUiStore.getState().draftOwner]).toEqual([undefined, newEdit]);
-  // The editor starts talking, with nothing typed. Scarlet asks a question while they speak. Aiming the box at it would
+  // The editor starts talking, with nothing typed. AirWaves asks a question while they speak. Aiming the box at it would
   // build the box again, dropping the recording, or send the rest of what they say as the answer.
   await act(async () => useUiStore.getState().setSpeaking(true));
   const base = data.tasks.find(t => t.kind !== "transcribe")!;
@@ -7772,7 +7772,7 @@ it("keeps the box where it was while the editor speaks into it, and follows what
 
 it("leaves a spoken message where it was said: the tag's × and words typed and sent meanwhile wait until it is out", async () => {
   appliedEdits();
-  // Scarlet hasn't asked anything, so with nothing open the box starts a new edit.
+  // AirWaves hasn't asked anything, so with nothing open the box starts a new edit.
   data = { ...data, tasks: data.tasks.map(t => t.state === "waiting_for_user" ? { ...t, state: "done" as const, question: null } : t) };
   useProjectStore.setState({ current: data });
   await show();
@@ -7801,7 +7801,7 @@ it("leaves a spoken message where it was said: the tag's × and words typed and 
 it("takes the box off a suggestion when its card closes after Revise, as off a cut or an edit", async () => {
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   await show();
-  // Scarlet's question waits, so with nothing open the box answers it.
+  // AirWaves's question waits, so with nothing open the box answers it.
   expect(boxTag()).toBe("Answer");
   await click(suggestion("chg_ready"));
   await act(async () => {});
@@ -7809,7 +7809,7 @@ it("takes the box off a suggestion when its card closes after Revise, as off a c
   await press("r");
   expect([boxTag(), useUiStore.getState().agentContext]).toMatchObject(["Whole edit", { changeId: "chg_ready", label: "Suggestion" }]);
   expect(aimLine()).toBe("Revising this suggestion");
-  // Esc closes the card, and the empty box goes back to Scarlet's question.
+  // Esc closes the card, and the empty box goes back to AirWaves's question.
   await press("Escape");
   expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
   expect([boxTag(), useUiStore.getState().agentContext]).toEqual(["Answer", null]);
@@ -7882,7 +7882,7 @@ it("brings a message kept for a request back aimed as it was, not at what's open
   expect(aimLine()).toBe("Revising “captions”");
 });
 
-it("says Queued on the card of a cut sent back until Scarlet starts on it, and steps through it with the arrows", async () => {
+it("says Queued on the card of a cut sent back until AirWaves starts on it, and steps through it with the arrows", async () => {
   finishedPass();
   await show();
   await act(async () => {});
@@ -7891,7 +7891,7 @@ it("says Queued on the card of a cut sent back until Scarlet starts on it, and s
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_first", 0, { kind: "revise" as const, state: "running" as const, startedAt: started, expectedSeconds: undefined })] }));
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_second", 2, { kind: "edit" as const, instruction: "Keep the aside.", expectedSeconds: undefined })] }));
-  // Only the second cut still waits on the editor. The other two are with Scarlet.
+  // Only the second cut still waits on the editor. The other two are with AirWaves.
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("1 needs you");
   await click(passCard().querySelector(".simple-pass-need")!);
   expect(passRows().map(r => [r.querySelector(".simple-pass-label")?.textContent, r.querySelector(".simple-pass-value")?.textContent]))
@@ -7904,12 +7904,12 @@ it("says Queued on the card of a cut sent back until Scarlet starts on it, and s
   expect(passRow("Breath before the price.").getAttribute("aria-current")).toBe("true");
   await press("ArrowDown");
   expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:11 · 3 of 3 · After", "Queued"]);
-  // ↑ steps back through every call, the one Scarlet is revising too.
+  // ↑ steps back through every call, the one AirWaves is revising too.
   await press("ArrowUp");
   expect([onVideo(), !!buttonIn(call(), "Approve")]).toEqual(["Showing cut at 0:06 · 2 of 3 · After", true]);
   await press("ArrowUp");
   expect([onVideo(), call().querySelector(".edit-card-status")?.textContent]).toEqual(["Showing cut at 0:02 · 1 of 3 · After", "Revising…"]);
-  // Scarlet starts on the note about the aside. It wasn't sent as a revision, but its card says Scarlet is on it.
+  // AirWaves starts on the note about the aside. It wasn't sent as a revision, but its card says AirWaves is on it.
   await press("ArrowDown");
   await press("ArrowDown");
   expect(call().querySelector(".edit-card-status")?.textContent).toBe("Queued");
@@ -7918,8 +7918,8 @@ it("says Queued on the card of a cut sent back until Scarlet starts on it, and s
 });
 
 /**
- * An earlier part of the waiting pass's own request applied an edit Scarlet flagged, so the request's "N need you"
- * counts it with the pass's calls, while Scarlet still works on the pass too. It sits after the last staged cut.
+ * An earlier part of the waiting pass's own request applied an edit AirWaves flagged, so the request's "N need you"
+ * counts it with the pass's calls, while AirWaves still works on the pass too. It sits after the last staged cut.
  */
 const flaggedPart = () => {
   const part = { ...data.changes.find(c => c.id === "chg_approved_2")!, id: "chg_part", taskId: "task_done", threadId: undefined, noteIds: [],
@@ -7943,7 +7943,7 @@ it("opens the request's flagged edit after its last call, where need you still c
   await press("a");
   await press("a");
   expect([call().querySelector(".edit-card-count")?.textContent, needYou()]).toEqual(["Cut 3", "2 need you"]);
-  // The last call schedules the pass, since Scarlet is still on it. The flagged edit still waits, so it opens in the
+  // The last call schedules the pass, since AirWaves is still on it. The flagged edit still waits, so it opens in the
   // call's place: the card doesn't close on "1 needs you".
   await press("a");
   await act(async () => {});
@@ -7957,7 +7957,7 @@ it("opens the request's flagged edit after its last call, where need you still c
   expect([editPanel(), needYou()]).toEqual([null, undefined]);
 });
 
-it("says what Scarlet said as the pass finished, and what it applied so far, above the calls still waiting", async () => {
+it("says what AirWaves said as the pass finished, and what it applied so far, above the calls still waiting", async () => {
   finishedPass();
   flaggedPart();
   const said = "Review the flagged directions. The sponsor pickup remains after the outro.";
@@ -7969,7 +7969,7 @@ it("says what Scarlet said as the pass finished, and what it applied so far, abo
   const made = passCard().querySelector<HTMLElement>(".simple-made")!;
   const list = passCard().querySelector<HTMLElement>(".simple-pass-list")!;
   expect([note?.textContent, made?.textContent, list?.getAttribute("aria-label")]).toEqual([said, `${SUMMARY}.`, "Calls that need you"]);
-  // Scarlet's words, then the sentence (the one edit applied so far says what it did), then the calls and the
+  // AirWaves's words, then the sentence (the one edit applied so far says what it did), then the calls and the
   // flagged edit, one run of numbers.
   expect([note.compareDocumentPosition(made), made.compareDocumentPosition(list)].map(p => !!(p & Node.DOCUMENT_POSITION_FOLLOWING))).toEqual([true, true]);
   expect(passRows().map(r => r.querySelector(".edit-badge")?.textContent)).toEqual(["1", "2", "3", "4"]);
@@ -8029,7 +8029,7 @@ it("keeps the waiting pass's flagged edit on the timeline, numbered after its ca
 it("keeps the number a call or a flagged edit was shown under when another call arrives, which takes the next", async () => {
   runningPass();
   flaggedPart();
-  // Scarlet has asked about two of the three staged cuts so far.
+  // AirWaves has asked about two of the three staged cuts so far.
   const asked = (n: number) => askAll(STAGED).slice(0, n).map((a, i) => ({ ...a, askOrder: i + 1 }));
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: asked(2) } : c) };
   useProjectStore.setState({ current: data });
@@ -8061,13 +8061,13 @@ it("keeps the number a call or a flagged edit was shown under when another call 
 
 it("keeps a revised call's number on its card and on the note about it that waits its turn", async () => {
   finishedPass();
-  // Scarlet asked about the cut at 0:11 first, then about 0:06, then about 0:02: the cut at 0:02 is Cut 3.
+  // AirWaves asked about the cut at 0:11 first, then about 0:06, then about 0:02: the cut at 0:02 is Cut 3.
   const order: Record<number, number> = { 2: 1, 1: 2, 0: 3 };
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: askAll(STAGED).map(a => ({ ...a, askOrder: order[a.index] })) } : c) };
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  // Two notes on Cut 3. Scarlet is on the first; the second waits its turn, tagged with the call.
+  // Two notes on Cut 3. AirWaves is on the first; the second waits its turn, tagged with the call.
   const now = new Date().toISOString();
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_note1", 0, { kind: "edit" as const, state: "running" as const, startedAt: now }), callRequest("task_note2", 0, laterNote)] }));
   const tag = () => [...container.querySelectorAll<HTMLElement>(".queue-row, .queue-head")].find(r => r.textContent?.includes("Start it later."))
@@ -8149,7 +8149,7 @@ it("keeps a previously unnumbered call in place when the engine publishes an ear
 
 it("numbers each call in the order it reached the editor, so an ask earlier in the video doesn't renumber the calls before it", async () => {
   runningPass();
-  // Scarlet has asked about the cut at 0:11 first, then about the one at 0:06. The cut at 0:02 it hasn't checked yet.
+  // AirWaves has asked about the cut at 0:11 first, then about the one at 0:06. The cut at 0:02 it hasn't checked yet.
   const asks = askAll(STAGED);
   const asked = (order: Record<number, number>) => asks.flatMap(a => order[a.index] ? [{ ...a, askOrder: order[a.index] }] : []);
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: asked({ 2: 1, 1: 2 }) } : c) };
@@ -8166,7 +8166,7 @@ it("numbers each call in the order it reached the editor, so an ask earlier in t
   const tag = () => [...container.querySelectorAll<HTMLElement>(".queue-row, .queue-head")].find(r => r.textContent?.includes("Start it later."))
     ?.querySelector(".queue-target")?.textContent;
   expect(tag()).toBe("Cut 1");
-  // Scarlet then asks about the cut at 0:02, earlier in the video. It is the third call, and the others keep theirs.
+  // AirWaves then asks about the cut at 0:02, earlier in the video. It is the third call, and the others keep theirs.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: asked({ 2: 1, 1: 2, 0: 3 }) } : c) }));
   await act(async () => {});
   expect(badges()).toEqual([["1", STAGED[2]!.reason], ["2", STAGED[1]!.reason], ["3", STAGED[0]!.reason]]);
@@ -8177,7 +8177,7 @@ it("numbers each call in the order it reached the editor, so an ask earlier in t
 
 it("numbers the cuts a pass never checked after its asks, in timeline order, once it hands them over", async () => {
   finishedPass();
-  // Scarlet asked about the cuts at 0:06 and 0:11 and stopped before it checked the one at 0:02.
+  // AirWaves asked about the cuts at 0:06 and 0:11 and stopped before it checked the one at 0:02.
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: askAll(STAGED).slice(1).map((a, i) => ({ ...a, askOrder: i + 1 })) } : c) };
   useProjectStore.setState({ current: data });
   await show();
@@ -8195,7 +8195,7 @@ it("heads each request with the editor's words alone, and tags a request about o
   await act(async () => {});
   const names = () => units().map(u => u.querySelector(".unit-msg p")?.textContent);
   // Every request in the conversation asked for an edit of its own: its heading is the editor's words, with no number
-  // or tag before them. "Edit N" is only ever an edit Scarlet made.
+  // or tag before them. "Edit N" is only ever an edit AirWaves made.
   const before = names();
   expect(before.length).toBeGreaterThan(1);
   expect(units().map(u => [u.querySelector(".unit-msg .simple-revising"), u.querySelector(".unit-msg")!.textContent!.startsWith("You")])).toEqual(before.map(() => [null, true]));
@@ -8209,14 +8209,14 @@ it("heads each request with the editor's words alone, and tags a request about o
   const queued = [...container.querySelectorAll<HTMLElement>(".queue-row, .queue-head")].find(r => r.textContent?.includes("Start it later."));
   expect(queued?.querySelector(".queue-target")?.textContent).toBe("Cut 3");
   expect(names()).toEqual(before);
-  // Scarlet starts on it. It is tagged with its cut, as the box and the tray tagged it.
+  // AirWaves starts on it. It is tagged with its cut, as the box and the tray tagged it.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_about" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   const about = container.querySelector<HTMLElement>('.subunit[data-run="task_about"]')!;
   expect([tagIn(about), wordsOf(about.querySelector(".subunit-msg p"))]).toEqual(["Cut 3", "Start it later."]);
   // It is inside the pass's block, under its call, so the conversation has no new block, and the pass's has no tag.
   expect(about.closest(".unit")?.querySelector(":scope > .unit-msg .simple-revising")).toBeNull();
   expect(names()).toEqual(before);
-  // That call waits on Scarlet now, so its dot is gone.
+  // That call waits on AirWaves now, so its dot is gone.
   expect(dots()).toEqual([["1", "check"], ["2", "check"]]);
 });
 
@@ -8235,7 +8235,7 @@ it("says an applied edit no request made once, in the sentence with its link", a
   expect(turn.querySelector(".simple-made")?.textContent).toBe(WORDS);
 });
 
-it("shows Scarlet's recheck of an approved cut under that call, with why and none of the earlier replies", async () => {
+it("shows AirWaves's recheck of an approved cut under that call, with why and none of the earlier replies", async () => {
   finishedPass();
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutReasons: STAGED.map(r => ({ start: r.start, end: r.end, reason: r.reason })) } : c) };
   useProjectStore.setState({ current: data });
@@ -8243,11 +8243,11 @@ it("shows Scarlet's recheck of an approved cut under that call, with why and non
   await act(async () => {});
   const at = (ms: number) => new Date(Date.now() + ms).toISOString();
   // The editor asked to keep the third cut, and that saved the pass again. Then their approval found the first cut's
-  // footage changed, so Scarlet sent that one back to itself (2026-11-14: it chained under "keep" with every reply).
+  // footage changed, so AirWaves sent that one back to itself (2026-11-14: it chained under "keep" with every reply).
   const keep = callRequest("task_keep", 2, { kind: "revise" as const, state: "done" as const, createdAt: at(-60_000), startedAt: at(-60_000), finishedAt: at(-30_000),
     changeIds: ["chg_ready"], instruction: "keep", reply: "Kept the original delivery.", context: { ...callRequest("x", 2, {}).context, message: "keep" } });
   const recheck = callRequest("task_recheck", 0, { kind: "revise" as const, state: "running" as const, createdAt: at(0), startedAt: at(0),
-    createdBy: { type: "scarlet" as const, name: "Scarlet" }, cutConflict: { version: "v_head", approved: true as const },
+    createdBy: { type: "scarlet" as const, name: "AirWaves" }, cutConflict: { version: "v_head", approved: true as const },
     instruction: "The editor approved this cut. The passage changed before it could apply.", context: { ...callRequest("x", 0, {}).context, message: "Recheck this cut" } });
   await event(d => ({ ...d, tasks: [...d.tasks, keep, recheck] }));
   const under = container.querySelector<HTMLElement>('.subunit[data-run="task_recheck"]');
@@ -8274,7 +8274,7 @@ it("keeps a request about one cut in the conversation while it's stopped early, 
   expect(about()?.querySelector(".req-state, .req-status")).toBeNull();
   expect([...about()!.querySelectorAll(".req-row")].map(row => [row.className, row.textContent, row.querySelector("button")?.textContent])).toEqual([["req-row req-result", "Nothing savedResume", "Resume"]]);
   expect(about()?.closest("li")?.querySelector(":scope > button .simple-pass-label")?.textContent).toBe(STAGED[0]!.reason);
-  // Done without changing anything: it stays, since Scarlet's words are the only place that says why.
+  // Done without changing anything: it stays, since AirWaves's words are the only place that says why.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_about" ? { ...t, state: "done" as const, summary: "That breath is the join; cutting more clips the next word." } : t) }));
   expect(tagIn(about())).toBe("Cut 1");
   // Done with the cut revised: the pass comes back with it, and the request leaves the conversation.
@@ -8332,12 +8332,12 @@ it("keeps a stopped request about one call under its cut, with Resume once the p
   const at = (ms: number) => new Date(Date.now() + ms).toISOString();
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_about", 0, { kind: "revise" as const, state: "cancelled" as const, startedAt: at(0), finishedAt: at(0) })] }));
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]');
-  /** The row it sits under, by Scarlet's note, and the rows of its work with their one action. */
+  /** The row it sits under, by AirWaves's note, and the rows of its work with their one action. */
   const stands = () => [about()?.closest("li")?.querySelector(":scope > button .simple-pass-label")?.textContent, about()?.querySelector(".subunit-msg > .unit-state")?.textContent,
     ...[...about()?.querySelectorAll(".req-row") ?? []].map(row => row.textContent)];
   const stopped = [STAGED[0]!.reason, "Stopped", "Nothing savedResume"];
   expect(stands()).toEqual(stopped);
-  // The third call is sent back from its card. While Scarlet is on it the stopped request stays under its cut and offers
+  // The third call is sent back from its card. While AirWaves is on it the stopped request stays under its cut and offers
   // nothing: a revision picked up behind another one would revise the pass as it stood before that one.
   const other = callRequest("task_other", 2, { kind: "revise" as const, state: "running" as const, instruction: "Keep the breath.", createdAt: at(1000), startedAt: at(1000) });
   await event(d => ({ ...d, tasks: [...d.tasks, { ...other, context: { ...other.context, message: "Keep the breath." } }],
@@ -8358,7 +8358,7 @@ it("keeps a stopped request about one call under its cut, with Resume once the p
   expect(stands()).toEqual(stopped);
   await click(buttonIn(about()!, "Resume")!);
   expect(retryTask).toHaveBeenCalledWith("task_about", { agent: "claude", model: "opus" });
-  // A later request about the same cut waits its turn: nothing is offered meanwhile. Once Scarlet begins it, it takes
+  // A later request about the same cut waits its turn: nothing is offered meanwhile. Once AirWaves begins it, it takes
   // the stopped one's place under the row.
   const later = callRequest("task_later", 0, { kind: "edit" as const, instruction: "Start it two frames later.", createdAt: at(5000) });
   await event(d => ({ ...d, tasks: [...d.tasks, { ...later, context: { ...later.context, message: "Start it two frames later." } }] }));
@@ -8369,19 +8369,19 @@ it("keeps a stopped request about one call under its cut, with Resume once the p
   expect(container.querySelector(".simple-thread")!.textContent).not.toContain("Start it later.");
 });
 
-it("says Scarlet's note on a revised cut once, on its call's row, when the revision stopped after saving the cut", async () => {
+it("says AirWaves's note on a revised cut once, on its call's row, when the revision stopped after saving the cut", async () => {
   finishedPass();
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutReasons: STAGED.map(r => ({ start: r.start, end: r.end, reason: r.reason })) } : c) };
   useProjectStore.setState({ current: data, retryTask: vi.fn().mockResolvedValue(undefined) });
   await show();
   await act(async () => {});
   const now = new Date().toISOString();
-  // The editor sends the first call back. Scarlet saves the revised cut, and the editor stops the request before it ends.
+  // The editor sends the first call back. AirWaves saves the revised cut, and the editor stops the request before it ends.
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_about", 0, { kind: "revise" as const, state: "running" as const, startedAt: now })] }));
   await revisedCut("task_about", "chg_ready", 0, { start: 2.2, end: 3 }, "A cleaner retake, from its first word.");
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_about" ? { ...t, state: "cancelled" as const, finishedAt: new Date().toISOString() } : t) }));
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]')!;
-  // It stays under its call's row, which has the revised cut and Scarlet's note on it. Under the row, the request has its
+  // It stays under its call's row, which has the revised cut and AirWaves's note on it. Under the row, the request has its
   // word and its one action, and doesn't say the note a second time (2026-11-10).
   expect(about().closest("li")?.querySelector(":scope > button .simple-pass-label")?.textContent).toBe("A cleaner retake, from its first word.");
   expect([about().querySelector(".subunit-msg > .unit-state")?.textContent, ...[...about().querySelectorAll(".req-row")].map(row => row.textContent)]).toEqual(["Stopped", "Resume"]);
@@ -8459,7 +8459,7 @@ it("reads a cut that one revision saved twice as revised once, from the cut the 
   // The second call is sent back from its card.
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_revise", 1, { kind: "revise" as const, state: "running" as const, createdAt: at(0), startedAt: at(0) })],
     changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
-  // Scarlet saves the cut, looks again and saves it a second time in the same run. The engine puts the first attempt
+  // AirWaves saves the cut, looks again and saves it a second time in the same run. The engine puts the first attempt
   // away as replaced by the second, so one pass waits.
   await revisedCut("task_revise", "chg_ready", 1, { start: 6.2, end: 7 }, "Starts after the breath.");
   const first = useProjectStore.getState().current!.changes.find(c => c.id === "chg_revised")!;
@@ -8470,7 +8470,7 @@ it("reads a cut that one revision saved twice as revised once, from the cut the 
     tasks: d.tasks.map(t => t.id === "task_revise" ? { ...t, state: "done" as const, finishedAt: at(2000), changeIds: ["chg_revised", "chg_again"] } : t) }));
   await act(async () => {});
   // The editor sent it back once. Its row says v2, and its card gives the cut they sent back as the earlier version,
-  // not Scarlet's own first attempt (2026-11-09: v3, with that attempt as v2).
+  // not AirWaves's own first attempt (2026-11-09: v3, with that attempt as v2).
   const row = passRow("Starts on the next word.");
   expect(row.querySelector(".simple-pass-value")?.textContent).toBe("v2");
   await click(row);
@@ -8478,14 +8478,14 @@ it("reads a cut that one revision saved twice as revised once, from the cut the 
   expect([version?.textContent, version?.getAttribute("title")]).toEqual(["v2", `v1: ${STAGED[1]!.reason}\nYou: “Start it later.”`]);
 });
 
-it("shows a request about one cut as its work while Scarlet is on it, without what Scarlet wrote about it", async () => {
+it("shows a request about one cut as its work while AirWaves is on it, without what AirWaves wrote about it", async () => {
   finishedPass();
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutReasons: STAGED.map(r => ({ start: r.start, end: r.end, reason: r.reason })) } : c) };
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
   const now = new Date().toISOString();
-  // The revision was sent as a note on the pass. Scarlet answers the note when it saves the cut, and then works on.
+  // The revision was sent as a note on the pass. AirWaves answers the note when it saves the cut, and then works on.
   const wrote = "The join left 0.14 s of dead air. The cut now starts 0.03 s earlier.";
   const asked = callRequest("task_about", 0, { kind: "revise" as const, state: "running" as const, startedAt: now });
   const note = { id: "note_about", projectId: data.project.id, version: "v1", time: STAGED[0]!.start, clipIds: [], text: "Start it later.", changeId: "chg_ready", state: "open" as const,
@@ -8493,11 +8493,11 @@ it("shows a request about one cut as its work while Scarlet is on it, without wh
     replies: [{ text: wrote, author: { type: "agent" as const, id: "claude", name: "claude" }, createdAt: now }] };
   await event(d => ({ ...d, tasks: [...d.tasks, { ...asked, context: { ...asked.context, noteIds: ["note_about"] } }], notes: [...d.notes, note] }));
   const about = () => container.querySelector<HTMLElement>('.subunit[data-run="task_about"]')!;
-  // Under its call: the editor's words with Stop after them, and Scarlet's work. Its reply isn't there.
+  // Under its call: the editor's words with Stop after them, and AirWaves's work. Its reply isn't there.
   expect(wordsOf(about().querySelector(".subunit-msg p"))).toBe("Start it later.");
   expect(about().querySelector('.subunit-msg > .unit-actions [aria-label^="Stop this edit"]')).not.toBeNull();
-  expect(about().querySelector('[aria-label="Scarlet’s work"]')).not.toBeNull();
-  // While Scarlet works on it, one line says what it is doing this moment, as for any request: no stages.
+  expect(about().querySelector('[aria-label="AirWaves’s work"]')).not.toBeNull();
+  // While AirWaves works on it, one line says what it is doing this moment, as for any request: no stages.
   const doing = () => about().querySelector('.req-now [role="status"]')?.textContent;
   expect(about().querySelector(".req-stage, .req-stages")).toBeNull();
   const toolCall = (name: string, input: object = {}) => ({ type: "tool" as const, at: new Date().toISOString(), text: name, data: { tool: name, input } });
@@ -8508,10 +8508,10 @@ it("shows a request about one cut as its work while Scarlet is on it, without wh
   expect(doing()).toBe("Moving the cut");
   expect(about().querySelector(".req-say")).toBeNull();
   expect(container.textContent).not.toContain(wrote);
-  // Done without changing the cut: it stays, and Scarlet's words are then the only place that says why.
+  // Done without changing the cut: it stays, and AirWaves's words are then the only place that says why.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_about" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() } : t) }));
   expect([...about().querySelectorAll(".req-say")].map(el => el.textContent)).toEqual([wrote]);
-  // Scarlet then closes the request with a message that says the same again. That message is the one reply, and no row
+  // AirWaves then closes the request with a message that says the same again. That message is the one reply, and no row
   // under it starts it a third time.
   const closing = "That cut already starts in the pause, so I left it as it was. The join still has 0.14 s of dead air.";
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_about" ? { ...t, summary: closing } : t) }));
@@ -8531,8 +8531,8 @@ it("keeps a call open on its new version when its revision lands", async () => {
   await reviewCalls();
   await press("ArrowUp");
   expect(call().querySelector(".edit-card-status")?.textContent).toBe("Revising…");
-  // Scarlet saves a draft revision, then changes it again. The row keeps the note the editor sent back while the
-  // other two calls remain available, until Scarlet finishes the requested revision.
+  // AirWaves saves a draft revision, then changes it again. The row keeps the note the editor sent back while the
+  // other two calls remain available, until AirWaves finishes the requested revision.
   windows.mockClear();
   vi.mocked(api.cutReview).mockClear();
   await revisedCut("task_revise", "chg_ready", 0, { start: 1.5, end: 3 }, "Starts in the pause.");
@@ -8582,7 +8582,7 @@ it("opens a finished request's edits from the review controls, with no chevron, 
   expect(listOpen()).toBe(false);
   expect(reviewModes(turn)).toEqual([["For you", "true"], ["See all", "false"]]);
   expect(turn.querySelector(".simple-pass-chevron, .run-chevron")).toBeNull();
-  // Scarlet's updates along the way aren't kept in the finished request.
+  // AirWaves's updates along the way aren't kept in the finished request.
   expect(turn.querySelector(".req-time, .req-step, .req-steps")).toBeNull();
   expect(turn.textContent).not.toContain("Laying the music under the whole edit.");
   await click(seeAll(turn)!);
@@ -8672,7 +8672,7 @@ it("keeps the chat anchored while scrolling a pass's edits, including when a rev
   });
 });
 
-it("moves on to the next edit when one Scarlet didn't flag is kept, and closes after the last", async () => {
+it("moves on to the next edit when one AirWaves didn't flag is kept, and closes after the last", async () => {
   laterRequest("chg_later", false);
   await show();
   await act(async () => {});
@@ -8687,7 +8687,7 @@ it("moves on to the next edit when one Scarlet didn't flag is kept, and closes a
   expect(editPanel()).toBeNull();
 });
 
-it("goes from a kept edit Scarlet didn't flag to the next one that hasn't been kept, past the ones that have, and wraps", async () => {
+it("goes from a kept edit AirWaves didn't flag to the next one that hasn't been kept, past the ones that have, and wraps", async () => {
   laterRequest("chg_later", false);
   // The editor kept "captions" earlier.
   keepEdits(PRJ, threadWith("chg_approved_2").id, [{ changeId: "chg_approved_2", spot: 1 }]);
@@ -8790,14 +8790,14 @@ it("keeps Resume on a stopped request about one cut when the same words finish o
   expect(buttonIn(about(), "Resume")).toBeDefined();
 });
 
-it("ends a finished dialogue pass on its calls, without Scarlet's closing message under it", async () => {
+it("ends a finished dialogue pass on its calls, without AirWaves's closing message under it", async () => {
   finishedPass();
   const closing = "The first dialogue pass is saved: the recording now runs 27:12.\n\n- **Applied:** the mic check.\n- **Staged, not applied:** three cuts.";
   data = { ...data, taskEvents: { ...data.taskEvents, task_done: [...(data.taskEvents.task_done ?? []), { type: "log" as const, at: new Date().toISOString(), text: closing }] } };
   useProjectStore.setState({ current: data });
   await show();
   await act(async () => {});
-  // The pass ends on what needs the editor: its calls. Scarlet's closing message isn't under it.
+  // The pass ends on what needs the editor: its calls. AirWaves's closing message isn't under it.
   expect(passCard().querySelector(".simple-pass-need")?.getAttribute("title")).toMatch(/^\d+ need you$/);
   expect(passRows().length).toBeGreaterThan(0);
   expect(container.querySelector(".req-report")).toBeNull();
@@ -8805,7 +8805,7 @@ it("ends a finished dialogue pass on its calls, without Scarlet's closing messag
 });
 
 it("leaves ← and → to the player, and ↑ and ↓ too while a pass has no call to step to", async () => {
-  // Scarlet has asked about nothing: every staged cut is its own pick.
+  // AirWaves has asked about nothing: every staged cut is its own pick.
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: [
     { index: 0, start: 0, end: 220, verdict: "cut" as const, reason: "A clean retake." }] } : c) };
   vi.spyOn(api, "cutReview").mockResolvedValue({ review: { cuts: [{ at: 0, removed: { start: 0, end: 1 }, beforeClip: 0 }],
@@ -8983,7 +8983,7 @@ it("names the footage on the Transcript's heading before the first cut, where th
 
 it("writes a time past the first hour with its hour, over the player as on the line that names the box's aim", async () => {
   const save = flagged();
-  // Scarlet is sure of the other two cuts: the one it asks about is the pass's only call.
+  // AirWaves is sure of the other two cuts: the one it asks about is the pass's only call.
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, cutAssessments: [
     { index: 0, start: 0, end: 220, verdict: "cut" as const, reason: "A clean retake." },
     { index: 1, start: 3727, end: 3730, verdict: "ask" as const, reason: "Breath before the price." },
@@ -9011,7 +9011,7 @@ it("opens Media for a project that was just made without footage, and draws no b
 });
 
 it("takes a queued revision's words out of the chat with it when it is removed from the queue", async () => {
-  // The editor sent a suggestion back while Scarlet was busy, then took that request out of the tray. Its words were
+  // The editor sent a suggestion back while AirWaves was busy, then took that request out of the tray. Its words were
   // saved as a note on the suggestion.
   const base = data.tasks.find(t => t.id === "task_done")!;
   const words = { ...data.notes[0]!, id: "note_feedback", changeId: "chg_ready", text: "Make the intro shorter still.", state: "open" as const, createdAt: new Date().toISOString() };
@@ -9027,7 +9027,7 @@ it("takes a queued revision's words out of the chat with it when it is removed f
 it("keeps a request in the conversation once its question is answered, instead of moving it to the queue", async () => {
   const base = data.tasks.find(t => t.kind !== "transcribe")!;
   const now = new Date().toISOString();
-  // Scarlet asked a question in this request. Nothing else is running.
+  // AirWaves asked a question in this request. Nothing else is running.
   data = { ...data, tasks: [...data.tasks.map(t => ["queued", "claimed", "running", "waiting_for_user"].includes(t.state) ? { ...t, state: "done" as const } : t),
     { ...base, id: "task_asking", state: "waiting_for_user" as const, createdAt: now, startedAt: now, finishedAt: undefined, summary: null, changeIds: [],
       question: "Smaller by how much?", instruction: "Make the logo smaller.", context: { threadId: "task_asking", message: "Make the logo smaller." } }] };
@@ -9035,9 +9035,9 @@ it("keeps a request in the conversation once its question is answered, instead o
   await show();
   const pinned = () => container.querySelector<HTMLElement>(".simple-pin .unit");
   expect(pinned()?.textContent).toContain("Make the logo smaller.");
-  // The editor answers. The engine puts the request back in line until Scarlet picks it up again.
+  // The editor answers. The engine puts the request back in line until AirWaves picks it up again.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_asking" ? { ...t, state: "queued" as const, question: null, hostId: null } : t) }));
-  // It is still the request Scarlet is on: in its place, not a new entry in the tray with a × to remove it.
+  // It is still the request AirWaves is on: in its place, not a new entry in the tray with a × to remove it.
   expect(pinned()?.textContent).toContain("Make the logo smaller.");
   expect(container.querySelector('[aria-label="Queued requests"]')).toBeNull();
 });
@@ -9072,7 +9072,7 @@ it("keeps a stopped pass's unchecked cuts as calls, and the pass in its place, a
       { ...staged, id: "chg_revised", taskId: "task_revise", threadId: ready.threadId ?? threadId, cutChoices: [{ index: 0, start: 0, end: 1, choice: "cut" as const }],
         createdAt: new Date().toISOString() }] }));
   await act(async () => {});
-  // The cut Scarlet never checked is still the editor's call: the pass stopped, whichever request made this version.
+  // The cut AirWaves never checked is still the editor's call: the pass stopped, whichever request made this version.
   expect(container.querySelector(".simple-pass-need")?.getAttribute("title")).toBe("2 need you");
   // And the pass, waiting on those calls, still holds the place above the message box.
   const pinned = container.querySelector<HTMLElement>(".simple-pin .unit")!;
@@ -9080,7 +9080,7 @@ it("keeps a stopped pass's unchecked cuts as calls, and the pass in its place, a
   expect(pinned.querySelector(".simple-pass")).not.toBeNull();
 });
 
-/** Nothing is running and Scarlet has asked nothing, so the message box starts a new edit. */
+/** Nothing is running and AirWaves has asked nothing, so the message box starts a new edit. */
 const idle = () => {
   data = { ...data, tasks: data.tasks.map(t => ["queued", "claimed", "running", "waiting_for_user"].includes(t.state) ? { ...t, state: "done" as const, question: null } : t) };
   useProjectStore.setState({ current: data });
@@ -9254,8 +9254,8 @@ it("gives the message box the cursor on N, about the moment the playhead is on, 
   expect(useUiStore.getState().agentContext).toMatchObject({ changeId: "chg_approved_2", editIndex: 1 });
 });
 
-it("leaves a box aimed at an edit or at Scarlet's question as it is when a point is picked", async () => {
-  // Scarlet has asked a question: the box answers it, and skipping through the video doesn't change that.
+it("leaves a box aimed at an edit or at AirWaves's question as it is when a point is picked", async () => {
+  // AirWaves has asked a question: the box answers it, and skipping through the video doesn't change that.
   await show();
   expect(boxTag()).toBe("Answer");
   await press("ArrowRight");
@@ -9328,7 +9328,7 @@ it("aims words chosen in the transcript with a call open at that call when they'
   idle();
   await show();
   await act(async () => {});
-  // "N need you" opens the first call: Scarlet's cut from 2 s to 3 s.
+  // "N need you" opens the first call: AirWaves's cut from 2 s to 3 s.
   await click(container.querySelector('[aria-label="Dialogue pass"] .simple-pass-need')!);
   expect(call().querySelector(".edit-card-title")?.textContent).toBe("A clean retake.");
   expect(boxTag()).toBe("Cut 1");
@@ -9413,7 +9413,7 @@ it("tags a queued request about an edit at the edit's own time, before and after
   earlierRequestOnly();
   const later = laterRequest();
   later.hold(later.earlier);
-  // Sent while Scarlet was busy, about the third edit. The request's own time is where the passage around it starts.
+  // Sent while AirWaves was busy, about the third edit. The request's own time is where the passage around it starts.
   const base = buildDb().tasks.find(t => t.id === "task_done")!;
   data = { ...data, tasks: [...data.tasks, { ...base, id: "task_about_wrap", state: "queued" as const, startedAt: undefined, finishedAt: undefined, hostId: null, summary: null,
     changeIds: [], instruction: "Hold the last word.", createdAt: new Date().toISOString(),
@@ -9548,7 +9548,7 @@ it("gives Space back to the player after a row of the menu is clicked, and after
   expect(document.activeElement).toBe(more);
 });
 
-it("keeps a pass's calls where they are, the made ones in their place, when Scarlet starts revising one of them inside it", async () => {
+it("keeps a pass's calls where they are, the made ones in their place, when AirWaves starts revising one of them inside it", async () => {
   flagged();
   // Three calls: one to make, one to send back, one left waiting.
   data = { ...data, changes: data.changes.map(c => c.id === "chg_ready" ? { ...c, intent: "suggestion" as const, taskId: "task_done",
@@ -9568,7 +9568,7 @@ it("keeps a pass's calls where they are, the made ones in their place, when Scar
     r.querySelector(".edit-badge")?.classList.contains("is-check"), r.querySelector(".simple-pass-value")?.textContent]);
   expect(pass().querySelector(".simple-pass-list")?.getAttribute("aria-label")).toBe("Calls that need you");
   expect(rows()).toEqual([["1", false, "Approved"], ["2", true, undefined], ["3", true, undefined]]);
-  // The editor sends the last call back. Scarlet starts on it inside the pass's block, under that call's row, so the
+  // The editor sends the last call back. AirWaves starts on it inside the pass's block, under that call's row, so the
   // pass keeps the place above the box and no new block joins the conversation.
   const base = data.tasks.find(t => t.id === "task_done")!;
   const revision = { ...base, id: "task_revise", kind: "revise" as const, state: "running" as const, finishedAt: undefined, changeIds: [], expectedSeconds: undefined,
@@ -9636,7 +9636,7 @@ it("marks the fixes a pass's final check applies as New in its list while the ch
 });
 
 it("opens the edits so far and keeps the selected cut open when a running pass saves another part", async () => {
-  // The pass has applied a part and is still at work. Scarlet is sure of every cut it staged since, so nothing is a call.
+  // The pass has applied a part and is still at work. AirWaves is sure of every cut it staged since, so nothing is a call.
   const ready = { ...data.changes.find(c => c.id === "chg_ready")!, intent: "suggestion" as const, taskId: "task_done",
     cutAssessments: [{ index: 0, start: 0, end: 220, verdict: "cut" as const, reason: "A clean retake." }] };
   const part = { ...ready, id: "chg_part", fromVersion: "ver_2", toVersion: data.project.head!, intent: "requested" as const, state: "approved" as const, cutAssessments: undefined, cutReasons: [{ start: 4, end: 5, reason: "An um." }],
@@ -9660,7 +9660,7 @@ it("opens the edits so far and keeps the selected cut open when a running pass s
   const rows = () => [...pass().querySelectorAll<HTMLButtonElement>(".simple-pass-list > li > button")];
   // No sentence sums the pass up yet, so the link alone says what it opens, and counts it.
   expect(pass().querySelector(".simple-made")).toBeNull();
-  expect([link().textContent, link().title]).toEqual(["See 1 edit so far", "Show the edits Scarlet has made so far, in order"]);
+  expect([link().textContent, link().title]).toEqual(["See 1 edit so far", "Show the edits AirWaves has made so far, in order"]);
   expect(numbered()).toEqual([["1", undefined]]);
   await withSimpleSheet(async () => {
     expect(styled(link(), "color", "text-decoration-color")).toEqual(["#eae5da", "#ae9d79"]);
@@ -9692,10 +9692,10 @@ it("opens the edits so far and keeps the selected cut open when a running pass s
   expect([link(), reviewModes(pass())]).toEqual([null, [["See both", "false"]]]);
 });
 
-it("wraps the line of a pass scheduled while Scarlet still works, so its link and its status never run over each other", async () => {
+it("wraps the line of a pass scheduled while AirWaves still works, so its link and its status never run over each other", async () => {
   flagged();
   // The pass has applied a part and is still at work. It asked about one cut, and the editor's call on it scheduled the
-  // pass to apply when Scarlet finishes.
+  // pass to apply when AirWaves finishes.
   const ready = { ...data.changes.find(c => c.id === "chg_ready")!, intent: "suggestion" as const, taskId: "task_done",
     cutReasons: [0, 1, 2].map(i => ({ start: i, end: i + 1, reason: ["A clean retake.", "Breath before the price.", "Repeated aside."][i]! })),
     cutAssessments: [{ index: 1, start: 230, end: 233, verdict: "ask" as const, reason: "Breath before the price." }],
@@ -9714,9 +9714,9 @@ it("wraps the line of a pass scheduled while Scarlet still works, so its link an
     await show();
     await act(async () => {});
     const line = container.querySelector<HTMLElement>('[aria-label="Dialogue pass"] .simple-pass-line')!;
-    // "See 2 edits so far" and "Goes in when Scarlet finishes" can be wider than a chat at its 320px least, inside its
+    // "See 2 edits so far" and "Goes in when AirWaves finishes" can be wider than a chat at its 320px least, inside its
     // margins. What doesn't fit goes to the next line. The schedule is a status: there is no link to take it back.
-    expect([...line.children].map(part => part.textContent)).toEqual(["See 2 edits so far", "Goes in when Scarlet finishes", ""]);
+    expect([...line.children].map(part => part.textContent)).toEqual(["See 2 edits so far", "Goes in when AirWaves finishes", ""]);
     expect(styled(line, "flex-wrap")).toEqual(["wrap"]);
   });
 });
@@ -9753,7 +9753,7 @@ it("leaves another request's edit open when a pass with its full list open leave
   await click(buttonIn(turnFor("chg_approved_2"), "See edit")!);
   await act(async () => {});
   expect(openTitle()).toBe("music bed");
-  // Scarlet starts on a call sent back earlier, and that request takes the place above the box. The pass's line is
+  // AirWaves starts on a call sent back earlier, and that request takes the place above the box. The pass's line is
   // mounted anew in the conversation with its list still open: the same list, so the open edit stays open.
   const base = data.tasks.find(t => t.id === "task_done")!;
   const revision = { ...base, id: "task_revise", kind: "revise" as const, state: "running" as const, finishedAt: undefined, changeIds: [], expectedSeconds: undefined,
@@ -9785,19 +9785,19 @@ it("says a stopped pass's cut wasn't checked, lists a skipped call as Skipped, a
       cutChoices: [{ index: 0, start: 0, end: 1, choice: "cut" as const }] } : c),
     tasks: data.tasks.map(t => t.id === "task_done" ? { ...t, state: "cancelled" as const } : t) };
   // What the engine answers when the video moved on under one of a pass's cuts: it refuses, and keeps the calls.
-  const MOVED = "This pass wasn’t applied because the footage under Cut 1 changed since Scarlet made it: skip Cut 1 to apply the rest.";
+  const MOVED = "This pass wasn’t applied because the footage under Cut 1 changed since AirWaves made it: skip Cut 1 to apply the rest.";
   const approve = vi.fn().mockRejectedValueOnce(new Error(MOVED)).mockRejectedValueOnce(new Error("The engine stopped."))
     .mockResolvedValueOnce({ outcome: "conflict" }).mockResolvedValue({ outcome: "applied" });
   useProjectStore.setState({ current: data, approve });
   await show();
   await act(async () => {});
   const note = () => call().querySelector<HTMLElement>(".edit-card-title")!;
-  // "2 need you" opens the first of them on the timeline: the cut Scarlet never got to. Its card says so before the note.
+  // "2 need you" opens the first of them on the timeline: the cut AirWaves never got to. Its card says so before the note.
   await reviewCalls();
   expect(note().querySelector(".edit-card-unchecked")?.textContent).toBe("Not checked yet. ");
   expect(note().textContent).toBe("Not checked yet. Repeated aside.");
   expect(note().title).toBe("Repeated aside.");
-  // S skips it, and the next call opens. Scarlet asked about this one, so it reads as its note alone.
+  // S skips it, and the next call opens. AirWaves asked about this one, so it reads as its note alone.
   await press("s");
   expect(save).toHaveBeenLastCalledWith("chg_ready", expect.objectContaining({ choices: [{ index: 0, choice: "cut" }, { index: 2, choice: "keep" }], applyWhenDone: false }));
   expect(note().textContent).toBe("Breath before the price.");
@@ -9826,7 +9826,7 @@ it("says a stopped pass's cut wasn't checked, lists a skipped call as Skipped, a
   await click(buttonIn(passCard(), "Retry")!);
   expect(said()).toBe("The engine stopped.");
   await click(buttonIn(passCard(), "Retry")!);
-  expect(said()).toBe("The video changed while this was waiting. Scarlet is redoing it on the video as it is now.");
+  expect(said()).toBe("The video changed while this was waiting. AirWaves is redoing it on the video as it is now.");
   // Once it applies, nothing is left to say.
   await click(buttonIn(passCard(), "Retry")!);
   expect(approve).toHaveBeenCalledTimes(4);
@@ -9844,7 +9844,7 @@ it("says under a request why Stop or Resume failed, until the same press works",
   useProjectStore.setState({ current: data, cancelTask, retryTask });
   await show();
   await act(async () => {});
-  // The line is the request's own: the last thing in its block, and nowhere else. The request Scarlet is on is fixed
+  // The line is the request's own: the last thing in its block, and nowhere else. The request AirWaves is on is fixed
   // above the message box, and the line is there with it, not left in the conversation under the request before it.
   const said = () => [...container.querySelectorAll<HTMLElement>('.simple-error[role="alert"]')].map(e => [e.closest<HTMLElement>(".unit")?.dataset.run, e.textContent]);
   expect(said()).toEqual([]);
@@ -9870,7 +9870,7 @@ it("says in the banner why a queued request couldn't be taken out, until one is"
   const queued = { ...base, id: "task_waiting", kind: "edit" as const, state: "queued" as const, startedAt: undefined, finishedAt: undefined, hostId: null, summary: null, changeIds: [],
     instruction: "Add a lower third with my name.", createdAt: new Date(Date.now() + 1000).toISOString(), context: { threadId: "task_waiting", message: "Add a lower third with my name." } };
   data = { ...data, tasks: [...data.tasks, queued] };
-  const cancelTask = vi.fn().mockRejectedValueOnce(new Error("Scarlet has already started on it.")).mockResolvedValue(undefined);
+  const cancelTask = vi.fn().mockRejectedValueOnce(new Error("AirWaves has already started on it.")).mockResolvedValue(undefined);
   useProjectStore.setState({ current: data, cancelTask });
   await show();
   const remove = () => [...container.querySelectorAll<HTMLElement>('[aria-label="Queued requests"] .queue-row')]
@@ -9881,7 +9881,7 @@ it("says in the banner why a queued request couldn't be taken out, until one is"
   await click(remove());
   expect(cancelTask).toHaveBeenCalledWith("task_waiting", true);
   // The request is still in the tray, and the banner under the header says why.
-  expect(banner()).toBe("Scarlet has already started on it.");
+  expect(banner()).toBe("AirWaves has already started on it.");
   await click(remove());
   expect(cancelTask).toHaveBeenCalledTimes(2);
   expect(banner()).toBeUndefined();
@@ -9892,15 +9892,15 @@ it("takes the banner about a queued request away once that request moves on, wit
   const queued = { ...base, id: "task_waiting", kind: "edit" as const, state: "queued" as const, startedAt: undefined, finishedAt: undefined, hostId: null, summary: null, changeIds: [],
     instruction: "Add a lower third with my name.", createdAt: new Date(Date.now() + 1000).toISOString(), context: { threadId: "task_waiting", message: "Add a lower third with my name." } };
   data = { ...data, tasks: [...data.tasks, queued] };
-  const cancelTask = vi.fn().mockRejectedValue(new Error("Scarlet has already started on it."));
+  const cancelTask = vi.fn().mockRejectedValue(new Error("AirWaves has already started on it."));
   useProjectStore.setState({ current: data, cancelTask });
   await show();
   const banner = () => container.querySelector('.simple-banner[role="status"]')?.textContent;
   if (!container.querySelector('[aria-label="Queued requests"] .queue-list, [aria-label="Queued requests"] .queue-row')) await click(container.querySelector(".queue-head")!);
   await click([...container.querySelectorAll<HTMLElement>('[aria-label="Queued requests"] .queue-row')]
     .find(r => r.textContent?.includes("Add a lower third with my name."))!.querySelector<HTMLButtonElement>(".queue-remove")!);
-  expect(banner()).toBe("Scarlet has already started on it.");
-  // Scarlet did start it, then finished: the tray is empty, and the line about it has nothing left to say.
+  expect(banner()).toBe("AirWaves has already started on it.");
+  // AirWaves did start it, then finished: the tray is empty, and the line about it has nothing left to say.
   await act(async () => useProjectStore.setState({ current: { ...data, tasks: data.tasks.map(t => t.id === "task_waiting"
     ? { ...t, state: "done" as const, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString() } : t) } }));
   expect(banner()).toBeUndefined();
@@ -9933,7 +9933,7 @@ it("logs which edit a shortcut kept or stepped to, where the key alone says only
   ]);
 });
 
-it("logs which call a shortcut decided or stepped to, by its number and time, never by Scarlet's note or the footage's words", async () => {
+it("logs which call a shortcut decided or stepped to, by its number and time, never by AirWaves's note or the footage's words", async () => {
   flagged();
   useProjectStore.setState({ current: data, approve: vi.fn().mockResolvedValue({ outcome: "applied" }) });
   await show();
@@ -10001,23 +10001,23 @@ it("says under a suggestion's decisions why it couldn't be applied, and leaves i
   await act(async () => fail(new Error("The engine stopped.")));
   expect(said()).toBe("The engine stopped.");
   expect(buttonIn(decide()!, "Apply")?.disabled).toBe(false);
-  // The working cut moved on while it waited: Scarlet redoes it, and the strip says so in place of the last reason.
+  // The working cut moved on while it waited: AirWaves redoes it, and the strip says so in place of the last reason.
   await press("a");
-  expect(said()).toBe("The video changed while this was waiting. Scarlet is redoing it on the video as it is now.");
+  expect(said()).toBe("The video changed while this was waiting. AirWaves is redoing it on the video as it is now.");
   await click(buttonIn(decide()!, "Apply")!);
   expect(approve).toHaveBeenCalledTimes(3);
   expect(decide()).toBeNull();
 });
 
-/** Scarlet's line under a suggestion it is to make again: while the redo waits its turn, then once Scarlet is on it. */
+/** AirWaves's line under a suggestion it is to make again: while the redo waits its turn, then once AirWaves is on it. */
 const REDO_WAITS = "The video changed while this suggestion was waiting. I’ll redo it on the video as it is now.";
 const REDOING = "The video changed while this suggestion was waiting. I’m redoing it on the video as it is now.";
-/** The engine's own task for a suggestion it sent back, as `sendBack` makes it: authored by Scarlet, and about the suggestion alone. */
+/** The engine's own task for a suggestion it sent back, as `sendBack` makes it: authored by AirWaves, and about the suggestion alone. */
 const redoTask = (changeId: string, over: Partial<ProjectData["tasks"][number]> = {}) => ({ ...data.tasks.find(t => t.id === "task_done")!, id: "task_redo", kind: "revise" as const,
-  state: "queued" as const, createdBy: { type: "scarlet" as const, name: "Scarlet" }, changeIds: [], summary: null, question: null,
+  state: "queued" as const, createdBy: { type: "scarlet" as const, name: "AirWaves" }, changeIds: [], summary: null, question: null,
   instruction: "Redo this change on the current edit. It was approved, but the timeline changed while you worked and the edit no longer fits.",
   context: { changeId, threadId: threadWith(changeId).id, message: "Redo on the current edit" }, createdAt: new Date().toISOString(), startedAt: undefined, finishedAt: undefined, ...over });
-/** What the engine answers when the video moved on under a suggestion: the suggestion is with Scarlet again, and the redo is asked for. */
+/** What the engine answers when the video moved on under a suggestion: the suggestion is with AirWaves again, and the redo is asked for. */
 const sendsBack = (changeId: string, redo: ProjectData["tasks"][number]) => vi.spyOn(api, "approveChange").mockImplementation(async () => ({ outcome: "sent_back",
   reason: "it overlaps with a change approved since (around 5.0 s)", task: redo, project: data.project,
   change: { ...useProjectStore.getState().current!.changes.find(c => c.id === changeId)!, state: "revising", revisionFrom: { state: "ready", taskId: redo.id },
@@ -10041,7 +10041,7 @@ it("says in a suggestion's request why the video moved on from it, queues the re
   await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
   await act(async () => {});
   expect(approveChange).toHaveBeenCalledTimes(1);
-  // The strip closes without a line of its own: the request it came from says why, as Scarlet's line. The request
+  // The strip closes without a line of its own: the request it came from says why, as AirWaves's line. The request
   // isn't at work yet, so it has no Stop and no row that says it waits: the redo waits its turn in the tray.
   expect(container.querySelector('[aria-label="Suggestion"]')).toBeNull();
   const unit = () => container.querySelector<HTMLElement>('.simple-chat .unit[data-run="task_done"], .simple-pin .unit[data-run="task_done"]')!;
@@ -10053,7 +10053,7 @@ it("says in a suggestion's request why the video moved on from it, queues the re
   expect(queueLines()).toEqual([["Next", "Suggestion", requestTextFor("task_done")]]);
   expect(units().filter(u => u.dataset.run === "task_redo")).toEqual([]);
   expect(container.querySelector(".simple-thread")!.textContent).not.toMatch(/Redo on the current edit|Sent back|The agent/);
-  // Scarlet starts on it. It is the same request at work again, as on Retry: it leaves the tray for its own block,
+  // AirWaves starts on it. It is the same request at work again, as on Retry: it leaves the tray for its own block,
   // which keeps its heading, carries Stop and holds the place above the message box.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_redo" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   expect(queueLines()).toEqual([]);
@@ -10103,7 +10103,7 @@ const passLeftSuggestionAlone = () => {
 
 it("redoes a suggestion a pass left under the pass's own request, as any request's work and not as a pass", async () => {
   const reframe = passLeftSuggestionAlone();
-  const redo = { ...data.tasks.find(t => t.id === "task_done")!, id: "task_redo", kind: "revise" as const, state: "running" as const, createdBy: { type: "scarlet" as const, name: "Scarlet" },
+  const redo = { ...data.tasks.find(t => t.id === "task_done")!, id: "task_redo", kind: "revise" as const, state: "running" as const, createdBy: { type: "scarlet" as const, name: "AirWaves" },
     changeIds: [], summary: null, instruction: "Redo this change on the current edit.", context: { changeId: reframe.id, threadId: threadWith("chg_ready").id, message: "Redo on the current edit" },
     createdAt: new Date(Date.now() + 2000).toISOString(), startedAt: new Date(Date.now() + 2000).toISOString(), finishedAt: undefined };
   vi.spyOn(api, "approveChange").mockResolvedValue({ outcome: "sent_back", reason: "clip clip_a no longer exists in the current version", task: redo, project: data.project,
@@ -10150,7 +10150,7 @@ it("plays a suggestion a pass left before it saved its calls, as it does one lef
   expect(container.querySelector('.edit-card[aria-label="Suggestion"] .edit-card-title')?.textContent).toBe("Show the host camera full-frame for the intro.");
   expect(unit().querySelector(".simple-pass-need")?.getAttribute("title")).toBe("3 need you");
   await press("Escape");
-  // The editor sends the first call back, and Scarlet makes the pass again with that cut revised, under the revision's
+  // The editor sends the first call back, and AirWaves makes the pass again with that cut revised, under the revision's
   // own request. The suggestion is still the pass's, and still plays.
   await event(d => ({ ...d, tasks: [...d.tasks, callRequest("task_revise", 0, { kind: "revise" as const, state: "running" as const, startedAt: new Date().toISOString() })] }));
   await revisedCut("task_revise", "chg_ready", 0, { start: 2.2, end: 3 }, "A cleaner retake, from its first word.");
@@ -10162,7 +10162,7 @@ it("plays a suggestion a pass left before it saved its calls, as it does one lef
   expect(container.querySelector('.edit-card[aria-label="Suggestion"] .edit-card-title')?.textContent).toBe("Show the host camera full-frame for the intro.");
 });
 
-it("keeps a request about one edit under that edit's row while Scarlet makes its suggestion again, with the line that says why", async () => {
+it("keeps a request about one edit under that edit's row while AirWaves makes its suggestion again, with the line that says why", async () => {
   appliedEdits();
   idle();
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
@@ -10192,12 +10192,12 @@ it("keeps a request about one edit under that edit's row while Scarlet makes its
   await act(async () => {});
   await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
   await act(async () => {});
-  // The video had moved on, so the suggestion is with Scarlet again. Its request stays where it was, under its edit's
+  // The video had moved on, so the suggestion is with AirWaves again. Its request stays where it was, under its edit's
   // row, and says why. The redo waits its turn in the tray under the request's own words.
   expect([row(), sub()!.querySelector(".unit-stop")]).toEqual(["captions", null]);
   expect(said().at(-1)).toBe(REDO_WAITS);
   expect(queueLines()).toEqual([["Next", "Suggestion", "Make the captions bigger."]]);
-  // Scarlet starts on it: the request is at work again in the same place, with Stop, and the line still says why.
+  // AirWaves starts on it: the request is at work again in the same place, with Stop, and the line still says why.
   // The redo names no edit of its own, and takes no block for itself.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_redo" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   expect(row()).toBe("captions");
@@ -10237,7 +10237,7 @@ it("keeps a redo the engine holds in the tray, which says what it waits for, and
   await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
   await act(async () => {});
   // The engine holds the redo until the pass's calls are made. The tray says so on its line, where Next would be, and
-  // the request's block doesn't say it is being redone, or that it waits to start: Scarlet isn't on it.
+  // the request's block doesn't say it is being redone, or that it waits to start: AirWaves isn't on it.
   const tray = () => container.querySelector<HTMLElement>('[aria-label="Queued requests"]')!;
   expect(queueLines()).toEqual([["Waits for your calls", "Suggestion", "Zoom in on the demo."]]);
   expect(tray().querySelector(".queue-next")?.classList.contains("is-waiting")).toBe(true);
@@ -10272,7 +10272,7 @@ it("lets the tag and the words on the tray's line give way together, so beside w
   });
 });
 
-it("says a suggestion no request made is being made again in Scarlet's words, queues it under its own, and gives its work no heading", async () => {
+it("says a suggestion no request made is being made again in AirWaves's words, queues it under its own, and gives its work no heading", async () => {
   vi.spyOn(api, "timeline").mockImplementation(async (_, version = "head") => ({ timeline: { ...data.timeline!, version } }));
   // No task lists this suggestion: nothing the editor asked for made it, so no request's heading can carry its redo.
   data = { ...data, tasks: data.tasks.map(t => ["queued", "claimed", "running", "waiting_for_user"].includes(t.state) ? { ...t, state: "done" as const, question: null } : t),
@@ -10288,12 +10288,12 @@ it("says a suggestion no request made is being made again in Scarlet's words, qu
   await act(async () => {});
   await click(buttonIn(container.querySelector('[aria-label="Suggestion"]')!, "Apply")!);
   await act(async () => {});
-  // The chat says it at once, as Scarlet's line under the suggestion, and the tray lists the redo under the
+  // The chat says it at once, as AirWaves's line under the suggestion, and the tray lists the redo under the
   // suggestion's own words: nothing here is the engine's name for the task.
   expect([...turn().querySelectorAll(".said")].map(p => p.textContent)).toEqual(["Cut 6 filler words (um, uh, you know).", REDO_WAITS]);
   expect(queueLines()).toEqual([["Next", "Suggestion", "Cut 6 filler words (um, uh, you know)"]]);
   expect(container.querySelector(".simple-thread")!.textContent).not.toMatch(/Redo on the current edit|Sent back|The agent/);
-  // Scarlet starts on it. Its work has no heading, since no request is behind it, and every request keeps its block.
+  // AirWaves starts on it. Its work has no heading, since no request is behind it, and every request keeps its block.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_redo" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   const work = container.querySelector<HTMLElement>('.simple-pin .unit[data-run="task_redo"]')!;
   expect([work.querySelector(".unit-msg"), work.querySelector('[aria-label^="Stop this edit"]')?.getAttribute("aria-label")]).toEqual([null, "Stop this edit"]);
@@ -10456,20 +10456,20 @@ it("draws a revision of one applied edit under that edit's row, at work, and und
   const sub = () => container.querySelector<HTMLElement>('.subunit[data-run="task_fix"]')!;
   const owner = () => sub().closest<HTMLElement>(".unit")!;
   // It is no block of its own: it is inside the request that made the edit, which holds the place above the message
-  // box while Scarlet is on it.
+  // box while AirWaves is on it.
   expect(container.querySelector('.unit[data-run="task_fix"]')).toBeNull();
   expect(owner().closest(".simple-pin")).not.toBeNull();
   expect(owner().querySelector(":scope > .unit-msg .simple-revising")).toBeNull();
   // While only the edit that needs the editor is listed it sits under what the request made: named for its edit, with
-  // the editor's words and Scarlet at work.
+  // the editor's words and AirWaves at work.
   expect(owner().querySelector(".simple-edits")?.getAttribute("aria-label")).toBe("Edits that need you");
   expect(sub().parentElement?.classList.contains("simple-pass")).toBe(true);
   expect([tagIn(sub()), wordsOf(sub().querySelector(".subunit-msg p"))]).toEqual(["Edit at 0:00", "Make the captions bigger."]);
-  expect(sub().querySelector('[aria-label="Scarlet’s work"] .working-text')).not.toBeNull();
-  // Its Stop is its own heading's last word, and the request that holds it has none: Scarlet isn't on that one.
+  expect(sub().querySelector('[aria-label="AirWaves’s work"] .working-text')).not.toBeNull();
+  // Its Stop is its own heading's last word, and the request that holds it has none: AirWaves isn't on that one.
   expect(sub().querySelector('.subunit-msg > .unit-actions [aria-label^="Stop this edit"]')).not.toBeNull();
   expect(owner().querySelector(":scope > .unit-msg > .unit-stop")).toBeNull();
-  // Opened, the list has it directly under the row it revises, and that row's word moves while Scarlet works.
+  // Opened, the list has it directly under the row it revises, and that row's word moves while AirWaves works.
   await click(seeAll(owner())!);
   const row = sub().previousElementSibling as HTMLElement;
   expect([row.className, row.querySelector(".simple-edit-title")?.textContent]).toEqual(["simple-edit", "captions"]);
@@ -10500,7 +10500,7 @@ it("keeps the list of what needs the editor, and only that, once one of its edit
   await click(owner().querySelector(".simple-pass-need")!);
   await act(async () => {});
   expect([list()?.getAttribute("aria-label"), rows(), openTitle()]).toEqual(["Edits that need you", [["wrap", undefined]], "wrap"]);
-  // The editor sends a revision of it. Scarlet takes it up, so the request moves above the message box, mounted anew.
+  // The editor sends a revision of it. AirWaves takes it up, so the request moves above the message box, mounted anew.
   const now = new Date().toISOString();
   await event(d => ({ ...d, tasks: [...d.tasks, { ...base, id: "task_fix", kind: "edit" as const, state: "running" as const, summary: null, changeIds: [], instruction: "Keep the last word.",
     createdAt: now, startedAt: now, finishedAt: undefined, expectedSeconds: undefined,
@@ -10508,7 +10508,7 @@ it("keeps the list of what needs the editor, and only that, once one of its edit
   await act(async () => {});
   expect(owner().closest(".simple-pin")).not.toBeNull();
   // The list is still just that edit, now Revising…, with the request directly under its row. The count disappears
-  // while Scarlet works on it, and See all remains available.
+  // while AirWaves works on it, and See all remains available.
   expect([list()?.getAttribute("aria-label"), rows()]).toEqual(["Edits that need you", [["wrap", "Revising…"]]]);
   expect(container.querySelector('.subunit[data-run="task_fix"]')!.previousElementSibling?.querySelector(".simple-edit-title")?.textContent).toBe("wrap");
   expect(reviewModes(owner())).toEqual([["For you", "true"], ["See all", "false"]]);
@@ -10530,7 +10530,7 @@ it("keeps the list of what needs the editor, and only that, once one of its edit
 
 it("draws a request about one place of an edit made in several once, under that edit's row, while only what needs the editor is listed", async () => {
   const { base, thread } = madeRequest();
-  // The captions went on in two places. Scarlet flagged the second, and the editor sent the first back.
+  // The captions went on in two places. AirWaves flagged the second, and the editor sent the first back.
   vi.spyOn(api, "threadEdits").mockImplementation(async (_project, threadId) => ({ version: data.project.head!,
     edits: threadId !== thread.id ? [] : [
       { changeId: "chg_approved_2", spot: 0, label: "music bed", range: { start: 0, end: 16 }, previous: [] },
@@ -10571,7 +10571,7 @@ it("keeps a request about an edit that isn't among the ones that need the editor
   expect(under[0]!.previousElementSibling?.classList.contains("simple-edits")).toBe(true);
 });
 
-it("keeps Scarlet's reply to two lines however long it is, and opens it in full on a click", async () => {
+it("keeps AirWaves's reply to two lines however long it is, and opens it in full on a click", async () => {
   // A reply that runs past its two lines, as the window measures it.
   const tooLong = vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(900);
   await show();
@@ -10659,8 +10659,8 @@ it("leaves a flagged edit that's open where it is when need you is pressed, as a
   expect(openTitle()).toBe("captions");
 });
 
-it("opens the next edit when one Scarlet didn't flag is kept, with a flagged edit further on", async () => {
-  // music bed, captions, and wrap, which Scarlet flagged.
+it("opens the next edit when one AirWaves didn't flag is kept, with a flagged edit further on", async () => {
+  // music bed, captions, and wrap, which AirWaves flagged.
   appliedEdits();
   await show();
   await act(async () => {});
@@ -11038,7 +11038,7 @@ it("plays a suggestion only on the editor's press on its line: its card comes ba
   // The strip is back with the reason. Nobody pressed play, so it waits where it begins.
   expect(strip()?.querySelector('[role="alert"]')?.textContent).toBe("The engine stopped.");
   expect(play).toHaveBeenCalledTimes(1);
-  // A revision that changes nothing brings it back the same way: the suggestion leaves while Scarlet has it and
+  // A revision that changes nothing brings it back the same way: the suggestion leaves while AirWaves has it and
   // returns as it was, paused.
   await event(d => ({ ...d, changes: d.changes.map(c => c.id === "chg_ready" ? { ...c, state: "revising" as const } : c) }));
   expect(strip()).toBeNull();
@@ -11246,7 +11246,7 @@ it("plays the video on without a break while a pass saves new working cuts, and 
   expect(container.querySelector(".caught-up-notice")).toBeNull();
 });
 
-/** A request that made the three edits, with Scarlet's closing words, and nothing running. */
+/** A request that made the three edits, with AirWaves's closing words, and nothing running. */
 const madeRequest = () => {
   appliedEdits();
   idle();
@@ -11264,7 +11264,7 @@ const captionFix = (base: ProjectData["tasks"][number], threadId: string, over: 
     context: { threadId, changeId: "chg_approved_2", editIndex: 1, time: 0.2, end: 2.4, message: "Make the captions bigger." }, ...over };
 };
 
-it("takes Scarlet's closing words out of the chat with a revision that has left, and keeps the request's own under its block", async () => {
+it("takes AirWaves's closing words out of the chat with a revision that has left, and keeps the request's own under its block", async () => {
   const { base, thread } = madeRequest();
   data = { ...data, tasks: [...data.tasks, captionFix(base, thread.id)] };
   useProjectStore.setState({ current: data });
@@ -11284,13 +11284,13 @@ it("takes Scarlet's closing words out of the chat with a revision that has left,
   expect(block.nextElementSibling?.textContent).toContain("Check edit 3 to hear how the ending lands.");
 });
 
-it("gives a request's list the place of Scarlet's reply while it's open, and brings the reply back when it's put away", async () => {
+it("gives a request's list the place of AirWaves's reply while it's open, and brings the reply back when it's put away", async () => {
   madeRequest();
   await showFolded();
   await act(async () => {});
   const block = () => container.querySelector<HTMLElement>('.unit[data-run="task_made"]')!;
   const reply = () => block().nextElementSibling?.classList.contains("from-scarlet") ? block().nextElementSibling!.querySelector(".said")?.textContent : undefined;
-  // For you shows the flagged edit, and Scarlet's reply follows the block.
+  // For you shows the flagged edit, and AirWaves's reply follows the block.
   expect(reply()).toBe("Check edit 3 to hear how the ending lands.");
   const drawn = block();
   // With every edit listed, the list has the reply's place and the block stays mounted.
@@ -11316,7 +11316,7 @@ it("keeps a revision whose new version couldn't be prepared, since nothing else 
   await act(async () => {});
   const fix = container.querySelector<HTMLElement>('[data-run="task_fix"]');
   expect(fix?.textContent).toContain("Make the captions bigger.");
-  // Scarlet's words are all it has: no row under them names the edit again or offers to open a version that isn't there.
+  // AirWaves's words are all it has: no row under them names the edit again or offers to open a version that isn't there.
   expect([...fix!.querySelectorAll(".req > *")].map(row => row.className)).toEqual(["req-said"]);
   expect(fix!.querySelector(".req-said .said")?.textContent).toBe("I couldn’t prepare the preview for this edit.");
 });
@@ -11327,7 +11327,7 @@ it("moves a request's closing words with its block to the place above the messag
   await act(async () => {});
   const block = () => container.querySelector<HTMLElement>('.unit[data-run="task_made"]')!;
   expect(block().closest(".simple-chat")).not.toBeNull();
-  // Scarlet starts on a revision of one of its edits: the block holds the place above the box, its words with it.
+  // AirWaves starts on a revision of one of its edits: the block holds the place above the box, its words with it.
   await event(d => ({ ...d, tasks: [...d.tasks, captionFix(base, thread.id)] }));
   await act(async () => {});
   expect(block().closest(".simple-pin")).not.toBeNull();
@@ -11342,7 +11342,7 @@ it("keeps a list the editor opened on a request open when a revision of one of i
   const block = () => container.querySelector<HTMLElement>('.unit[data-run="task_made"]')!;
   await click(seeAll(block())!);
   expect(block().querySelectorAll(".simple-edits .simple-edit").length).toBe(3);
-  // The block moves above the message box while Scarlet revises, and is mounted anew there: the list stays open.
+  // The block moves above the message box while AirWaves revises, and is mounted anew there: the list stays open.
   await event(d => ({ ...d, tasks: [...d.tasks, captionFix(base, thread.id)] }));
   await act(async () => {});
   expect(block().closest(".simple-pin")).not.toBeNull();
@@ -11381,7 +11381,7 @@ it("keeps a request that is tried again in its one block, and out of the queue",
   expect(blocks()[0]!.getAttribute("data-run")).toBe("task_zoom");
   expect(blocks()[0]!.querySelector('.req-status [role="status"]')?.textContent).toBe("Queued");
   expect(container.querySelector(".queue-row")).toBeNull();
-  // Once Scarlet is on it, the same block holds the place above the message box.
+  // Once AirWaves is on it, the same block holds the place above the message box.
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_busy" ? { ...t, state: "done" as const, finishedAt: new Date().toISOString() }
     : t.id === "task_zoom_again" ? { ...t, state: "running" as const, startedAt: new Date().toISOString() } : t) }));
   await act(async () => {});
@@ -11392,7 +11392,7 @@ it("keeps a request that is tried again in its one block, and out of the queue",
 it("names a queued request about an edit the same way with the timeline on its request and after it moves to a later one", async () => {
   earlierRequestOnly();
   const later = laterRequest();
-  // Sent while Scarlet was busy, about the earlier request's third edit. Its own time is where the passage around it starts.
+  // Sent while AirWaves was busy, about the earlier request's third edit. Its own time is where the passage around it starts.
   const base = buildDb().tasks.find(t => t.id === "task_done")!;
   data = { ...data, changes: [...data.changes, later.change], tasks: [...data.tasks, { ...base, id: "task_about_wrap", state: "queued" as const, startedAt: undefined,
     finishedAt: undefined, hostId: null, summary: null, changeIds: [], instruction: "Hold the last word.", createdAt: new Date().toISOString(),
@@ -11413,7 +11413,7 @@ it("names a queued request about an edit the same way with the timeline on its r
   expect(tag()).toBe("Edit at 0:11");
 });
 
-it("shows all of Scarlet's reply to a request that changed nothing, kept to two lines until it's opened", async () => {
+it("shows all of AirWaves's reply to a request that changed nothing, kept to two lines until it's opened", async () => {
   idle();
   const base = data.tasks.find(t => t.id === "task_done")!;
   const asked = new Date().toISOString();
@@ -11507,7 +11507,7 @@ it("opens again, after a quit, the call or the cut that was open, without playin
   const aim = useUiStore.getState().draftOwner;
   const place = bookmark();
   expect(new URLSearchParams(place.split("?")[1]).get("open")).toMatch(/^call:[\w-]+:\d+$/);
-  // Scarlet quits and opens at that place: the call's card is back, and nothing plays until the editor says so.
+  // AirWaves quits and opens at that place: the call's card is back, and nothing plays until the editor says so.
   listen.mockClear();
   await act(async () => root.unmount());
   // The project's page closing puts the message away under what it was aimed at.
@@ -11672,7 +11672,7 @@ it("keeps the call the editor is on, and the list of calls, when another call's 
   finishedPass();
   await show();
   await act(async () => {});
-  // The editor sent the first and the last call back. Scarlet is on the first; the last waits its turn.
+  // The editor sent the first and the last call back. AirWaves is on the first; the last waits its turn.
   await event(d => ({ ...d, tasks: [...d.tasks,
     callRequest("task_note1", 0, { kind: "edit" as const, state: "running" as const, startedAt: new Date().toISOString() }),
     callRequest("task_note2", 2, laterNote)] }));
@@ -11698,7 +11698,7 @@ it("keeps the call the editor is on, and the list of calls, when another call's 
   await event(d => ({ ...d, tasks: d.tasks.map(t => t.id === "task_note1" ? { ...t, changeIds: [revised.id] } : t) }));
   await act(async () => {});
   asItWas();
-  // Scarlet moves on to the last call. Nothing changes for the one that's open. The list takes up the revision once the
+  // AirWaves moves on to the last call. Nothing changes for the one that's open. The list takes up the revision once the
   // open call's listen stops: until then the pass it plays on holds.
   await runPasses("task_note1", "task_note2");
   await act(async () => {});
@@ -11755,7 +11755,7 @@ it("leaves full screen when Revise hands the keyboard to the message box, which 
   await press("r");
   expect(useUiStore.getState().composerFocus).toBe(1);
   expect(boxTag()).toBe("Edit at 0:00");
-  // The box is in the chat, behind the player: typed into unseen, the message went to Scarlet on Enter.
+  // The box is in the chat, behind the player: typed into unseen, the message went to AirWaves on Enter.
   expect(stage.dataset.expanded).toBeUndefined();
   expect(editPanel()).not.toBeNull();
 });
@@ -11841,7 +11841,7 @@ it("puts a marked stretch on the message beside the edit that's open, which stay
   await act(async () => {});
   const edit = useUiStore.getState().agentContext as AgentContext;
   expect([openTitle(), boxTag()]).toEqual(["captions", "Edit at 0:04"]);
-  // Outside the edit's own passage: Scarlet is told both and works out which the words mean.
+  // Outside the edit's own passage: AirWaves is told both and works out which the words mean.
   await markOnRuler(11, 16);
   const both = useUiStore.getState().agentContext as AgentContext;
   expect(both).toMatchObject({ changeId: edit.changeId, editIndex: edit.editIndex, time: edit.time, end: edit.end });
@@ -11948,7 +11948,7 @@ it("shows the whole timeline on any press on a request's band", async () => {
   }
 });
 
-it("goes from a kept edit Scarlet didn't flag to a call still waiting, or a flagged edit, when it comes next in the list", () => {
+it("goes from a kept edit AirWaves didn't flag to a call still waiting, or a flagged edit, when it comes next in the list", () => {
   const edit = (at: number, check?: string, kept = false) => ({ changeId: "chg_pass", spot: at, label: `at ${at}`, range: { start: at, end: at + 1 }, previous: [], kept, ...(check && { check }) });
   const rows = [[edit(13, undefined, true)], [edit(21)], [edit(35)], [edit(45, "Listen to the join.")], [edit(50)]];
   const still = (e: object) => !(e as { kept: boolean }).kept;

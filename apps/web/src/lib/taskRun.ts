@@ -304,7 +304,7 @@ export function runSummary(task: Task, change?: Change): string {
     // Edit labels are sometimes fragments ("the screen demonstrations"). Use them only when they read as a title.
     return label && label.length <= 48 && /^\p{Lu}/u.test(label) ? label : firstWords(change.description);
   }
-  // Only what the chat would show as Scarlet's words: a reply that was commands, or the request said back, says
+  // Only what the chat would show as AirWaves's words: a reply that was commands, or the request said back, says
   // nothing here either.
   const said = editConfirmation(taskChatText(task), requestText(task));
   return said ? firstWords(said) : "Done";
@@ -312,7 +312,7 @@ export function runSummary(task: Task, change?: Change): string {
 
 /**
  * How long the run actually worked: from start to finish (or now), minus every stretch spent waiting
- * for the editor to answer a question. Time waiting on the editor is never Scarlet's work.
+ * for the editor to answer a question. Time waiting on the editor is never AirWaves's work.
  */
 function workClock(task: Task, events: readonly TaskEvent[]) {
   const time = (x?: string | null) => Date.parse(x ?? "") || 0;
@@ -335,7 +335,7 @@ function workClock(task: Task, events: readonly TaskEvent[]) {
   };
 }
 
-/** Active work in this task, including earlier claims when Scarlet recorded them. */
+/** Active work in this task, including earlier claims when AirWaves recorded them. */
 export function workTime(task: Task, events: readonly TaskEvent[], now: number): number | undefined {
   const working = task.state === "claimed" || task.state === "running";
   const start = Date.parse(task.startedAt ?? "");

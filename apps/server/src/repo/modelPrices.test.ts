@@ -31,7 +31,7 @@ let dir: string;
 beforeEach(async () => { dir = await mkdtemp(join(tmpdir(), "scarlet-prices-")); });
 afterEach(async () => { await rm(dir, { recursive: true, force: true }); });
 
-it("keeps the chat models of the providers Scarlet runs, per million tokens, with their speeds", () => {
+it("keeps the chat models of the providers AirWaves runs, per million tokens, with their speeds", () => {
   expect(pickPrices(raw)).toEqual({
     "claude-opus-9": { rates: [4, 20, 0.2, 5], multipliers: { fast: 2 } },
     "gemini-9-pro": { rates: [1, 4] },
@@ -51,7 +51,7 @@ it("prices a model only the list has, and each speed at its own rate", () => {
   expect(estimateApiTokenCost("gemini-9-pro", usage, at, { prices })).toBeUndefined();
 });
 
-it("prefers Scarlet's own rates at standard speed and takes a speed from the list", () => {
+it("prefers AirWaves's own rates at standard speed and takes a speed from the list", () => {
   const prices = new ModelPrices({}, { fetchedAt: at, models: { "gpt-6.2-sol": { rates: [99, 99, 99, 99], tiers: { priority: [4, 20, 0.2, 5] } } } });
   expect(estimateApiTokenCost("gpt-6.2-sol", usage, at, { prices })).toBeCloseTo(12.1, 9);
   expect(estimateApiTokenCost("gpt-6.2-sol", usage, at, { prices, tier: "priority" })).toBeCloseTo(24.2, 9);

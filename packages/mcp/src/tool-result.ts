@@ -56,7 +56,7 @@ export function describeError(err: unknown): string {
     const issues = err.code === "validation_error" ? z.array(z.object({ path: z.array(z.union([z.string(), z.number()])), message: z.string() }))
       .safeParse(err.details) : undefined;
     const detail = issues?.success && issues.data.length ? `\n${formatIssues(issues.data)}` : "";
-    return `Scarlet server error ${err.status} (${err.code}): ${err.message}${detail}`;
+    return `AirWaves server error ${err.status} (${err.code}): ${err.message}${detail}`;
   }
   if (err instanceof z.ZodError) return `Validation failed:\n${formatZodError(err)}`;
   if (err instanceof Error) return `${err.name}: ${err.message}${errorCause(err)}`;

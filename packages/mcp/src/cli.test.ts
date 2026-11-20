@@ -56,7 +56,7 @@ describe("main", () => {
     vi.stubEnv("SCARLET_TASK_STARTED_AT", "2026-10-31T00:00:00.000Z");
     try {
       const args = ["--server", "http://localhost:4000", "--project", "project", "--task", "task"];
-      await expect(main(args)).rejects.toThrow("Update the Scarlet engine");
+      await expect(main(args)).rejects.toThrow("Update the AirWaves engine");
       current = true;
       await expect(main(args)).rejects.toThrow("no longer active");
     } finally { fetch.mockRestore(); vi.unstubAllEnvs(); }

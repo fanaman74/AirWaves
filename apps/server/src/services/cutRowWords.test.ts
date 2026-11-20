@@ -19,7 +19,7 @@ it("names a cut saved without a summary by the words beside it, so a pass's rows
     edit("Shortened a pause", 0.45, 0.5),
     edit("Cut a false start", 0.5, 1.9),
     edit("Shortened a pause", 4.95, 5),
-    // Scarlet's own summary, and an edit that isn't named by its kind, stay as they are.
+    // AirWaves's own summary, and an edit that isn't named by its kind, stay as they are.
     edit("Cut the repeat", 0.9, 2.4, { summary: "Cut the repeat" }),
     edit("Punched in on Matt", 3, 4, { beforeCut: undefined }),
   ], () => before).map(e => e.label);

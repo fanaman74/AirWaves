@@ -18,7 +18,7 @@ beforeEach(() => {
   vi.resetModules();
 });
 
-/** Scarlet quit with `saved` on this computer. The next launch starts from that alone. */
+/** AirWaves quit with `saved` on this computer. The next launch starts from that alone. */
 async function relaunch(saved: string) {
   vi.resetModules();
   importLocalFile.mockClear();
@@ -55,7 +55,7 @@ it("remembers imports until each file is in the project, and carries on with the
   await job;
   expect(pendingImports("prj")).toEqual([]);
 
-  // Scarlet quit while the first file was copying. The next launch starts from what was saved.
+  // AirWaves quit while the first file was copying. The next launch starts from what was saved.
   vi.resetModules();
   importLocalFile.mockClear();
   // The quit came a little after that snapshot: b.mov's copy had begun as well.
@@ -98,7 +98,7 @@ it("downloads a link once however often its project reopens, and again after a q
   await resumeImports("prj", []);
   expect(importLocalFile).not.toHaveBeenCalled();
 
-  // Scarlet quit mid-download. The next launch starts the link again.
+  // AirWaves quit mid-download. The next launch starts the link again.
   const relaunched = await relaunch(saved);
   await relaunched.resumeImports("prj", []);
   expect(importLocalFile.mock.calls.map(call => call[1])).toEqual([link]);
@@ -116,7 +116,7 @@ it("matches a new project's format to its first video after a quit interrupted t
   const saved = await savedMidImport(project.id, ["/clips/a.mov", "/clips/b.mov"], project);
   expect(JSON.parse(saved).map((i: { source: string; setsFormat?: boolean }) => [i.source, i.setsFormat])).toEqual([["/clips/a.mov", true], ["/clips/b.mov", true]]);
 
-  // Scarlet quit while the first file was copying. The project reopens as it was created.
+  // AirWaves quit while the first file was copying. The project reopens as it was created.
   const relaunched = await relaunch(saved);
   store.current = { id: project.id, project };
   let finishSecond!: () => void;
@@ -177,7 +177,7 @@ it("keeps the first file recoverable through a second quit while its format is b
 
 it("imports a file still waiting its turn though one of the same name arrived meanwhile, and not the one whose copy had begun", async () => {
   const project = createProject("Two cameras");
-  // The copy of the first clip had begun when Scarlet quit; the second, same name from another folder, was still waiting.
+  // The copy of the first clip had begun when AirWaves quit; the second, same name from another folder, was still waiting.
   const saved = await savedMidImport(project.id, ["/camera-a/clip.mov", "/camera-b/clip.mov"]);
   expect(JSON.parse(saved).map((i: { started?: boolean }) => i.started)).toEqual([true, false]);
   const relaunched = await relaunch(saved);
@@ -450,7 +450,7 @@ it("keeps the retry for the next engine when a project read preceded the outage"
 
 it("carries on the imports of every project at launch, not only the one on screen", async () => {
   const { pendingImports } = await import("../../lib/pendingImports");
-  // Files dropped on two projects' cards, and a third project in the Trash, when Scarlet quit.
+  // Files dropped on two projects' cards, and a third project in the Trash, when AirWaves quit.
   const at = new Date().toISOString();
   const { resumeAllImports } = await relaunch(JSON.stringify([
     { projectId: "prj_a", source: "/clips/a.mov", at, started: false }, { projectId: "prj_b", source: "/clips/b.mov", at, started: false },

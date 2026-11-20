@@ -24,7 +24,7 @@ export function loadRuntime(): typeof Ort {
   const bin = dirname(process.execPath);
   const locations = [join(bin, "uhm-runtime"), join(bin, "../Resources/uhm-runtime")];
   const runtime = locations.map(p => join(p, "dist/runtime.cjs")).find(p => existsSync(p));
-  if (!runtime) throw new Error("The installed Scarlet engine is missing its Uhm runtime.");
+  if (!runtime) throw new Error("The installed AirWaves engine is missing its Uhm runtime.");
   return req(runtime);
 }
 

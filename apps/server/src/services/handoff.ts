@@ -28,7 +28,7 @@ interface ProbedStream {
   tags?: Record<string, string>;
 }
 
-/** What another app needs to know about a file that Scarlet's own record leaves out: its timecode and its sound. */
+/** What another app needs to know about a file that AirWaves's own record leaves out: its timecode and its sound. */
 async function probeForHandoff(file: string, signal?: AbortSignal) {
   try {
     const out = await ffprobe(["-print_format", "json", "-show_format", "-show_streams", file], { signal });
@@ -65,7 +65,7 @@ export interface Handoff {
  */
 export async function buildHandoff(ctx: Ctx, project: Project, timeline: Timeline, folder: string, signal?: AbortSignal): Promise<Handoff> {
   if (!isAbsolute(folder)) throw badRequest("handoff_folder", "Choose where to save the folder.");
-  const base = safeFileName(folder.split(/[\\/]/).filter(Boolean).pop() || project.name).trim() || "Scarlet";
+  const base = safeFileName(folder.split(/[\\/]/).filter(Boolean).pop() || project.name).trim() || "AirWaves";
   const assets = usedMedia(project, timeline);
   const colors = [...new Set(timeline.tracks.flatMap(track => track.clips.flatMap(clip => clip.kind === "color" && parseColor(clip.color) ? [clip.color] : [])))];
   const names = handoffFileNames([

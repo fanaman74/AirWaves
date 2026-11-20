@@ -6,7 +6,7 @@ import { ActivityProgress } from "../ui/primitives";
 import type { LocalImport, UploadItem } from "./UploadDropzone";
 
 /**
- * The step of reading a file that Scarlet is on, and how far that step has got. Media's row and the card over the
+ * The step of reading a file that AirWaves is on, and how far that step has got. Media's row and the card over the
  * player say both the same way. There is no guess at the time left, and a step still under way never says 100%.
  * `paused`: the pause holds a file's read until resume, so no step is under way and it says only that (`held`).
  */

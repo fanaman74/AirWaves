@@ -13,7 +13,7 @@ type Page = { data?: Transcript; error?: string; done: Promise<void> };
  * Pages of finished transcripts already read. A chunk's key names its transcript, and a transcript that has been
  * aligned never changes under its ID, so neither do its pages. The Transcript column is mounted again for each new
  * working cut, and without these it read the whole transcript again every time: 60 requests for an hour of footage,
- * on every edit Scarlet saved while the column was open.
+ * on every edit AirWaves saved while the column was open.
  */
 const readPages = new Map<string, Transcript>();
 /** About four hours of footage. */

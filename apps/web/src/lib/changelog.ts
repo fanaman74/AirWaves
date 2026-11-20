@@ -15,7 +15,7 @@ export function parseChangelog(text: string): ChangelogDay[] {
   return days.filter(day => day.changes.length);
 }
 
-/** What this build of Scarlet says changed, up to and including itself. */
+/** What this build of AirWaves says changed, up to and including itself. */
 export const CHANGELOG: ChangelogDay[] = parseChangelog(source);
 
 /** The changes a newer build's changelog lists that this build's doesn't, newest first. */

@@ -471,7 +471,7 @@ it("keeps a transcription's place in line when the socket is ahead of the reques
   expect(useProjectStore.getState().current!.tasks).toEqual([waiting]);
 });
 
-it("doesn't put a request back in line when the answer's reply arrives after Scarlet picked it up", async () => {
+it("doesn't put a request back in line when the answer's reply arrives after AirWaves picked it up", async () => {
   const db = buildDb();
   const project = db.projects.find(p => p.id === PRJ)!;
   const asked = { ...db.tasks.find(t => t.kind !== "transcribe")!, id: "task_asking", state: "waiting_for_user" as const, question: "Smaller by how much?", finishedAt: undefined };
@@ -502,7 +502,7 @@ it("keeps a queued request's hold, new words and early start as the engine answe
   await initial.rewordTask(queued.id, "Shorter", ["skl_dialogue"]);
   expect(api.rewordTask).toHaveBeenCalledExactlyOnceWith(queued.id, "Shorter", ["skl_dialogue"]);
   expect(store().tasks[0]!.instruction).toBe("Shorter");
-  // Scarlet picked it up before the answer came back: the answer doesn't put it back in line.
+  // AirWaves picked it up before the answer came back: the answer doesn't put it back in line.
   open({ tasks: [running] });
   await initial.startBeforeCalls(queued.id);
   await initial.holdForRewording(queued.id, false);
@@ -541,16 +541,16 @@ function open(extra: Partial<ProjectData> = {}) {
 const said = (id: string, second: number, text = id): TaskEvent => ({ id, type: "log", text, at: new Date(Date.UTC(2026, 9, 30, 12, 0, second)).toISOString() });
 const store = () => useProjectStore.getState().current!;
 
-it("doesn't put a new request back in line when the reply that made it arrives after Scarlet picked it up", async () => {
+it("doesn't put a new request back in line when the reply that made it arrives after AirWaves picked it up", async () => {
   const { db, project, current } = open();
   const queued = { ...db.tasks.find(t => t.kind !== "transcribe")!, id: "task_new", projectId: PRJ, state: "queued" as const, finishedAt: undefined };
-  // The engine tells the socket before it answers: by then Scarlet has the request.
+  // The engine tells the socket before it answers: by then AirWaves has the request.
   const claimed = { ...queued, state: "claimed" as const };
   const note = { ...db.notes[0]!, id: "note_new", projectId: PRJ };
   const change = { ...db.changes.find(c => c.state === "ready")!, projectId: PRJ };
   vi.spyOn(api, "createNote").mockResolvedValue({ note, task: queued });
   vi.spyOn(api, "createVoiceNote").mockResolvedValue({ note, task: queued });
-  // An approval that overlaps a newer edit is sent back to Scarlet, as a request of its own.
+  // An approval that overlaps a newer edit is sent back to AirWaves, as a request of its own.
   vi.spyOn(api, "approveChange").mockResolvedValue({ change, project, outcome: "sent_back", task: queued });
   vi.spyOn(api, "workspace").mockResolvedValue({ project, timeline: current.timeline });
   const typed = () => initial.createNote(PRJ, { time: 3, text: "Tighten this" });
@@ -607,7 +607,7 @@ it("opens completed conversations in the task snapshot and retains steps receive
   expect(store().taskEvents[task.id]?.map(e => e.id)).toEqual(["tool", "saved", "live"]);
 });
 
-it("reads a run's steps again after the connection comes back, so what Scarlet did meanwhile shows", async () => {
+it("reads a run's steps again after the connection comes back, so what AirWaves did meanwhile shows", async () => {
   const { db, project } = open();
   const task = { ...db.tasks.find(t => t.kind !== "transcribe")!, id: "task_run", state: "running" as const };
   open({ tasks: [task] });
@@ -619,7 +619,7 @@ it("reads a run's steps again after the connection comes back, so what Scarlet d
   await initial.loadTaskEvents("task_run", "conversation");
   await initial.loadTaskEvents("task_run", "all");
   expect(store().taskEvents.task_run?.map(e => e.id)).toEqual(["e1"]);
-  // While the socket was down Scarlet took two more steps. Nothing but a fresh read can deliver them.
+  // While the socket was down AirWaves took two more steps. Nothing but a fresh read can deliver them.
   read.mockClear();
   read.mockResolvedValue({ task, events: [said("e1", 1), said("e2", 2), said("e3", 3)] });
   await initial.load(PRJ);
@@ -646,10 +646,10 @@ it("takes the engine's list of learnings after the connection comes back, so a r
   await initial.load(projectId);
   // Until the engine's list arrives the rules read as they did.
   expect(store().learnings?.map(l => [l.id, l.state])).toEqual([["lrn_saved", "saving"], ["lrn_back", "saving"], ["lrn_waiting", "suggested"]]);
-  // What happens here while the list is read is newer than the list: the editor approves a rule, and Scarlet offers another.
+  // What happens here while the list is read is newer than the list: the editor approves a rule, and AirWaves offers another.
   initial.applyEvent({ type: "learning.updated", projectId, learning: rule("lrn_waiting") });
   initial.applyEvent({ type: "learning.updated", projectId, learning: rule("lrn_new", { state: "suggested" }) });
-  // While the socket was down Scarlet saved one rule, which it no longer lists, and sent one back. No event said so.
+  // While the socket was down AirWaves saved one rule, which it no longer lists, and sent one back. No event said so.
   answer({ learnings: [rule("lrn_back", { state: "suggested", error: "It already says that." }), rule("lrn_waiting", { state: "suggested" })] });
   await vi.waitFor(() => expect(store().learnings?.map(l => [l.id, l.state, l.error])).toEqual([
     ["lrn_back", "suggested", "It already says that."], ["lrn_waiting", "saving", undefined], ["lrn_new", "suggested", undefined]]));
@@ -916,7 +916,7 @@ it("leaves the activity log alone until it has been opened", () => {
 
 it("merges activity received during the first history read without duplicates or reordering", async () => {
   open();
-  const entry = (id: string, second: number): ActivityEntry => ({ id, projectId: PRJ, actor: { type: "scarlet", name: "Scarlet" },
+  const entry = (id: string, second: number): ActivityEntry => ({ id, projectId: PRJ, actor: { type: "scarlet", name: "AirWaves" },
     type: "change.approved", summary: id, data: {}, createdAt: new Date(second * 1000).toISOString() });
   const activity = Array.from({ length: 200 }, (_, index) => entry(`page_${String(200 - index).padStart(3, "0")}`, 1));
   const newest = entry("newest", 2), earlier = entry("new_earlier", 1);

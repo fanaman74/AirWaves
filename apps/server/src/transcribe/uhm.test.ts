@@ -270,7 +270,7 @@ describe("filler detection in the audio helper", () => {
 
   it("says the installed engine is missing its runtime when the packaged one isn't beside it", () => {
     installed.packaged = true;
-    try { expect(() => loadRuntime()).toThrow("The installed Scarlet engine is missing its Uhm runtime."); }
+    try { expect(() => loadRuntime()).toThrow("The installed AirWaves engine is missing its Uhm runtime."); }
     finally { installed.packaged = false; }
   });
 

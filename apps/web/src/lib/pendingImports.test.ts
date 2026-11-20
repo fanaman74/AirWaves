@@ -55,7 +55,7 @@ it("marks a file whose copy has begun, and a new project's first files until its
   expect(localStorage.getItem(KEY)).toBe(settled);
 });
 
-it("reads what an older Scarlet saved, and drops entries it can't use", () => {
+it("reads what an older AirWaves saved, and drops entries it can't use", () => {
   localStorage.setItem(KEY, JSON.stringify([
     { projectId: "prj_1", source: "/cards/old.mov", at: "2026-10-01T10:00:00.000Z" },
     { projectId: "prj_1", source: "/cards/odd.mov", at: "2026-10-01T10:00:00.000Z", setsFormat: "yes", started: "no", extra: 1 },

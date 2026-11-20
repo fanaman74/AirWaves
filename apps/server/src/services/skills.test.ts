@@ -41,7 +41,7 @@ it("names what a version changed by the parts of the skill it touched", () => {
   expect(versionChange(base, base.replace("name: a-skill", "name: renamed"))).toBe("Changed the header");
 });
 
-describe("the skills Scarlet comes with", () => {
+describe("the skills AirWaves comes with", () => {
   let dataDir: string;
   let app: ScarletApp;
   beforeEach(async () => {
@@ -121,7 +121,7 @@ describe("the skills Scarlet comes with", () => {
 
   it("keeps the two-frame crossfade an editor had by default when their own dialogue guide doesn't ask for one", async () => {
     await upgrade();
-    // Before preferences moved into the guide, Scarlet added the crossfade at every join by itself.
+    // Before preferences moved into the guide, AirWaves added the crossfade at every join by itself.
     const content = "House rules for this interview.\nKeep the host's first take.\n";
     const mine = updateSkill(app.ctx, editor, publicGuide()!, { content });
     oldSettings({ aiCuts: { pause: "cut", filler: "cut", retake: "cut", coaching: "cut" }, pauseTightness: "natural", crossfadeFrames: 2 });
@@ -375,13 +375,13 @@ describe("a stock skill the editor deleted", () => {
     expect(stock).toMatchObject({ source: "bundled", enabled: true });
     const deleted = await app.app.request(`/api/skills/${stock.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken(app.ctx)}` } });
     expect(deleted.status).toBe(200);
-    // A skill Scarlet took away itself wasn't the editor's decision, so the next launch still seeds it.
+    // A skill AirWaves took away itself wasn't the editor's decision, so the next launch still seeds it.
     deleteSkill(app.ctx, named("add-captions")!);
     await app.ctx.close();
     launch();
     expect(named("frame-screen")).toBeUndefined();
     expect(named("add-captions")).toMatchObject({ source: "bundled", enabled: true });
-    // One the editor had edited is theirs, with nothing left to say Scarlet came with it. Deleted, it stays deleted too.
+    // One the editor had edited is theirs, with nothing left to say AirWaves came with it. Deleted, it stays deleted too.
     const edited = updateSkill(app.ctx, editor, named("add-captions")!, { content: named("add-captions")!.content + "\nKeep captions to two lines.\n" });
     expect(edited.source).toBeUndefined();
     deleteSkill(app.ctx, edited, editor);
@@ -410,7 +410,7 @@ describe("skills that the workflows replaced", () => {
     await rm(dataDir, { recursive: true, force: true });
   });
   const named = (name: string) => app.ctx.repos.skills.select("name = ?", [name])[0];
-  // The two starter shortcuts Scarlet shipped as quick actions, word for word.
+  // The two starter shortcuts AirWaves shipped as quick actions, word for word.
   const shipped = [
     { id: "act_pauses", name: "Tighten pauses here", target: "playhead" as const,
       instruction: "Tighten the pauses around this moment so it flows naturally. Keep breaths that help the rhythm." },
@@ -422,15 +422,15 @@ describe("skills that the workflows replaced", () => {
   const guide = [
     "---",
     "name: scarlet-basics",
-    "description: Use the current Scarlet project, version and review notes as the starting point for an edit.",
+    "description: Use the current AirWaves project, version and review notes as the starting point for an edit.",
     "agents: []",
     "---",
     "",
-    "# Scarlet Basics",
+    "# AirWaves Basics",
     "",
     "Start each editing turn with `project_get`. Use the editor’s referenced version and position to identify the passage. `timeline_at` maps a playhead time to each clip’s source time. `timeline_get` shows the clip properties needed for a patch.",
     "",
-    "Choose a workflow by the outcome the editor requested. A change to the words, a change to their sound and a change to the picture can each be made independently. Use the tools enabled for the project. When available, `change_review_cut` compares a changed spot by `changeId` and zero-based `index`. Repeat the call if Scarlet is preparing the preview. Request `includeAudio` only if you can play the returned WAV. Otherwise, give the editor the time to check in Scarlet’s player.",
+    "Choose a workflow by the outcome the editor requested. A change to the words, a change to their sound and a change to the picture can each be made independently. Use the tools enabled for the project. When available, `change_review_cut` compares a changed spot by `changeId` and zero-based `index`. Repeat the call if AirWaves is preparing the preview. Request `includeAudio` only if you can play the returned WAV. Otherwise, give the editor the time to check in AirWaves’s player.",
     "",
     "Submit one versioned change per editorial idea. Include the relevant `noteIds` when responding to feedback. Describe what changed and where. Check the returned state before reporting that an edit was applied or building on it. For alternatives, start each from the same version and leave the choice to the editor.",
     "",
@@ -443,7 +443,7 @@ describe("skills that the workflows replaced", () => {
   const render = [
     "---",
     "name: render-verify",
-    "description: Render a requested Scarlet delivery or verify a specific export, file property or quality-check range.",
+    "description: Render a requested AirWaves delivery or verify a specific export, file property or quality-check range.",
     "category: Delivery",
     "---",
     "",
@@ -453,13 +453,13 @@ describe("skills that the workflows replaced", () => {
     "",
     "`render_request` renders a range, or the whole video when the editor asks for a delivery. `render_status` with `inspectFile` measures the finished file, to compare with the project settings from `project_get`. `change_get` lists the renders of a change.",
     "",
-    "A render Scarlet's engine made and a local copy saved through **Export video** are separate files.",
+    "A render AirWaves's engine made and a local copy saved through **Export video** are separate files.",
     "",
   ].join("\n");
   const screen = [
     "---",
     "name: screen-recording",
-    "description: Reframe, pan or zoom an existing moving screen recording in Scarlet so the action stays readable.",
+    "description: Reframe, pan or zoom an existing moving screen recording in AirWaves so the action stays readable.",
     "category: Picture and graphics",
     "---",
     "",
@@ -521,7 +521,7 @@ describe("skills that the workflows replaced", () => {
   const smoothing = [
     "---",
     "name: smooth-audio-cuts",
-    "description: Fix clicks or abrupt room-tone changes at existing dialogue joins in Scarlet while preserving picture timing.",
+    "description: Fix clicks or abrupt room-tone changes at existing dialogue joins in AirWaves while preserving picture timing.",
     "category: Sound",
     "---",
     "",
@@ -573,7 +573,7 @@ describe("skills that the workflows replaced", () => {
     expect(usedBy(both.id)).toEqual([dialogue.id, captions.id]);
     expect(usedBy(neither.id)).toEqual([captions.id]);
     expect(usedBy(plain.id)).toEqual([]);
-    // Scarlet took them away, not the editor: nothing in the history says they deleted a skill.
+    // AirWaves took them away, not the editor: nothing in the history says they deleted a skill.
     expect(app.ctx.repos.activity.select("type = 'skill.deleted'")).toEqual([]);
   });
 
@@ -598,7 +598,7 @@ describe("skills that the workflows replaced", () => {
     expect(named("tighten-pauses-here")).toMatchObject({ source: "quick-action:act_pauses" });
   });
 
-  it("retires the guide Scarlet shipped, unless the editor made it theirs", () => {
+  it("retires the guide AirWaves shipped, unless the editor made it theirs", () => {
     const stock = createSkill(app.ctx, null, { name: "scarlet-basics", content: guide, scope: "team" }, { source: "bundled" });
     const run = uses([stock.id, named("add-captions")!.id]);
     retireMergedSkills(app.ctx);

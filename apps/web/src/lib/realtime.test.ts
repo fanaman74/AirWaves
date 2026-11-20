@@ -49,7 +49,7 @@ it("says reconnecting through the waits between tries, and offline only after it
   stop = startRealtime();
   latest().open();
   expect(status()).toBe("open");
-  // The engine goes away. Scarlet is already set to try again, so the wait reads as reconnecting, not offline.
+  // The engine goes away. AirWaves is already set to try again, so the wait reads as reconnecting, not offline.
   latest().drop();
   expect(status()).toBe("connecting");
   for (let failed = 1; failed < 4; failed++) {

@@ -1,7 +1,7 @@
 /**
  * Perception of an edited timeline: what plays in order, where the joins are and how each join
  * sounds. Everything here is measured and deterministic, so a model that cannot hear audio can
- * still verify its own edit. Scarlet reports; the model decides.
+ * still verify its own edit. AirWaves reports; the model decides.
  */
 import { clipDuration, formatTimecode, type MediaClip, type Project, type TimeRange, type Timeline, type TranscriptWord } from "@scarlet/timeline";
 import type { PictureEntrance } from "./picture-entrance.js";

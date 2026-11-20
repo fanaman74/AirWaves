@@ -140,7 +140,7 @@ export function ScrubPreview({ start = 0, duration, pictureAspect = 16 / 9, fram
   }, [file]);
 
   // The page builds `frameAt` again whenever the project or its media change, which they do while videos cache or
-  // Scarlet works. The bubble reads the latest one without being set up again: that would drop a drag in progress.
+  // AirWaves works. The bubble reads the latest one without being set up again: that would drop a drag in progress.
   const frameSource = useRef(frameAt);
   useLayoutEffect(() => { frameSource.current = frameAt; }, [frameAt]);
   // The bubble shows a pinned time from the next paint, without being set up again.

@@ -105,14 +105,14 @@ it("counts tokens at a glance and in full", () => {
   expect(tokenBreakdown({ ...usage, runs: 1 })).not.toContain("runs");
 });
 
-it("names who did something: an agent by its name in the interface, Scarlet, or the person", () => {
+it("names who did something: an agent by its name in the interface, AirWaves, or the person", () => {
   // The engine records an agent by its id, and a model by an alias. Neither is shown.
   expect(authorLabel({ type: "agent", id: "claude", name: "claude", model: "opus" })).toBe("Claude Code");
   expect(authorLabel({ type: "agent", id: "claude", name: "Claude Code", model: "opus" })).toBe("Claude Code");
   expect(authorLabel({ type: "agent", id: "codex", name: "Codex" })).toBe("Codex");
   // One this build doesn't know keeps the name it came with.
   expect(authorLabel({ type: "agent", id: "another", name: "Another agent" })).toBe("Another agent");
-  expect(authorLabel({ type: "scarlet", name: "anything" })).toBe("Scarlet");
+  expect(authorLabel({ type: "scarlet", name: "anything" })).toBe("AirWaves");
   expect(authorLabel({ type: "human", id: "u", name: "Matt" })).toBe("Matt");
   expect(initials("Matthew Berman")).toBe("MB");
   expect(initials("  ada   king  lovelace ")).toBe("AL");

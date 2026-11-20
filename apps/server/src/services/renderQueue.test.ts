@@ -533,19 +533,19 @@ it("tells the editor what to install when the FFmpeg in use can't draw the capti
   const failed = ctx.repos.renders.get(render.id);
   expect(failed).toMatchObject({ state: "failed", error: said });
   expect(failed).not.toHaveProperty("errorDetail");
-  expect(said).toMatch(/^This copy of FFmpeg can’t draw text, so Scarlet can’t draw the video’s captions\. .+ Then restart Scarlet and try again\.$/);
+  expect(said).toMatch(/^This copy of FFmpeg can’t draw text, so AirWaves can’t draw the video’s captions\. .+ Then restart AirWaves and try again\.$/);
 });
 
 it.each([
   ["a source file is gone", (media: string) => [`${media}/camera.mp4: No such file or directory\nError opening input file ${media}/camera.mp4.`, false],
-    "Scarlet can’t find “Camera” in this project’s files: export the logs from Settings → Advanced to report it."],
+    "AirWaves can’t find “Camera” in this project’s files: export the logs from Settings → Advanced to report it."],
   ["a source file can't be decoded", (media: string) => [`[mov,mp4,m4a,3gp,3g2,mj2 @ 0x7f8] moov atom not found\n${media}/camera.mp4: Invalid data found when processing input`, true],
-    "Scarlet can’t read “Camera” in this project’s files: export the logs from Settings → Advanced to report it."],
+    "AirWaves can’t read “Camera” in this project’s files: export the logs from Settings → Advanced to report it."],
   // The source is gone too, but ffmpeg named another file: that one is what it couldn't open.
-  ["ffmpeg can't open a file that isn't a source", (media: string) => [`${media}/../luts/grade.cube: No such file or directory`, false], "Scarlet couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it."],
+  ["ffmpeg can't open a file that isn't a source", (media: string) => [`${media}/../luts/grade.cube: No such file or directory`, false], "AirWaves couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it."],
   ["the disk is full", () => ["[out#0/mp4 @ 0x600] Error writing trailer: No space left on device", true],
     "There isn’t enough free disk space to render this: free some space, then try again."],
-  ["ffmpeg fails for its own reasons", () => ["[fc#0 @ 0x600] Error reinitializing filters!\nFailed to inject frame into filter network: Invalid argument", true], "Scarlet couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it."],
+  ["ffmpeg fails for its own reasons", () => ["[fc#0 @ 0x600] Error reinitializing filters!\nFailed to inject frame into filter network: Invalid argument", true], "AirWaves couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it."],
   // The renderer checks before it draws captions; this is for anything that asks for drawtext without that check.
   ["ffmpeg was built without drawtext", () => ["[AVFilterGraph @ 0x600] No such filter: 'drawtext'\nError : Filter not found", true], missingTextFilterMessage("draw the video’s captions")],
 ] as const)("says why a render failed in plain words when %s, and keeps ffmpeg's own output in the log and for an agent", async (_why, wrote, said) => {

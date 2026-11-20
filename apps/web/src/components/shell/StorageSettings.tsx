@@ -74,7 +74,7 @@ export function StorageSettings() {
     {import.meta.env.DEV && <DeveloperCaches />}
     {selection && <ConfirmDialog open danger={selection.kind === "trash"} onClose={() => select(undefined)}
       title={selection.kind === "trash" ? "Empty Trash?" : "Clear render cache?"}
-      body={selection.kind === "trash" ? `Permanently delete ${selection.rows.map(r => r.name).join(", ")}? This ${freedSpace(selection.rows) ? `frees ${freedSpace(selection.rows)} and ` : ""}cannot be undone.` : `Remove generated render segments for ${selection.rows[0]!.name}? Scarlet can rebuild them from the project media.`}
+      body={selection.kind === "trash" ? `Permanently delete ${selection.rows.map(r => r.name).join(", ")}? This ${freedSpace(selection.rows) ? `frees ${freedSpace(selection.rows)} and ` : ""}cannot be undone.` : `Remove generated render segments for ${selection.rows[0]!.name}? AirWaves can rebuild them from the project media.`}
       confirmLabel={selection.kind === "trash" ? "Delete permanently" : "Clear cache"}
       onConfirm={async () => {
         // What the last cleanup said doesn't stand beside this one's failure.

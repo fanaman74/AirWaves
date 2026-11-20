@@ -64,9 +64,9 @@ export function skillRoutes(ctx: Ctx) {
     const task = ctx.db.transaction(() => {
       const skill = requireSkill(c.req.param("skillId"));
       const running = latestSkillEdit(ctx, skill.id);
-      if (running && !FINISHED_TASK.has(running.state)) throw conflict("skill_edit_running", "Scarlet is already revising this skill");
+      if (running && !FINISHED_TASK.has(running.state)) throw conflict("skill_edit_running", "AirWaves is already revising this skill");
       const home = ctx.db.prepare("SELECT id FROM projects WHERE deleted_at IS NULL ORDER BY updated_at DESC LIMIT 1").get() as { id: string } | undefined;
-      if (!home) throw conflict("no_project", "Create a project first. Scarlet runs its requests from one.");
+      if (!home) throw conflict("no_project", "Create a project first. AirWaves runs its requests from one.");
       const task = createTask(ctx, {
         projectId: home.id,
         kind: "skill_edit",
@@ -98,7 +98,7 @@ export function skillRoutes(ctx: Ctx) {
       }
       requireActiveAttempt(ctx, requestAttempt(c.req.raw), projectId, task.id);
       const skill = requireSkill(target.skillId);
-      // The model supplies prose. Scarlet owns the name, the rest of the header and the version history.
+      // The model supplies prose. AirWaves owns the name, the rest of the header and the version history.
       const content = reviseSkillContent(skill, body);
       // A lost response may be sent again.
       if (task.resultSkillId && skill.content === content) return skill;
@@ -200,7 +200,7 @@ export function skillRoutes(ctx: Ctx) {
       if (change?.projectId !== projectId || change.state !== "approved" || (change.appliedVersion ?? change.toVersion) !== task.context.version) {
         throw conflict("change_not_approved", "The original change is no longer approved at the requested version");
       }
-      // The model supplies prose. Scarlet owns the frontmatter, destination and provenance.
+      // The model supplies prose. AirWaves owns the frontmatter, destination and provenance.
       const content = `---\nname: ${target.name}\ndescription: ${JSON.stringify(body.description)}\n---\n\n${body.instructions}\n`;
       if (task.resultSkillId) {
         const existing = ctx.repos.skills.get(task.resultSkillId);

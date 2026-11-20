@@ -23,7 +23,7 @@ describe("drawing an applied edit on the timeline", () => {
       .toMatchObject({ band: { start: 61, end: 61 }, bandLabel: "Cut" });
   });
 
-  it("names a graphic Scarlet laid over the picture apart from b-roll", () => {
+  it("names a graphic AirWaves laid over the picture apart from b-roll", () => {
     expect(editKindWord(edit({ kind: "graphic" }))).toBe("Graphic");
     expect(editKindWord(edit({ kind: "overlay" }))).toBe("Overlay");
   });
@@ -47,7 +47,7 @@ describe("the note on an applied edit's card", () => {
     expect(editNote(edited)).toBe(reason);
     expect(editNote({ ...edited, check: "Listen for the full score" })).toBe(`${reason} Listen for the full score`);
   });
-  it("is Scarlet's summary of the edit and nothing else, flagged or not", () => {
+  it("is AirWaves's summary of the edit and nothing else, flagged or not", () => {
     const summary = "Muted the call audio and the screen recording's demo sound, leaving only the camera mic";
     expect(editNote(edit({ label: "Use camera mic, mute call audio", check: "Screen recording's demo sound is muted too", summary }))).toBe(summary);
     expect(editNote(edit({ label: "Trim the false start", summary: "Trimmed the false start" }))).toBe("Trimmed the false start");

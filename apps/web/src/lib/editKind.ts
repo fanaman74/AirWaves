@@ -19,7 +19,7 @@ export function editRowWord(edit: Pick<ThreadEdit, "kind" | "marker">): string {
   return editKindWord(edit) ?? (edit.marker ? "To do" : "Edit");
 }
 
-/** The card shows why Scarlet made the edit and what to check. */
+/** The card shows why AirWaves made the edit and what to check. */
 export function editNote(edit: Pick<ThreadEdit, "label" | "check" | "summary" | "reason" | "recheck" | "marker" | "todo" | "reviewSays">, reviewFirst = false): string {
   // A marker changed nothing the editor sees or hears: what it asks of them is the point, so it comes first. A revision
   // only says it was revised, so what the marker asks is kept apart from it.

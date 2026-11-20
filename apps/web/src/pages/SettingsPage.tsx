@@ -11,6 +11,7 @@ import { api, errorMessage } from "../lib/client";
 import { desktop } from "../lib/desktop";
 import { Link, Navigate, Outlet, useBlocker, useLocation, useMatch, useNavigate } from "react-router-dom";
 import { ModelSettings } from "../components/shell/ModelSettings";
+import { AiProviderSettings } from "../components/shell/AiProviderSettings";
 import { DesktopAgents, DesktopDiagnostics, ExportLogs } from "../components/shell/DesktopSettings";
 import { EditingToolsSettings } from "../components/shell/EditingToolsSettings";
 import { useUiStore } from "../stores/ui";
@@ -270,6 +271,7 @@ function ServerSettingsForm({ section }: { section: "general" | "advanced" }) {
 
 const tabs = [
   { id: "general", label: "General", to: "/settings" },
+  { id: "providers", label: "AI providers", to: "/settings#providers" },
   { id: "models", label: "Models", to: "/settings#models" },
   { id: "tools", label: "Tools & skills", to: "/settings/skills" },
   { id: "usage", label: "Usage", to: "/settings#usage" },
@@ -331,6 +333,7 @@ export function SettingsPage() {
             <CheckInSettings />
           </>
         )}
+        {tab === "providers" && <AiProviderSettings />}
         {tab === "models" && <ModelSettings />}
         {tab === "tools" && (
           <>

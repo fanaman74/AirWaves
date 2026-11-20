@@ -37,12 +37,12 @@ it("stays quiet through a short drop in the connection, then says in words what 
   await after(2499);
   expect(said()).toBeUndefined();
   await after(1);
-  expect(said()).toBe("Reconnecting to Scarlet…");
+  expect(said()).toBe("Reconnecting to AirWaves…");
   // Giving up on the connection changes the words at once: the wait ran from when it dropped, and doesn't start again.
   await ws("closed");
   expect(said()).toBe("Offline: live updates paused");
   await ws("connecting");
-  expect(said()).toBe("Reconnecting to Scarlet…");
+  expect(said()).toBe("Reconnecting to AirWaves…");
   // Back, it says nothing, at once.
   await ws("open");
   expect(said()).toBeUndefined();

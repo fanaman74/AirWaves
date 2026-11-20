@@ -252,7 +252,7 @@ interface PreviewProps {
      * until its revision landed, or becomes one, is taken up as it was instead of started again.
      */
     heard?: { current: string | undefined };
-    /** Set while Scarlet opens again, at launch, what was open at the last quit: that passage is shown and not played. */
+    /** Set while AirWaves opens again, at launch, what was open at the last quit: that passage is shown and not played. */
     quiet?: { current: boolean } };
   /**
    * Play this rendered version instead, through `clock`, while everything on screen stays on the version shown.

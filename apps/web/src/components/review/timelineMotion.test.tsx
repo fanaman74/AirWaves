@@ -132,7 +132,7 @@ it("ends a drag that is held when a new working cut builds the timeline again, s
   Object.defineProperty(slider(), "setPointerCapture", { value() {} });
   await act(async () => { slider().dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, isPrimary: true, pointerId: 1, pointerType: "mouse", button: 0, clientX: 40 })); });
   expect([gestures.length, release.mock.calls.length]).toEqual([1, 0]);
-  // Scarlet applies a cut while the pointer is still down: the video is shorter, and its timeline is built anew.
+  // AirWaves applies a cut while the pointer is still down: the video is shorter, and its timeline is built anew.
   await draw(110);
   expect(gestures[0]!.aborted).toBe(true);
   expect(release).toHaveBeenCalledTimes(1);

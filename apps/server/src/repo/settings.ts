@@ -57,7 +57,7 @@ export class SettingsRepo {
     if (this.cache && this.raw === row?.json && this.revision === revision && this.cachedDefault === defaultProvider) return this.cache;
     const defaults = { ...DEFAULT_SETTINGS_INPUT, transcription: { provider: defaultProvider } };
     const settings = ServerSettings.parse(deepMerge(defaults, row ? JSON.parse(row.json) : {}));
-    // Transcription can't be turned off any more: an "Off" saved before goes back to the engine Scarlet ships with.
+    // Transcription can't be turned off any more: an "Off" saved before goes back to the engine AirWaves ships with.
     // "none" stays only for a build that has no engine to run, where it says transcription is unavailable.
     if (settings.transcription.provider === "none") settings.transcription.provider = defaultProvider;
     const revoke = this.cache && (this.revision !== revision || settings.transcription.provider !== this.cache.transcription.provider);

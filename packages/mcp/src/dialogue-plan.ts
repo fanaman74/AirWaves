@@ -1,7 +1,7 @@
 /**
  * The planning step of dialogue_apply_cuts, without I/O: resolve word references, validate the plan,
  * verify optional quotes, check every retake, filler and quoted production edge against the recording,
- * and record each change Scarlet makes for the agent's gate report. The MCP tool supplies live reads;
+ * and record each change AirWaves makes for the agent's gate report. The MCP tool supplies live reads;
  * offline replay (evals/src/replay.ts) supplies stored ones, so both run the same code.
  */
 import { cutScope, normalizeTranscriptToken, selectedRange, type RepeatOccurrence, type DialogueCutKind, type DialogueDetections, type Task } from "@scarlet/shared";
@@ -25,7 +25,7 @@ export interface DialogueCutInput {
   mediaId?: string;
   fromWord?: number;
   toWord?: number;
-  /** A pause, named by the word it follows. Scarlet trims it to `leave` seconds. */
+  /** A pause, named by the word it follows. AirWaves trims it to `leave` seconds. */
   afterWord?: number;
   leave?: number;
   /** Seconds of quiet between the cut and the next word, as heard. */
@@ -53,7 +53,7 @@ export interface DialoguePlanSources {
   project(): Promise<Project>;
   /**
    * Transcript words in transcript_get order, so word references keep their indices. A transcript can be read while
-   * Scarlet is still placing its words on the audio; with `through`, the times are final up to that source second.
+   * AirWaves is still placing its words on the audio; with `through`, the times are final up to that source second.
    * A recording with no transcript yet gets one made, and the read waits for it, unless `prepare` is false: then it
    * answers null at once.
    */
@@ -70,7 +70,7 @@ export interface DialoguePlanSources {
   readKeptWords?: ReadKeptWords;
   /** Actual duration of a centered dialogue crossfade in project frames, when known. */
   crossfadeFrames?: number;
-  /** The room tone the model asked joins to leave either side (its skill's pace). Scarlet's default when absent. */
+  /** The room tone the model asked joins to leave either side (its skill's pace). AirWaves's default when absent. */
   pace?: JoinPace;
   /**
    * Sound at speaking level in a stretch of a recording that holds no transcript word, when its levels can be read.
@@ -264,11 +264,11 @@ const HEARD_CONTEXT = 0.5;
 const HEARD_REACH = 1.5;
 
 /**
- * A pause reference Scarlet found nothing to take out of: the pause already plays as short as asked, the quiet it could
+ * A pause reference AirWaves found nothing to take out of: the pause already plays as short as asked, the quiet it could
  * trim in is shorter than the wait, or what would come out is less than a frame. The pause plays as it is.
  */
 export class NoPauseToTrim extends Error {}
-/** One cut of a batch that Scarlet could not turn into a range to remove. The batch's other cuts are unaffected. */
+/** One cut of a batch that AirWaves could not turn into a range to remove. The batch's other cuts are unaffected. */
 export class CutNotPlaced extends Error {}
 
 /**
@@ -293,7 +293,7 @@ async function resolvePauseCut(tl: Timeline, ref: { mediaId: string; afterWord: 
   const pageAt = (t: number) => scanPageAt(sources.pages(), ref.mediaId, 0, t);
   // `leave` is what the editor hears, and the clip plays the recording at its speed: at 2x, 0.4 s heard is 0.8 s of the
   // recording. The quiet the edges stay in is measured in the recording, so the trim is placed there.
-  // Callers inside Scarlet may omit `leave`; the agent's tools require it.
+  // Callers inside AirWaves may omit `leave`; the agent's tools require it.
   const speed = clip.speed ?? 1, pace = sources.pace ?? DEFAULT_PACE, leave = ref.leave ?? pace.after + pace.before;
   const cut = pauseCutRange(before, after, pageAt, leave * speed, { after: pace.after * speed, before: pace.before * speed }, ref.voiceIn === undefined ? undefined : ref.voiceIn * speed);
   const plays = cut.plays / speed;
@@ -313,7 +313,7 @@ async function resolvePauseCut(tl: Timeline, ref: { mediaId: string; afterWord: 
   const place = (source: number, room?: TimeRange) => round3(edgeOnFrame(on(source), room, fps, on));
   // A removal is saved on whole frames inside the quiet its edges sit in. Where that quiet holds one frame, both edges
   // land on it and nothing is left to remove: sent on, the empty range refused the whole batch as "is empty. Submit
-  // distinct nonoverlapping ranges", for a range Scarlet placed itself.
+  // distinct nonoverlapping ranges", for a range AirWaves placed itself.
   const start = place(cut.start, cut.room.start), end = place(cut.end, cut.room.end);
   if (end <= start) throw new NoPauseToTrim(`The pause between ${said} plays ${plays.toFixed(2)} s, and trimming it to ${leave.toFixed(2)} s would take out ` +
     `${Math.round((cut.end - cut.start) / speed * 1000)} ms: the quiet between the words holds no whole frame of version ${tl.version} to remove. It plays as it is.`);
@@ -400,7 +400,7 @@ export async function resolveCutRange(tl: Timeline, c: CutRef, label: string, so
   if (words === seconds) throw new Error(`${label}: give start/end in timeline seconds or mediaId with fromWord/toWord, not both or neither.`);
   if (pause) {
     if (!c.mediaId || c.fromWord !== undefined || c.toWord !== undefined) throw new Error(`${label}: a pause reference is mediaId with afterWord, without fromWord or toWord.`);
-    // How long a pause plays is pacing, and pacing is the agent's call: there is no length Scarlet picks for it.
+    // How long a pause plays is pacing, and pacing is the agent's call: there is no length AirWaves picks for it.
     if (c.leave === undefined) throw new Error(`${label}: give leave with afterWord, the seconds this pause should still play, word to word. Judge it by the delivery around it and the pace the skill asks for.`);
     return { ...await resolvePauseCut(tl, { mediaId: c.mediaId, afterWord: c.afterWord!, leave: c.leave, voiceIn: c.voiceIn }, sources), wordRef: true as const };
   }
@@ -431,11 +431,11 @@ type ResolvedCut = Omit<DialogueCutInput, "mediaId" | "fromWord" | "toWord" | "a
   input: number;
   words?: string;
   wordEdgeProblems?: string[];
-  /** Edges Scarlet placed at a dip in the level between two words that run together. */
+  /** Edges AirWaves placed at a dip in the level between two words that run together. */
   wordEdgeDips?: string[];
-  /** What Scarlet measured in the range that the agent's words for it do not say. */
+  /** What AirWaves measured in the range that the agent's words for it do not say. */
   notes?: string[];
-  /** Where a word reference's words play. Its edges were placed by Scarlet in the silence beyond them. */
+  /** Where a word reference's words play. Its edges were placed by AirWaves in the silence beyond them. */
   spoken?: TimeRange;
   /** Other word ranges that leave the same words playing and found measured quiet at both edges. */
   cleanAlternatives?: Array<{ fromWord: number; toWord: number }>;
@@ -451,9 +451,9 @@ interface PlannedDecision extends TimeRange {
   originalRange: TimeRange | undefined;
   /** Marks an applied cut as needing the editor until they keep it. */
   check?: string;
-  /** Why Scarlet held a cut the agent sent to apply: what it measured at the edges. The agent's reason stays its own. */
+  /** Why AirWaves held a cut the agent sent to apply: what it measured at the edges. The agent's reason stays its own. */
   held?: string;
-  /** Nothing Scarlet measures can settle this join (a same-word join): the cut waits for the editor, and the engine lets no later cut replace it. */
+  /** Nothing AirWaves measures can settle this join (a same-word join): the cut waits for the editor, and the engine lets no later cut replace it. */
   unheard?: true;
   /** Held for how its join measured, applied as placed only because the agent sent unsureJoins cut. */
   appliedAsPlaced?: true;
@@ -484,7 +484,7 @@ interface DialoguePlanRequest {
   /** Submitted cuts, by index, left out of this plan because their edges were disputed. The rest keep their indices. */
   setAside?: ReadonlySet<number>;
   /**
-   * What happens to a cut the model decided when Scarlet can't place its join cleanly: "ask" holds it for the editor
+   * What happens to a cut the model decided when AirWaves can't place its join cleanly: "ask" holds it for the editor
    * with the evidence, "cut" applies it as placed and reports the evidence to the model. Its skill says which.
    */
   unsureJoins?: UnsureJoins;
@@ -503,7 +503,7 @@ type DisputedEdge = Extract<DialoguePlan, { outcome: "needsRevision" }>["dispute
 /**
  * A batch as dialogue_apply_cuts saves it, shared with offline replay. A dispute names the cuts whose edges make it,
  * and the rest of the batch is saved without them, so a pass resubmits only what was disputed instead of the whole
- * batch: a refused batch cost a pass a turn and every cut again, five to seven times a pass (2026-11-16). A cut Scarlet
+ * batch: a refused batch cost a pass a turn and every cut again, five to seven times a pass (2026-11-16). A cut AirWaves
  * could not place is named before any edge is measured, so the rest can raise a dispute of its own once it is set
  * aside. Each round sets aside what the last one named.
  */
@@ -582,7 +582,7 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
   }
   const outside = cuts.filter(c => c.start < scope.start || c.end > scope.end);
   if (outside.length) throw new Error(`cuts ${outside.map(c => c.input).join(", ")} fall outside the range ${scope.start}–${scope.end} s.`);
-  // A range given as words has its edges placed by Scarlet in the silence beside the words. When the agent decides
+  // A range given as words has its edges placed by AirWaves in the silence beside the words. When the agent decides
   // that silence in the range next to it, as a pause cut before a retake, the placed edge lands inside that range
   // and the plan used to be refused: once or twice on most passes, a turn each. The placed edge gives way to the
   // range beside it, and the gate says so. The words themselves reaching into another range is still the agent's overlap to fix.
@@ -595,11 +595,11 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
       const was = placed[edge];
       placed[edge] = edge === "start" ? Math.max(placed.start, other.end) : Math.min(placed.end, other.start);
       if (Math.abs(placed[edge] - was) > 1e-6) placed.notes = [...(placed.notes ?? []),
-        `Scarlet placed its ${edge} at ${r2(was)} s, inside cut ${other.input}; it moved to ${r2(placed[edge])} s to meet that cut.`];
+        `AirWaves placed its ${edge} at ${r2(was)} s, inside cut ${other.input}; it moved to ${r2(placed[edge])} s to meet that cut.`];
     }
   }
   const sorted = [...cuts].sort((a, b) => a.start - b.start);
-  // Say which range and where it landed: a range given as words is placed by Scarlet, so the agent can't see that it
+  // Say which range and where it landed: a range given as words is placed by AirWaves, so the agent can't see that it
   // reached into the one beside it, and "cuts 1" alone cost a pass three tries.
   const placed = (c: ResolvedCut) => `cut ${c.input} (${c.words ? "words placed at " : ""}${r2(c.start)}–${r2(c.end)} s)`;
   const bad = sorted.flatMap((c, i) => c.end <= c.start ? [`${placed(c)} is empty`]
@@ -634,15 +634,15 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
   // Every removal's edges are measured. A production aside given in seconds without its quote used to skip the check
   // and apply as typed: one ended between "this game" and "let me", in continuous speech (2026-11-15).
   if (removals.length) await sources.measure(audibleSourcePoints(tl, removals.flatMap(c => [c.start, c.end])));
-  // Every change Scarlet makes to the plan goes back to the agent with its evidence.
+  // Every change AirWaves makes to the plan goes back to the agent with its evidence.
   const report: GateLine[] = [];
   const checkJoin = dialogueJoinChecker(tl, project, sources.pages(), sources.pace);
-  // An edge Scarlet could not move out of sound. The held cut is the model's to settle: an edge inside a word that is
+  // An edge AirWaves could not move out of sound. The held cut is the model's to settle: an edge inside a word that is
   // sounding there is never applied as placed, and dialogue_review_save neither asks the editor about it nor cuts it
   // there. Of eighteen calls one pass handed the editor, fifteen were held this way, asked about as "listen for the end
   // of …", and most were a word or a few frames off (2026-11-16).
   const inSound = new Map<number, { reason: string; inWord: boolean }>();
-  /** Cuts whose join Scarlet placed without a measurement that says it plays clean: the editor's to hear. */
+  /** Cuts whose join AirWaves placed without a measurement that says it plays clean: the editor's to hear. */
   const unheard = new Set<number>();
   const decisions = removals.map(c => {
     const decided: PlannedDecision = { start: c.start, end: c.end, reason: c.reason, review: c.decision === "review", kind: c.kind,
@@ -666,9 +666,9 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
     const offered = same?.sameWordJoin, said = offered && "“" + offered.word + "”";
     // Said of the cut as saved: the check's own words offer the seconds, and a pass sent the cut again on them.
     const placed = same?.sameWord ? { start: same.start, end: same.end, reason: same.reason ?? "" } : offered && { start: offered.start, end: offered.end,
-      reason: `Staged from ${r2(offered.start)} s, where the first ${said} begins: the word before runs into it with no pause, so Scarlet found its start by matching it to the second ${said} on their sound` +
+      reason: `Staged from ${r2(offered.start)} s, where the first ${said} begins: the word before runs into it with no pause, so AirWaves found its start by matching it to the second ${said} on their sound` +
         `${offered.takesFirst ? `, and took out the first ${said} too, which the range as given left playing twice` : ""}. No kept word is cut as measured. ` +
-        "Scarlet can't hear the join and neither can you, so it waits for the editor as a call: record ask on it. Nothing else is needed on this cut." };
+        "AirWaves can't hear the join and neither can you, so it waits for the editor as a call: record ask on it. Nothing else is needed on this cut." };
     if (placed) {
       unheard.add(c.input);
       inSound.set(c.input, { inWord: false, reason: placed.reason });
@@ -680,14 +680,14 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
     const alternatives = c.cleanAlternatives?.map(a => `#${a.fromWord}–#${a.toWord}`).join(", ");
     const base = fallback ? adjust({ ...decided, ...fallback }, [...c.wordEdgeProblems!, ...(alternatives
       ? [`Words ${alternatives} leave the same words playing and have measured quiet at both edges.`] : [])].join(" ")) : decided;
-    // Removed words whose two edges Scarlet placed itself, in the measured silence beside them or at the dip between
+    // Removed words whose two edges AirWaves placed itself, in the measured silence beside them or at the dip between
     // two words that run together, are not checked a second time: that check takes a brief dip for speech and held
     // every cut of a doubled word for the editor. What was measured at a dip goes back to the agent.
     if (c.spoken && !c.wordEdgeProblems?.length) return c.wordEdgeDips?.length ? adjust(decided, c.wordEdgeDips.join(" ")) : base;
     const join = checkJoin({ start: c.start, end: c.end }, c.spoken, c.air);
     // Without a measurement at the edge there is nothing to act on. The agent's own evidence stands.
     if (join.unmeasured) return base;
-    // An edge left in sound: what Scarlet measured goes with the held cut, for the model's review. Named words say what
+    // An edge left in sound: what AirWaves measured goes with the held cut, for the model's review. Named words say what
     // goes, so the quiet or low points that keep or take another word are no help there; a pass offered them resent
     // cuts that broke the sentence (2026-11-16).
     if (join.inSound?.length && c.kind !== "pause") {
@@ -702,7 +702,7 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
       const i = sorted.indexOf(c), frame = 1 / project.settings.fps;
       const start = (!i || sorted[i-1]!.end <= join.start - frame) && join.start >= scope.start && !kept.some(k => k.end > join.start && k.end <= c.start) ? join.start : c.start;
       const end = (i === sorted.length - 1 || join.end + frame <= sorted[i+1]!.start) && join.end <= scope.end && !kept.some(k => k.start < join.end && k.start >= c.end) ? join.end : c.end;
-      // An edge Scarlet moved is reported with what it measured, as every other move is.
+      // An edge AirWaves moved is reported with what it measured, as every other move is.
       const moved = end > start ? quietFrameNote(c, { start, end }) : undefined;
       return moved ? adjust({ ...base, start, end }, moved) : base;
     }
@@ -747,7 +747,7 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
     d.held = [found.reason, plays && `As placed the join plays “${plays}”.`, kept && `Kept, it plays “${kept}”.`]
       .filter(Boolean).join(" ").slice(0, 800);
   }));
-  // A cut the model decided that Scarlet held only for how its join measured applies as placed when the model said
+  // A cut the model decided that AirWaves held only for how its join measured applies as placed when the model said
   // so. A hold for the selection or footage marked to keep stays: that is the editor's, not a measurement. So does an
   // edge inside a word that is sounding there: offered the way round, one pass sent 21 of its 33 saves with
   // unsureJoins cut and applied ten such edges (2026-11-16).
@@ -758,7 +758,7 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
     const line = report.findLast(l => l.cut === c.input);
     if (line) Object.assign(line, { outcome: "cut", evidence: `Applied as placed, as unsureJoins asked: ${line.evidence}` });
   });
-  // The submitted ranges don't overlap, but an edge Scarlet moved can reach into the range beside it: two cuts that
+  // The submitted ranges don't overlap, but an edge AirWaves moved can reach into the range beside it: two cuts that
   // meet at one instant, and the first one's end moved out into the pause the second removes. The engine rejects
   // overlapping ranges, and the agent can't see which edge moved. Hold each moved edge at its neighbor instead:
   // both stretches are decided either way, so nothing more or less comes out.
@@ -772,7 +772,7 @@ export async function planDialogueCuts(req: DialoguePlanRequest, sources: Dialog
     const held = (d: PlannedDecision, c: ResolvedCut, range: TimeRange) => {
       const moved = Math.abs(range.start - d.start) > 1e-9 || Math.abs(range.end - d.end) > 1e-9;
       // An adjustment that leaves nothing of the range falls back to the range as asked, held for the agent's closer
-      // look with what Scarlet measured, as every other cut it can't place is.
+      // look with what AirWaves measured, as every other cut it can't place is.
       const next: PlannedDecision = range.end - range.start > 1e-9 ? { ...d, ...range } : { ...d, start: c.start, end: c.end, review: true,
         ...(!d.review && { held: `Its edges as measured meet the neighboring range at ${r2(meet)} s, which leaves nothing of it to remove.` }) };
       const original = d.originalRange && { start: Math.max(d.originalRange.start, d === before ? -Infinity : meet), end: Math.min(d.originalRange.end, d === before ? meet : Infinity) };

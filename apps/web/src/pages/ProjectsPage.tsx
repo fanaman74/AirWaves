@@ -70,7 +70,7 @@ function usePoster(projectId: string, mediaCount: number, poster: ProjectSummary
 }
 
 /**
- * What Scarlet is doing in the project, as the engine counted it, in a few words: "Editing", "Transcribing 42%",
+ * What AirWaves is doing in the project, as the engine counted it, in a few words: "Editing", "Transcribing 42%",
  * "Caching paused". A job under way gives how far it has got once there is a figure, and never says 100%.
  */
 function activityLabel(activity: ProjectActivity): string {
@@ -80,7 +80,7 @@ function activityLabel(activity: ProjectActivity): string {
   return activity.fraction === undefined ? name : `${name} ${Math.min(99, Math.floor(activity.fraction * 100))}%`;
 }
 
-/** The project's status under its details while Scarlet works on it, led by a ring drawn as the chat's step under way is. */
+/** The project's status under its details while AirWaves works on it, led by a ring drawn as the chat's step under way is. */
 function ProjectActivityLine({ p }: { p: ProjectSummary }) {
   const activity = p.activity ?? [];
   if (!activity.length) return null;
@@ -398,9 +398,9 @@ function FirstEditGuide() {
         </li>
       </ol>
       <details className="first-edit-skills">
-        <summary>Teach Scarlet your editing style <Icon name="chevron" size={13} /></summary>
+        <summary>Teach AirWaves your editing style <Icon name="chevron" size={13} /></summary>
         <p>To reuse editing instructions, type <strong>/</strong> in chat and choose <strong>Create a skill</strong>.</p>
-        <p>Scarlet can also suggest a rule when you ask for an edit like this.</p>
+        <p>AirWaves can also suggest a rule when you ask for an edit like this.</p>
         <blockquote>“For interviews, always leave a beat after a difficult question.”</blockquote>
         <p>Review the rule in <strong>More → Learnings</strong>. Choose a skill and press <strong>Approve</strong> to save it.</p>
       </details>
@@ -564,7 +564,7 @@ export function ProjectsPage() {
           ) : empty ? (
             <section className="library-first-edit" aria-labelledby="first-edit-title">
               <h2 id="first-edit-title">Make your first edit</h2>
-              <p>Drop your footage here, then tell Scarlet what you’d like to change.</p>
+              <p>Drop your footage here, then tell AirWaves what you’d like to change.</p>
               <div className="first-edit-actions">{newProject}{quickStart}</div>
             </section>
           ) : (

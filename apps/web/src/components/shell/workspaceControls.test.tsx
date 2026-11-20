@@ -192,7 +192,7 @@ it("shows the desktop build version and telemetry disclosure under About", async
   vi.spyOn(api, "settings").mockResolvedValue({ settings: buildDb().settings });
   await mount(<SettingsPage />, "/settings/skills");
   await click(el.querySelector('a[href="/settings#about"]')!);
-  const about = el.querySelector('section[aria-label="About Scarlet"]')!;
+  const about = el.querySelector('section[aria-label="About AirWaves"]')!;
   expect(about.querySelector("dd")?.textContent).toBe(__SCARLET_VERSION__);
   if (__SCARLET_REVISION__) expect(about.textContent).toContain(__SCARLET_REVISION__.slice(0, 7));
   const telemetry = about.querySelector('section[aria-labelledby="telemetry-heading"]')!;
@@ -208,16 +208,16 @@ it("shows the desktop build version and telemetry disclosure under About", async
   if (__SCARLET_REVISION__) {
     latest.mockResolvedValueOnce(__SCARLET_REVISION__).mockResolvedValueOnce("0".repeat(40));
     await click(check);
-    expect(about.textContent).toContain("Scarlet is up to date.");
+    expect(about.textContent).toContain("AirWaves is up to date.");
     await click(check);
     expect(about.textContent).toContain("An update is available.");
   }
 });
 
-it("lists Scarlet's tools under the skills, with nothing to switch off", async () => {
+it("lists AirWaves's tools under the skills, with nothing to switch off", async () => {
   await mount(<SettingsPage />, "/settings#tools");
   const tools = el.querySelector('[aria-label="Editing tools"]')!;
-  expect(tools.querySelector("p")?.textContent).toBe("Scarlet can use all of these on every request.");
+  expect(tools.querySelector("p")?.textContent).toBe("AirWaves can use all of these on every request.");
   expect(tools.textContent).toContain("Frame inspection");
   expect(tools.querySelector('[role="switch"]')).toBeNull();
   expect(el.textContent).not.toMatch(/Optional tools|Restore tool defaults/);

@@ -42,7 +42,7 @@ export function logStateChanges(ctx: Ctx, projects: readonly { id: string; head:
           if (!moved) return;
           const before = moved.from?.split("/")[0];
           const versions = `${c.fromVersion} → ${c.appliedVersion ?? c.toVersion}`;
-          const how = c.autoApplied ? " (applied by Scarlet)" : "";
+          const how = c.autoApplied ? " (applied by AirWaves)" : "";
           ctx.log(`[edit] ${c.id} ${before && before !== c.state ? `${before} → ${c.state}` : before ? `${c.state}, new version` : c.state}${how} in ${c.projectId}, ${versions}`
             + `${c.taskId ? `, from ${c.taskId}` : ""}, ${c.ranges.length} ${c.ranges.length === 1 ? "place" : "places"}`);
           return;

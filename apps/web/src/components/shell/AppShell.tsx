@@ -79,7 +79,7 @@ export function AppShell() {
         reconnectRealtime();
       } else if (engine.error) {
         // The engine crashed or can't start: the window says so until it is back, where each action would fail
-        // without a word. A restart Scarlet asked for, to load a dev rebuild, carries no error and is over in a moment.
+        // without a word. A restart AirWaves asked for, to load a dev rebuild, carries no error and is over in a moment.
         void bootstrap();
       }
     });
@@ -133,14 +133,14 @@ export function AppShell() {
   // An engine that has given up won't come up by waiting, so the window says why at once rather than after the slow-start wait.
   if (status === "offline" && (connectedOnce || slowStart || failed)) return (
     <StartupRecovery
-      title={failed ? "Scarlet couldn’t start" : connectedOnce ? "Reconnecting to Scarlet…" : "Scarlet is taking longer than usual to start…"}
+      title={failed ? "AirWaves couldn’t start" : connectedOnce ? "Reconnecting to AirWaves…" : "AirWaves is taking longer than usual to start…"}
       detail={error ?? "Waiting for the local engine."}
       showLogs
     />
   );
   // On startup the engine is still booting, so "offline" is expected: the startup screen stays instead of an error.
   // An engine replaced later takes the window for a moment too, and the screen says what that is.
-  if (status !== "ready" || returning || (library && !startup.done)) return <BootSplash line={startup.done ? "Reconnecting to Scarlet…" : undefined} />;
+  if (status !== "ready" || returning || (library && !startup.done)) return <BootSplash line={startup.done ? "Reconnecting to AirWaves…" : undefined} />;
 
   return (
     <div className="h-full flex flex-col">

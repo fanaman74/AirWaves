@@ -31,9 +31,9 @@ it("passes a command to the desktop with its arguments and hands back the answer
 });
 
 it("logs a command the desktop refused, as a warning, and still fails the caller", async () => {
-  command.mockRejectedValue("This update is no longer ready. Scarlet will check again.");
-  await expect(desktop.restartForUpdate("abc123")).rejects.toBe("This update is no longer ready. Scarlet will check again.");
-  expect(lines).toEqual(['[error] desktop cmd=restart_for_update error="This update is no longer ready. Scarlet will check again."']);
+  command.mockRejectedValue("This update is no longer ready. AirWaves will check again.");
+  await expect(desktop.restartForUpdate("abc123")).rejects.toBe("This update is no longer ready. AirWaves will check again.");
+  expect(lines).toEqual(['[error] desktop cmd=restart_for_update error="This update is no longer ready. AirWaves will check again."']);
   expect(levels).toEqual(["warn"]);
 });
 

@@ -154,7 +154,7 @@ it("says who is signed in once on General, in the card, and has no default to pi
   expect(save).toHaveBeenCalledExactlyOnceWith({ transcription: expect.objectContaining({ provider: "whispercpp", localModel: "crisperwhisper" }) });
 });
 
-it("picks how much Scarlet checks with the editor on General, saved as it is chosen", async () => {
+it("picks how much AirWaves checks with the editor on General, saved as it is chosen", async () => {
   const save = vi.spyOn(api, "updateSettings").mockImplementation(async patch => ({ settings: { ...settings, ...patch } as typeof settings }));
   await open();
   const card = el.querySelector(".check-in-preferences")!;
@@ -163,7 +163,7 @@ it("picks how much Scarlet checks with the editor on General, saved as it is cho
   const pick = card.querySelector<HTMLElement>("#check-in")!;
   // Balanced until the editor says otherwise, and the line under it says what that step brings them.
   expect(pick.textContent).toBe("Balanced");
-  expect(card.querySelector(".transcription-status")?.textContent).toBe("About one in four of the cuts that take words out: the ones Scarlet thinks most likely to be wrong. They go into the video either way and wait in For you until you keep them.");
+  expect(card.querySelector(".transcription-status")?.textContent).toBe("About one in four of the cuts that take words out: the ones AirWaves thinks most likely to be wrong. They go into the video either way and wait in For you until you keep them.");
   expect((await openOptions(pick)).map(option => option.textContent)).toEqual(["Less", "Balanced", "More"]);
   await act(async () => pick.click());
   await selectOption(pick, "More");
@@ -371,7 +371,7 @@ it("shows where audio goes when switching between cloud, bundled and custom tran
   expect(form.textContent).toContain(local);
   expect(form.textContent).not.toContain(cloud);
   await selectOption(transcribeWith(), "Custom local model");
-  expect(form.textContent).toContain("Scarlet passes audio to the selected local runtime.");
+  expect(form.textContent).toContain("AirWaves passes audio to the selected local runtime.");
   expect(form.textContent).not.toContain(local);
 });
 

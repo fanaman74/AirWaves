@@ -25,7 +25,7 @@ export function appliedPassCuts(delivery: FirstCutDelivery, edits: ThreadEdit[])
 export type ThreadEntry = { taskId?: string } & (
   | { kind: "request"; at: string; text: string; author: Author; revisionLabel?: string }
   // `replyTo` is the run a closing reply answers. It draws after that request's block and goes where the block goes.
-  // `onNote` marks what Scarlet wrote back on the editor's note, as distinct from the message it closed the request with.
+  // `onNote` marks what AirWaves wrote back on the editor's note, as distinct from the message it closed the request with.
   | { kind: "agent"; at: string; text: string; author: Author; change?: Change; fullText?: string; replyTo?: string; onNote?: boolean }
   | ProgressEntry
   | { kind: "question"; at: string; text: string; task: Task; answered: boolean }
@@ -37,21 +37,21 @@ export type ThreadEntry = { taskId?: string } & (
 const FIRST_CUT_INSTRUCTION = "Make a first cut from this project’s footage and send it to me for review.";
 
 /**
- * Scarlet's own redo of a suggestion. Applied after the video had moved on, the suggestion no longer fit, so the engine
+ * AirWaves's own redo of a suggestion. Applied after the video had moved on, the suggestion no longer fit, so the engine
  * asks for it again on the video as it is now. The editor didn't ask for it: it carries on the request that made the
  * suggestion, and its task's words ("Redo on the current edit") are the engine's, never shown.
  */
 export const isRedo = (task: Task) => task.kind === "revise" && task.createdBy.type === "scarlet" && !task.cutConflict;
 /**
- * Scarlet's recheck of a call the editor approved: the footage in its passage changed before the pass could go in, so
+ * AirWaves's recheck of a call the editor approved: the footage in its passage changed before the pass could go in, so
  * the engine sends that one cut back. It is a request about that cut, drawn under its row like a revision, and not a
  * redo of the request that saved the pass (2026-11-14: rechecks chained under an earlier "keep" and showed every
  * reply since).
  */
 export const isRecheck = (task: Task) => task.kind === "revise" && task.createdBy.type === "scarlet" && !!task.cutConflict?.approved;
-/** Why Scarlet is rechecking an approved cut, in place of the editor's words a revision has. */
+/** Why AirWaves is rechecking an approved cut, in place of the editor's words a revision has. */
 const RECHECK_WORDS = "The footage here changed after you approved it. Rechecking the cut.";
-/** What Scarlet says about a suggestion it is to make again: while the redo waits its turn, then once Scarlet is on it. */
+/** What AirWaves says about a suggestion it is to make again: while the redo waits its turn, then once AirWaves is on it. */
 const REDO_WAITS = "The video changed while this suggestion was waiting. I’ll redo it on the video as it is now.";
 const REDOING = "The video changed while this suggestion was waiting. I’m redoing it on the video as it is now.";
 const legacyInterruption = "The agent was interrupted after saving its proposed changes. You can review them here.";
@@ -128,7 +128,7 @@ export function stagedCuts(pass: Pick<Change, "cutReasons">): TimeRange[] {
 /**
  * The one cut or edit a request was about, as it stands now, so the request's card can say what it did there and open
  * it on the timeline. A revised cut keeps its index through later revisions of the pass; a cut named in one part of a
- * running pass is found again in the next by its range. `note` is Scarlet's note on the cut as this request left it.
+ * running pass is found again in the next by its range. `note` is AirWaves's note on the cut as this request left it.
  * `edit` is the applied edit; without one, `call` is the cut's index in `changeId`, the pass that now holds it.
  * With the thread's `tasks`, the pass is also followed through a revision sent from one of its cuts' cards: that one
  * leaves the pass it revised marked as revising, with nothing on it that names the pass it made.
@@ -185,7 +185,7 @@ export function threadConversation(thread: Thread, notes: Note[], events: Record
     const requested = t.context.message === "Make first cut" && t.instruction.startsWith(FIRST_CUT_INSTRUCTION)
       ? t.instruction.slice(FIRST_CUT_INSTRUCTION.length).trim() : requestText(t);
     if (t.resumeRootId) out.push({ kind: "system", at: t.createdAt ?? "", text: "Edit resumed." });
-    // Scarlet's redo of a suggestion has no words of its own here: the suggestion says what is happening to it, below.
+    // AirWaves's redo of a suggestion has no words of its own here: the suggestion says what is happening to it, below.
     else if (author.type === "scarlet") { if (!isRedo(t)) out.push({ kind: "system", at: t.createdAt ?? "", text: isRecheck(t) ? RECHECK_WORDS : requested, tone: "warn" }); }
     else if (requested && requested !== "Make first cut") {
       out.push({ kind: "request", at: t.createdAt ?? "", text: requested, author, revisionLabel: revisionTarget(t, thread.changes) });
@@ -223,9 +223,9 @@ export function threadConversation(thread: Thread, notes: Note[], events: Record
     }
     const hasEdit = thread.changes.some(c => c.taskId === t.id || t.changeIds.includes(c.id));
     if (hasEdit && t.state === "done" && t.summary === legacyInterruption) {
-      out.push({ kind: "system", at: t.finishedAt ?? t.createdAt ?? "", text: "Scarlet was interrupted after saving changes.", tone: "warn" });
+      out.push({ kind: "system", at: t.finishedAt ?? t.createdAt ?? "", text: "AirWaves was interrupted after saving changes.", tone: "warn" });
     }
-    // A dialogue pass's summary is Scarlet's receipt of what it saved. What Scarlet said as it finished is its reply.
+    // A dialogue pass's summary is AirWaves's receipt of what it saved. What AirWaves said as it finished is its reply.
     if (t.state === "done" && (t.reply || !hasEdit)) {
       const reply = taskChatText(t, t.reply || t.summary);
       const full = editConfirmation(reply, requested, "full");
@@ -256,13 +256,13 @@ export function threadConversation(thread: Thread, notes: Note[], events: Record
       if (t.agent === "claude" && t.error?.includes("Sandbox required but unavailable")) {
         text = "Claude Code couldn’t start because its required shell sandbox was unavailable.";
       }
-      if (t.interrupted) text = hasEdit ? "Scarlet was interrupted after saving changes." : "The edit was interrupted before it finished.";
+      if (t.interrupted) text = hasEdit ? "AirWaves was interrupted after saving changes." : "The edit was interrupted before it finished.";
       // The host stopped the run: its agent went silent ("stalled: … N minutes"), or it reached an optional
       // time cap ("timed out after N minutes", or a bare "timed out" from hosts that stopped every run at 45).
       const quiet = /^stalled\b.*?(\d+) minutes?/.exec(t.error ?? "");
       const limit = /^timed out(?: after (\d+) minutes?)?/.exec(t.error ?? "");
       const kept = hasEdit ? " What it saved is kept." : "";
-      if (quiet) text = `Scarlet went quiet for ${quiet[1]} ${quiet[1] === "1" ? "minute" : "minutes"}, so the edit was stopped.${kept}`;
+      if (quiet) text = `AirWaves went quiet for ${quiet[1]} ${quiet[1] === "1" ? "minute" : "minutes"}, so the edit was stopped.${kept}`;
       else if (limit) text = (limit[1] ? `The edit reached its ${limit[1]}-minute limit.` : "The edit ran out of time.") + kept;
       if (stopped) text = "Edit stopped.";
       out.push({ kind: "system", at: t.finishedAt ?? t.createdAt ?? "",
@@ -294,20 +294,20 @@ export function threadConversation(thread: Thread, notes: Note[], events: Record
           author: { type: "agent", id: task.agent, name: task.agent, model: task.model } });
       }
     }
-    // Applied after the video had moved on, a suggestion goes back to Scarlet to be made again. It says so once, in
-    // Scarlet's words, under the request that made it, for as long as the redo waits or runs: why it wasn't applied
+    // Applied after the video had moved on, a suggestion goes back to AirWaves to be made again. It says so once, in
+    // AirWaves's words, under the request that made it, for as long as the redo waits or runs: why it wasn't applied
     // and what happens to it. What the redo makes, or how it ended, takes the line's place.
     const redo = thread.tasks.find(t => isRedo(t) && t.context.changeId === c.id && runIsActive(t));
     if (redo) out.push({ kind: "agent", taskId: task?.id, at: redo.createdAt ?? c.updatedAt ?? "", text: redo.state === "queued" && !redo.startedAt ? REDO_WAITS : REDOING,
       author: { type: "agent", id: redo.agent, name: redo.agent, model: redo.model } });
     for (const feedback of notes.filter(n => n.changeId === c.id)) {
-      // The note's own words are what its request was sent as. A reply to it is Scarlet's, and never part of them.
+      // The note's own words are what its request was sent as. A reply to it is AirWaves's, and never part of them.
       const words = noteThread(feedback).text;
       if (thread.tasks.some(t => t.context.noteIds?.includes(feedback.id) && requestText(t) === words)) continue;
       out.push({ kind: "request", at: feedback.createdAt ?? c.updatedAt ?? "", text: words, author: feedback.author });
     }
     // A suggestion put away by a decision. Today that is the engine's doing: when the editor applies one of the alternatives
-    // Scarlet offered, the others are put away as "Another alternative was chosen". The editor applied something else and
+    // AirWaves offered, the others are put away as "Another alternative was chosen". The editor applied something else and
     // never skipped this one, so the line says it wasn't applied, the word the suggestion's own button has (Apply).
     if (c.state === "rejected" && c.decidedBy) out.push({ kind: "system", at: c.updatedAt ?? "", text: `Not applied${c.rejectReason ? `: ${c.rejectReason}` : "."}` });
   }
@@ -317,13 +317,13 @@ export function threadConversation(thread: Thread, notes: Note[], events: Record
       : [task.finishedAt, delivery.change?.updatedAt, task.createdAt].filter(Boolean).sort().at(-1) ?? "";
     out.push({ kind: "firstCut", taskId: task.id, at, delivery });
   }
-  // What Scarlet said back about a note of this thread reads as Scarlet's, under the request the note was sent as.
+  // What AirWaves said back about a note of this thread reads as AirWaves's, under the request the note was sent as.
   for (const note of notes) {
     const asked = thread.tasks.find(t => t.context.noteIds?.includes(note.id));
     if (!asked && !thread.changes.some(c => c.id === note.changeId)) continue;
     for (const reply of noteThread(note).replies) {
       out.push({ kind: "agent", taskId: asked?.id, at: reply.createdAt ?? note.updatedAt ?? note.createdAt ?? "", text: reply.text, onNote: true,
-        author: reply.author ?? { type: "agent", id: asked?.agent, name: asked?.agent ?? "Scarlet", model: asked?.model } });
+        author: reply.author ?? { type: "agent", id: asked?.agent, name: asked?.agent ?? "AirWaves", model: asked?.model } });
     }
   }
   out.sort((a, b) => ts(a.at) - ts(b.at));

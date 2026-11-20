@@ -14,7 +14,7 @@ import "./workspace.css";
 
 async function launch() {
   const root = document.getElementById("root")!;
-  const desktopOnly = "Open Scarlet in the desktop app.";
+  const desktopOnly = "Open AirWaves in the desktop app.";
   if (!isDesktop()) {
     root.textContent = desktopOnly;
     return;
@@ -59,11 +59,11 @@ async function launch() {
     appLog("app", "startup-failed", { name: errorName(error), error: withoutAddresses(describeUiError(error)).slice(0, 2000) }, { level: "error" });
     const view = await opening.catch(() => undefined);
     if (!view) {
-      root.textContent = "Scarlet couldn’t start. Close Scarlet and open it again.";
+      root.textContent = "AirWaves couldn’t start. Close AirWaves and open it again.";
       return;
     }
-    view.render(<StartupRecovery title="Scarlet couldn’t start"
-      detail={`${error instanceof Error ? error.message : String(error)}\nClose Scarlet and open it again.`} />);
+    view.render(<StartupRecovery title="AirWaves couldn’t start"
+      detail={`${error instanceof Error ? error.message : String(error)}\nClose AirWaves and open it again.`} />);
   }
 }
 

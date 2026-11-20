@@ -149,7 +149,7 @@ export async function discoverModels(agent: CliAgent, file: string, env: NodeJS.
           if (agent === "codex") {
             send({ method: "initialized" });
             pendingStep = "model_list";
-            // Codex leaves some models out of its own picker. Scarlet lists every model the CLI offers.
+            // Codex leaves some models out of its own picker. AirWaves lists every model the CLI offers.
             request("model/list", { includeHidden: true });
           } else {
             pendingStep = "session_new";

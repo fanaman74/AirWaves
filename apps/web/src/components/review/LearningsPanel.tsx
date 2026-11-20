@@ -7,7 +7,7 @@ import { useAgentAvailability } from "../agent/AgentChip";
 import { Icon } from "../ui/primitives";
 import { PreferenceSelect } from "../ui/PreferenceSelect";
 
-/** The learnings that still wait: on the editor's call, or on Scarlet while it saves one they approved. */
+/** The learnings that still wait: on the editor's call, or on AirWaves while it saves one they approved. */
 function openLearnings(learnings: Learning[] | undefined): Learning[] {
   return (learnings ?? []).filter(l => l.state === "suggested" || l.state === "saving");
 }
@@ -24,9 +24,9 @@ function quoted(passages: string[]): string {
 }
 
 /**
- * Learnings: rules Scarlet picked up from what the editor asked for, each waiting for their call. A rule reads as it
+ * Learnings: rules AirWaves picked up from what the editor asked for, each waiting for their call. A rule reads as it
  * would in the skill, with the words it came from under it, and what the skill already says that it would replace.
- * The editor picks the skill, Revise lets them reword the rule in place, then Approve has Scarlet revise that skill
+ * The editor picks the skill, Revise lets them reword the rule in place, then Approve has AirWaves revise that skill
  * around it and × declines it. Nothing is saved without Approve. The list opens under the header from the menu and
  * closes on Esc or a press outside it.
  */
@@ -44,7 +44,7 @@ export function LearningsPanel({ onClose, focus }: { onClose(): void;
   // asked once per opening whatever comes back, so a read that keeps failing isn't asked over and over.
   useEffect(() => { if (useSkillsStore.getState().status !== "ready") void loadSkills(); }, [loadSkills]);
 
-  // The page hands over a new onClose each time it draws, which it does all the while Scarlet works or a file
+  // The page hands over a new onClose each time it draws, which it does all the while AirWaves works or a file
   // transcribes or caches. The listeners read the latest one, so the panel takes the keyboard only as it opens: taken
   // again on each redraw, it would shut a skill list that's open and pull the keyboard off Approve.
   const close = useRef(onClose);

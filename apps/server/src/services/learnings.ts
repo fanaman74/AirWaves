@@ -10,7 +10,7 @@ import { latestSkillEdit } from "./skills.js";
 import { createTask, editsDialogue, FINISHED_TASK } from "./tasks.js";
 
 /**
- * Learnings: standing rules Scarlet picked up from the editor's requests. Every request is read for one as it is
+ * Learnings: standing rules AirWaves picked up from the editor's requests. Every request is read for one as it is
  * sent, by a learning check: a short run beside the request that sees what they said and their skills, and offers a
  * rule, with what the skill already says that it would change, or does nothing. Each rule waits for the editor, who
  * approves or declines it. Approving one has an agent revise the skill around it, as a skill edit, on the model the
@@ -41,14 +41,14 @@ const ONLY_A_SKILL = /^\/[\w-]+$/;
 
 /**
  * Read what the editor just asked for a standing rule. The check is a run of its own with the request's agent and
- * model: it starts with the request, outside the project's queue, and edits nothing. A request Scarlet made itself, a
+ * model: it starts with the request, outside the project's queue, and edits nothing. A request AirWaves made itself, a
  * resumed run and a message with no words of the editor's aren't read.
  */
 export function startLearningCheck(ctx: Ctx, task: Task): Task | undefined {
   if (!editsDialogue(task.kind) || task.createdBy.type !== "human" || task.resumeRootId || task.agent === "api") return;
   // Make shorts words its request from the editor's choices in a form: there is nothing they said to read.
   if (task.context.short) return;
-  // The check is Scarlet's own. Whatever goes wrong starting it, the request it reads is already saved and runs.
+  // The check is AirWaves's own. Whatever goes wrong starting it, the request it reads is already saved and runs.
   try {
     if (ONLY_A_SKILL.test(wordsOf(task)) || !enabledSkills(ctx).length) return;
     return createTask(ctx, {
@@ -95,8 +95,8 @@ export function learningCheckContext(ctx: Ctx, check: Task): LearningCheckContex
   const target = aimedAt(asked);
   const madeBy = target.makers.length ? ` with ${target.makers.join(", ")}` : "";
   const about = c.changeId && (c.cutIndex !== undefined || c.editIndex !== undefined)
-    ? `They said it about one ${c.cutIndex !== undefined ? "cut" : "edit"} Scarlet made${madeBy}${at}.`
-    : c.changeId ? `They said it about an edit Scarlet made${madeBy}.`
+    ? `They said it about one ${c.cutIndex !== undefined ? "cut" : "edit"} AirWaves made${madeBy}${at}.`
+    : c.changeId ? `They said it about an edit AirWaves made${madeBy}.`
     : at ? `They said it about the moment${at} in the video.` : undefined;
   // A correction that keeps coming back is the rule, and it comes back across videos, so the list isn't this project's
   // alone. Each line says what it was about and which skill made that, as the request above does.
@@ -105,7 +105,7 @@ export function learningCheckContext(ctx: Ctx, check: Task): LearningCheckContex
     .filter(t => !ONLY_A_SKILL.test(wordsOf(t))).slice(0, RECENT_REQUESTS).reverse()
     .map(t => {
       const { kind, makers } = aimedAt(t);
-      return { said: clip(wordsOf(t), 400), ...(kind && { about: `${kind === "cut" ? "a cut" : "an edit"} ${makers.length ? makers.join(", ") : "Scarlet"} made` }),
+      return { said: clip(wordsOf(t), 400), ...(kind && { about: `${kind === "cut" ? "a cut" : "an edit"} ${makers.length ? makers.join(", ") : "AirWaves"} made` }),
         ...(t.projectId !== asked.projectId && { elsewhere: true }) };
     });
   const rules = ctx.repos.learnings.select("state != 'declined'", [], `created_at DESC, rowid DESC LIMIT ${KNOWN_RULES}`).reverse()
@@ -331,8 +331,8 @@ export function skillEditEnded(ctx: Ctx, task: Task): void {
         ctx.log(`[learning] ${learning.id} saved by ${task.id}`);
       }
     } else if (learning.state === "saving") {
-      const why = task.state === "done" ? task.summary?.trim() || "Scarlet left the skill as it is."
-        : task.state === "cancelled" ? "Saving was stopped." : task.interrupted ? "Saving was interrupted." : task.error?.trim() || "Scarlet couldn’t save it.";
+      const why = task.state === "done" ? task.summary?.trim() || "AirWaves left the skill as it is."
+        : task.state === "cancelled" ? "Saving was stopped." : task.interrupted ? "Saving was interrupted." : task.error?.trim() || "AirWaves couldn’t save it.";
       save(ctx, { ...learning, state: "suggested", error: why });
       ctx.log(`[learning] ${learning.id} not saved by ${task.id} (${task.state})`);
     }

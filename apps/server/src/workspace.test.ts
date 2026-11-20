@@ -951,9 +951,9 @@ it.each(["failure", "interruption"] as const)("keeps the complete transcript rea
     expect(await (await ask()).json()).toMatchObject({ task: { id: task.id, state: "running" } });
     expect(ctx.repos.transcripts.count("media_id = ?", [t.media.id])).toBe(1);
     if (outcome === "failure") peer.ctx.repos.settings.update({ transcription: { localModel: "whispercpp" } });
-    else job.controller.abort(new Error("Scarlet quit while aligning."));
+    else job.controller.abort(new Error("AirWaves quit while aligning."));
     resume();
-    await expect(job.done).rejects.toThrow(outcome === "failure" ? "local model" : "Scarlet quit");
+    await expect(job.done).rejects.toThrow(outcome === "failure" ? "local model" : "AirWaves quit");
     expect(t.task().state).toBe("failed");
     expect(t.task().interrupted).toBe(outcome === "interruption" || undefined);
     expect(await read()).toMatchObject({ id: old.id, localModel: old.localModel, segments: old.segments });
@@ -1425,7 +1425,7 @@ it("discards a render worker and its notifications when a render request rolls b
   expect(publish).not.toHaveBeenCalled();
 });
 
-it("cuts a screen and a synced camera together, and hands the editor the cut Scarlet wasn't sure of on both", async () => {
+it("cuts a screen and a synced camera together, and hands the editor the cut AirWaves wasn't sure of on both", async () => {
   const { ctx } = workspace;
   vi.spyOn(ctx.render, "renderRange").mockImplementation(async (_project, _timeline, _range, file) => { writeFileSync(file, "preview"); });
   ctx.repos.projects.putMedia(project.id, { id: "screen", kind: "video", name: "Screen", path: "screen.mp4", duration: 20, hasAudio: true }, "ready");
@@ -1444,7 +1444,7 @@ it("cuts a screen and a synced camera together, and hands the editor the cut Sca
     cuts: [{ start: 5, end: 6, review: false, reason: "a restart" }, { start: 12, end: 13, review: true, reason: "may be the better take" }] });
   expect(saved.status, await saved.clone().text()).toBe(201);
   const changes = (await saved.json()).changes as Change[];
-  // The cut Scarlet was sure of is out of both recordings at the same moment.
+  // The cut AirWaves was sure of is out of both recordings at the same moment.
   const applied = current();
   expect(places(applied, "v1")).toEqual([[0, 0, 5], [5, 6, 20]]);
   expect(places(applied, "v2")).toEqual([[2, 0, 3], [5, 4, 17]]);
@@ -1659,7 +1659,7 @@ it("applies activity filters and page limits before loading documents", async ()
   const dates = ["2025-01-01T00:00:00.000Z", "2025-01-02T00:00:00.000Z", "2025-01-03T00:00:00.000Z"];
   for (const projectId of [project.id, null]) {
     dates.forEach((createdAt, i) => activity.put({ id: `${projectId}-${i}`, projectId, createdAt,
-      type: i === 1 ? "note.added" : "media.added", summary: "test", actor: { type: "scarlet", name: "Scarlet" }, data: {} }));
+      type: i === 1 ? "note.added" : "media.added", summary: "test", actor: { type: "scarlet", name: "AirWaves" }, data: {} }));
   }
   const parse = vi.spyOn(activity, "parse");
   const cases = [
@@ -1703,7 +1703,7 @@ it("reads the footage a change left out as it built the video, when it is applie
   ctx.repos.projects.putMedia(project.id, { id: "take", kind: "video", name: "Take", path: "take.mp4", duration: 60 }, "ready");
   const piece = (id: string, sourceIn: number, sourceOut: number, timelineIn: number) =>
     ({ op: "addClip", trackId: "v1", clip: { id, kind: "media", mediaId: "take", sourceIn, sourceOut, timelineIn } });
-  // Scarlet places the pieces to keep: what came between them was never on the timeline.
+  // AirWaves places the pieces to keep: what came between them was never on the timeline.
   const built = await api("POST", projectsPath() + "/changes", { description: "Kept the opening", autoApprove: true, skipRender: true,
     ops: [piece("a", 5, 10, 0), piece("b", 20, 30, 5)], timelineEdits: [{ label: "Cut the aside", range: { start: 4.8, end: 5.2 } }] });
   expect(built.status).toBe(201);
@@ -1719,7 +1719,7 @@ it("reads the footage a change left out as it built the video, when it is applie
   const quiet = await api("POST", projectsPath() + "/changes", { description: "Lower the level", autoApprove: true, skipRender: true,
     ops: [{ op: "updateClip", clipId: "a", patch: { volume: 0.5 } }] });
   expect((await quiet.json()).change.leftOut).toEqual({ joins: [] });
-  // A change an earlier build applied has nothing read. Starting Scarlet reads it, once.
+  // A change an earlier build applied has nothing read. Starting AirWaves reads it, once.
   ctx.repos.changes.put({ ...change, leftOut: undefined });
   recordLeftOutFootage(ctx);
   expect(ctx.repos.changes.get(change.id)!.leftOut).toEqual(change.leftOut);
@@ -1811,7 +1811,7 @@ it("recovers dead workers, keeps saved proposals and lets follow-ups run exactly
   const proposal = await api("POST", `/projects/${saved.projectId}/changes`, { description: "End", ops: marker, taskId: saved.id, skipRender: true });
   expect(proposal.status).toBe(201);
   const { change } = await proposal.json();
-  // An earlier proposal of the same run, which Scarlet closed when this one took its cuts over.
+  // An earlier proposal of the same run, which AirWaves closed when this one took its cuts over.
   ctx.repos.changes.put({ ...ctx.repos.changes.get(change.id)!, id: "chg_carried", state: "rejected", rejectedFrom: "ready",
     rejectReason: "Carried into a later part of the same dialogue pass.", replacedBy: change.id });
   // Simulate stopping between persisting the change and updating the task.
@@ -1828,11 +1828,11 @@ it("recovers dead workers, keeps saved proposals and lets follow-ups run exactly
   expect(repos.tasks.get(unstarted.id)?.state).toBe("queued");
   expect(repos.tasks.get(saved.id)).toMatchObject({ state: "failed", interrupted: true, changeIds: [change.id, "chg_carried"] });
   expect(repos.tasks.get(interrupted.id)).toMatchObject({ state: "failed", interrupted: true });
-  // Scarlet closed mid-run, so each run carries on by itself, ahead of the follow-up asked while it worked.
+  // AirWaves closed mid-run, so each run carries on by itself, ahead of the follow-up asked while it worked.
   const resumed = repos.tasks.get(repos.tasks.get(saved.id)!.retryTaskId!)!;
   expect(resumed).toMatchObject({ state: "queued", resumeRootId: saved.id, changeIds: [], context: { threadId: saved.id } });
   expect(resumed.instruction).toContain(`Saved change ${change.id} [ready]`);
-  // The proposal Scarlet closed isn't told as one the editor turned down.
+  // The proposal AirWaves closed isn't told as one the editor turned down.
   expect(resumed.instruction).toContain(`Saved change chg_carried [replaced by ${change.id}, which holds its cuts now; the editor made no decision on it]`);
   expect(resumed.instruction).not.toContain("[rejected]");
   const retry = async () => (await (await api("POST", `/tasks/${interrupted.id}/retry`)).json()).task;
@@ -1850,7 +1850,7 @@ it("recovers dead workers, keeps saved proposals and lets follow-ups run exactly
   await api("POST", `/hosts/${host.id}/heartbeat`, { running: [live.id] });
   recoverTasks(workspace.ctx);
   expect(repos.tasks.get(live.id)?.state).toBe("claimed");
-  // A worker lost while Scarlet stays open: the run carries on by itself, still ahead of the follow-up.
+  // A worker lost while AirWaves stays open: the run carries on by itself, still ahead of the follow-up.
   expect(repos.tasks.get(a.id)?.interrupted).toBe(true);
   const third = await claim();
   expect(third).toMatchObject({ id: repos.tasks.get(a.id)?.retryTaskId, resumeRootId: interrupted.id });
@@ -1882,7 +1882,7 @@ it("resumes an interrupted run ahead of a follow-up asked in the millisecond the
     expect((await claim())?.id).toBe(run.id);
     const follow = make("Tighten the intro", run.id);
     expect(follow.createdAt).toBe(run.createdAt);
-    // Scarlet quits mid-run. The run carries on under a new task, a later row than the follow-up.
+    // AirWaves quits mid-run. The run carries on under a new task, a later row than the follow-up.
     expect((await api("POST", `/tasks/${run.id}/complete`, { state: "cancelled", interrupted: true })).status).toBe(200);
     const retryId = ctx.repos.tasks.get(run.id)!.retryTaskId;
     const queue = await readQueue();
@@ -1919,7 +1919,7 @@ it("marks a run that ended without the transcripts it waited for, and resumes it
 
   // Transcripts on their way: asking to finish waits for them.
   const transcribing = ["camera", "screen"].map(mediaId => createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api",
-    instruction: `Transcribe ${mediaId}`, context: { mediaId }, createdBy: { type: "scarlet", name: "Scarlet" }, state: "running" }));
+    instruction: `Transcribe ${mediaId}`, context: { mediaId }, createdBy: { type: "scarlet", name: "AirWaves" }, state: "running" }));
   const armed = await (await api("POST", `/tasks/${task.id}/continue-when-ready`, { on: true })).json();
   expect(armed.task.continueWhenReady).toBe(true);
   expect(armed.resumed).toBeUndefined();
@@ -1949,7 +1949,7 @@ it("stops waiting when a run's transcript ends without being saved", async () =>
   // Nothing is transcribing this recording, and this project has no such media to start on.
   expect((await api("POST", `/tasks/${task.id}/continue-when-ready`, { on: true })).status).toBe(409);
   const transcribing = createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", instruction: "Transcribe camera",
-    context: { mediaId: "camera" }, createdBy: { type: "scarlet", name: "Scarlet" }, state: "running" });
+    context: { mediaId: "camera" }, createdBy: { type: "scarlet", name: "AirWaves" }, state: "running" });
   expect((await api("POST", `/tasks/${task.id}/continue-when-ready`, { on: true })).status).toBe(200);
   saveTask(ctx, { ...transcribing, state: "failed", error: "Transcription was interrupted.", finishedAt: new Date().toISOString() });
   expect(ctx.repos.tasks.get(task.id)).toMatchObject({ state: "done", needsTranscripts: ["camera"] });
@@ -1970,7 +1970,7 @@ it("stops waiting for multiple transcripts as soon as one fails, even while anot
     ctx.repos.taskEvents.append({ id: `wait_${mediaId}`, taskId: task.id, at: new Date().toISOString(), type: "log",
       text: "Waiting", data: { kind: "media_wait", wait: "transcript", mediaId } });
     return createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", instruction: `Transcribe ${mediaId}`,
-      context: { mediaId }, createdBy: { type: "scarlet", name: "Scarlet" }, state: "running" });
+      context: { mediaId }, createdBy: { type: "scarlet", name: "AirWaves" }, state: "running" });
   });
   await api("POST", `/tasks/${task.id}/complete`, { state: "done" });
   const armed = await (await api("POST", `/tasks/${task.id}/continue-when-ready`, { on: true })).json();
@@ -2553,7 +2553,7 @@ it("offers retry after an interrupted transcription and protects a live or compl
   const { ctx } = workspace;
   const media = ctx.repos.projects.putMedia(project.id, { id: "speech", name: "Interview", path: "interview.wav", kind: "audio" }, "ready");
   const input = { projectId: project.id, kind: "transcribe" as const, agent: "api" as const, state: "running" as const,
-    instruction: "Transcribe Interview", context: { mediaId: media.id }, createdBy: { type: "scarlet" as const, name: "Scarlet" } };
+    instruction: "Transcribe Interview", context: { mediaId: media.id }, createdBy: { type: "scarlet" as const, name: "AirWaves" } };
   const interrupted = createTask(ctx, input);
   await ctx.close();
   workspace = openWorkspace();
@@ -2604,7 +2604,7 @@ it("transcribes again after an interruption, but not after a failure or while me
   const stopped = (id: string, interrupted: boolean) => {
     ctx.repos.projects.putMedia(project.id, { id, name: id, path: id + ".wav", kind: "audio" }, "ready");
     const task = createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", state: "running",
-      instruction: "Transcribe " + id, context: { mediaId: id }, createdBy: { type: "scarlet", name: "Scarlet" } });
+      instruction: "Transcribe " + id, context: { mediaId: id }, createdBy: { type: "scarlet", name: "AirWaves" } });
     return saveTask(ctx, { ...task, state: "failed", interrupted: interrupted || undefined, error: "Stopped.", finishedAt: new Date().toISOString() });
   };
   const latest = (id: string) => ctx.repos.tasks.select("kind = 'transcribe' AND json_extract(json, '$.context.mediaId') = ?", [id], "created_at, rowid").at(-1)!;
@@ -2626,7 +2626,7 @@ it("transcribes again after an interruption, but not after a failure or while me
     // A second transcript the editor asked for, with a provider chosen for it, was interrupted too. It starts again as asked,
     // though the recording already has a transcript.
     const asked = createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", state: "running", instruction: "Transcribe quit",
-      context: { mediaId: "quit", transcriptionProvider: "openai" }, createdBy: { type: "scarlet", name: "Scarlet" } });
+      context: { mediaId: "quit", transcriptionProvider: "openai" }, createdBy: { type: "scarlet", name: "AirWaves" } });
     saveTask(ctx, { ...asked, state: "failed", interrupted: true, error: "Transcription was interrupted.", finishedAt: new Date().toISOString() });
     recoverTasks(ctx);
     expect(latest("quit").id).not.toBe(asked.id);
@@ -2647,7 +2647,7 @@ it("leaves a cut-off transcription for Retry when a cloud service was selected s
   const cutOff = (id: string, transcribedWith: string) => {
     ctx.repos.projects.putMedia(project.id, { id, name: id, path: id + ".wav", kind: "audio" }, "ready");
     const task = createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", state: "running",
-      instruction: "Transcribe " + id, context: { mediaId: id, transcribedWith }, createdBy: { type: "scarlet", name: "Scarlet" } });
+      instruction: "Transcribe " + id, context: { mediaId: id, transcribedWith }, createdBy: { type: "scarlet", name: "AirWaves" } });
     return saveTask(ctx, { ...task, state: "failed", interrupted: true, error: "Transcription was interrupted.", finishedAt: new Date().toISOString() });
   };
   const latest = (id: string) => ctx.repos.tasks.select("kind = 'transcribe' AND json_extract(json, '$.context.mediaId') = ?", [id], "created_at, rowid").at(-1)!;
@@ -2688,7 +2688,7 @@ it("keeps a part-aligned transcript's times, without transcribing again, after a
     expect(t.recognitions()).toBe(1);
     // A later run failed by itself, so the next one is the editor's Retry, not something a read starts.
     const failed = createTask(t.ctx, { projectId: project.id, kind: "transcribe", agent: "api", state: "running",
-      instruction: "Transcribe Interview", context: { mediaId: t.media.id }, createdBy: { type: "scarlet", name: "Scarlet" } });
+      instruction: "Transcribe Interview", context: { mediaId: t.media.id }, createdBy: { type: "scarlet", name: "AirWaves" } });
     saveTask(t.ctx, { ...failed, state: "failed", error: "The model file is missing.", finishedAt: new Date().toISOString() });
     leaveMarked();
     expect(await read()).toEqual({ through: 10.5 });
@@ -2714,13 +2714,13 @@ it("transcribes again when the interrupted task was created in the millisecond t
   const provider = vi.spyOn(OpenAIProvider.prototype, "transcribe").mockResolvedValue({ segments: [] });
   const media = ctx.repos.projects.putMedia(project.id, { id: "speech", name: "Interview", path: "interview.wav", kind: "audio" }, "ready");
   const ask = () => createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", state: "running", instruction: "Transcribe Interview",
-    context: { mediaId: media.id, transcriptionProvider: "openai" }, createdBy: { type: "scarlet", name: "Scarlet" } });
+    context: { mediaId: media.id, transcriptionProvider: "openai" }, createdBy: { type: "scarlet", name: "AirWaves" } });
   const latest = () => ctx.repos.tasks.select("kind = 'transcribe'", [], "created_at, rowid").at(-1)!;
   // The clock stands still, so each task is created in the very millisecond the transcript before it was saved.
   vi.useFakeTimers({ toFake: ["Date"] });
   try {
     expect(await transcribeMedia(ctx, project.id, media)).toBeTruthy();
-    // A second transcript was asked for and marked interrupted when Scarlet quit.
+    // A second transcript was asked for and marked interrupted when AirWaves quit.
     const marked = saveTask(ctx, { ...ask(), state: "failed", interrupted: true, error: "Transcription was interrupted.", finishedAt: new Date().toISOString() });
     recoverTasks(ctx);
     expect(latest().id).not.toBe(marked.id);
@@ -2757,7 +2757,7 @@ it.each(["quit", "lost worker"])("transcribes again after a %s when speaker labe
     // A millisecond later the editor asks for a second transcript.
     vi.setSystemTime(Date.now() + 1);
     const asked = createTask(ctx, { projectId: project.id, kind: "transcribe", agent: "api", state: "running", instruction: "Transcribe Interview",
-      context: { mediaId: media.id, transcriptionProvider: "openai" }, createdBy: { type: "scarlet", name: "Scarlet" } });
+      context: { mediaId: media.id, transcriptionProvider: "openai" }, createdBy: { type: "scarlet", name: "AirWaves" } });
     // Another millisecond on, speaker analysis saves its labelled copy of the first transcript, newer than the second's task.
     vi.setSystemTime(Date.now() + 1);
     label();
@@ -2766,7 +2766,7 @@ it.each(["quit", "lost worker"])("transcribes again after a %s when speaker labe
     expect(labelled.id).not.toBe(first.id);
     expect(labelled.speakerAnalysis).toBeDefined();
     expect(Date.parse(labelled.createdAt!)).toBeGreaterThan(Date.parse(asked.createdAt!));
-    // Scarlet stops before the second transcript is made. The labelled copy doesn't pass for it.
+    // AirWaves stops before the second transcript is made. The labelled copy doesn't pass for it.
     if (stopped === "quit") saveTask(ctx, { ...asked, state: "failed", interrupted: true, error: "Transcription was interrupted.", finishedAt: new Date().toISOString() });
     recoverTasks(ctx);
     expect(ctx.repos.tasks.get(asked.id)).toMatchObject({ state: "failed", interrupted: true });
@@ -4006,7 +4006,7 @@ it("leaves a scheduled pass for the editor when its run stops early, instead of 
   const staged = (await (await api("POST", projectsPath() + "/dialogue-cuts", { taskId: task.id, fromVersion: base, description: "Part",
     cuts: [{ start: 12, end: 13, review: true, reason: "may be the better take" }, { start: 15, end: 16, review: true, reason: "repeated aside" }] })).json()).changes[0] as Change;
   const choose = (body: object) => api("PUT", `/changes/${staged.id}/cut-choices`, { fromVersion: staged.fromVersion, toVersion: staged.toVersion, ...body });
-  // The editor makes the one call they know of and asks for the pass to apply when Scarlet finishes.
+  // The editor makes the one call they know of and asks for the pass to apply when AirWaves finishes.
   expect((await choose({ choices: [{ index: 0, choice: "keep" }], applyWhenDone: true })).status).toBe(200);
   // The run is stopped before it checked the second cut, which is now the editor's call too.
   expect((await api("POST", `/tasks/${task.id}/cancel`)).status).toBe(200);
@@ -4023,7 +4023,7 @@ it("hands the editor the staged cuts a finished run never checked, instead of ap
   const { task, base, staged, submit, choose, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(8, 9), staged(12, 13), staged(16, 17)]);
   expect((await assess(one.review, [{ index: 0, start: 8, end: 9, verdict: "ask", reason: "Both takes land." }])).status).toBe(200);
-  // The editor answers the one call Scarlet asked, which schedules the pass.
+  // The editor answers the one call AirWaves asked, which schedules the pass.
   expect((await choose(one.review, [{ index: 0, choice: "keep" }], true)).status).toBe(200);
   // The run finishes without checking the other two. They are the editor's calls now: nothing comes out unseen.
   await checkPassAudio(task.id);
@@ -4038,7 +4038,7 @@ it("hands the editor the staged cuts a finished run never checked, instead of ap
   expect(ctx.repos.changes.get(one.review.id)).toMatchObject({ state: "approved", restoredCuts: [0, 2] });
 });
 
-it("doesn't take out a scheduled pass's cuts that a finished run never checked when Scarlet checked none of them", async () => {
+it("doesn't take out a scheduled pass's cuts that a finished run never checked when AirWaves checked none of them", async () => {
   const { ctx } = workspace;
   const { task, base, staged, submit, choose } = dialoguePassInParts();
   const one = await submit(base, [staged(8, 9), staged(12, 13)]);
@@ -4268,7 +4268,7 @@ it("applies verified trims once and offers uncertain cuts at their remapped time
   const completion = await api("POST", `/tasks/${task.id}/complete`, { state: "done", summary: "Removed the demonstration." });
   expect((await completion.json()).task.summary).toContain("Removed 2 s at 0:01. Dialogue cuts are pending review.");
   expect(ctx.repos.tasks.get(task.id)!.summary).not.toContain("Removed the demonstration");
-  // What Scarlet said as it finished is kept beside the receipt, for the editor.
+  // What AirWaves said as it finished is kept beside the receipt, for the editor.
   expect(ctx.repos.tasks.get(task.id)!.reply).toBe("Removed the demonstration.");
 });
 
@@ -4348,13 +4348,13 @@ it("keeps the editor's calls through the pass's next part and applies them as so
   const [staged] = (await submit(base, [{ start: 12, end: 13, review: true, reason: "may be the better take" },
     { start: 15, end: 16, review: true, reason: "repeated aside" }])).changes;
   const choose = (change: Change, body: object) => api("PUT", `/changes/${change.id}/cut-choices`, { fromVersion: change.fromVersion, toVersion: change.toVersion, ...body });
-  // The editor calls the first cut before Scarlet has assessed anything, and asks for the result once the pass is done.
+  // The editor calls the first cut before AirWaves has assessed anything, and asks for the result once the pass is done.
   const chosen = await choose(staged!, { choices: [{ index: 0, choice: "keep" }], applyWhenDone: true });
   expect(chosen.status).toBe(200);
   expect((await chosen.json()).change).toMatchObject({ state: "ready", cutChoices: [{ index: 0, start: 12, end: 13, choice: "keep" }], applyWhenDone: { userId: localUser(ctx).id } });
   expect((await choose(staged!, { choices: [{ index: 2, choice: "cut" }] })).status).toBe(400);
 
-  // The next part decides that range again. The editor's call stands, and Scarlet says so.
+  // The next part decides that range again. The editor's call stands, and AirWaves says so.
   const two = await submit(base, [{ start: 2, end: 4, review: false, reason: "false start" }, { start: 12, end: 13.5, review: true, reason: "check the pickup" }]);
   expect(two.editorDecided).toEqual([{ start: 12, end: 13.5 }]);
   expect(two.carriedForward).toBe(2);
@@ -4366,7 +4366,7 @@ it("keeps the editor's calls through the pass's next part and applies them as so
   expect(duplicate.status).toBe(200);
   expect((await duplicate.json()).change).toMatchObject({ id: review.id, cutChoices: review.cutChoices, applyWhenDone: review.applyWhenDone });
   expect((await choose(staged!, { choices: [] })).status).toBe(409);
-  // Scarlet checks the other cut before it finishes, so nothing waits on the editor.
+  // AirWaves checks the other cut before it finishes, so nothing waits on the editor.
   expect((await api("POST", `/changes/${review.id}/cut-assessments`, { fromVersion: review.fromVersion, toVersion: review.toVersion,
     assessments: [{ index: 1, start: 13, end: 14, verdict: "cut", reason: "A clean retake." }] })).status).toBe(200);
 
@@ -4380,7 +4380,7 @@ it("keeps the editor's calls through the pass's next part and applies them as so
   expect(timelineDuration(ctx.repos.versions.get(project.id, head)!.timeline)).toBeCloseTo(17);
 });
 
-it("applies a pass when its run finishes with every staged cut settled by Scarlet, and leaves one with a call for the editor", async () => {
+it("applies a pass when its run finishes with every staged cut settled by AirWaves, and leaves one with a call for the editor", async () => {
   const { ctx } = workspace;
   vi.spyOn(ctx.render, "renderRange").mockImplementation(async (_project, _timeline, _range, file) => { writeFileSync(file, "preview"); });
   ctx.repos.projects.putMedia(project.id, { id: "mic", name: "mic", path: "mic.wav", kind: "audio", duration: 20, hasAudio: true }, "ready");
@@ -4398,11 +4398,11 @@ it("applies a pass when its run finishes with every staged cut settled by Scarle
     expect((await api("POST", `/tasks/${task.id}/complete`, { state: "done", summary: "Done." })).status).toBe(200);
     return ctx.repos.changes.get(staged!.id)!;
   };
-  // Scarlet asked about one: the pass waits for the editor.
+  // AirWaves asked about one: the pass waits for the editor.
   const waiting = await pass(["cut", "ask"]);
   expect(waiting.state).toBe("ready");
   expect((await api("POST", `/changes/${waiting.id}/reject`, {})).status).toBe(200);
-  // Scarlet cut one and kept the other, and asked nothing: the pass goes in with its verdicts.
+  // AirWaves cut one and kept the other, and asked nothing: the pass goes in with its verdicts.
   const applied = await pass(["cut", "keep"]);
   expect(applied).toMatchObject({ state: "approved", restoredCuts: [1] });
   expect(ctx.repos.projects.get(project.id)!.head).toBe(applied.appliedVersion);
@@ -4452,7 +4452,7 @@ function straightCuts(clips: Clip[]): Clip[] {
   return out;
 }
 
-/** Scarlet's own edit between two parts of a pass, such as crossfades on the joins it just made: the video moves on, and every frame of footage stays where it was. */
+/** AirWaves's own edit between two parts of a pass, such as crossfades on the joins it just made: the video moves on, and every frame of footage stays where it was. */
 function crossfades(taskId: string) {
   const { ctx } = workspace;
   const head = ctx.repos.versions.get(project.id, ctx.repos.projects.get(project.id)!.head!)!.timeline;
@@ -4468,7 +4468,7 @@ const waitingPasses = () => workspace.ctx.repos.changes.select(`project_id = ? A
 it("lets no later cut replace one staged for the editor's ear, and says when a save takes part of another staged cut", async () => {
   const { ctx } = workspace;
   const { task, base, staged, submit, assess, listed } = dialoguePassInParts();
-  // Nothing Scarlet measures can settle the first cut's join, so it waits for the editor from the moment it is staged.
+  // Nothing AirWaves measures can settle the first cut's join, so it waits for the editor from the moment it is staged.
   const { review } = await submit(base, [{ ...staged(8, 10), held: "The words run together.", unheard: true }, staged(14, 16)]);
   expect(review.cutReasons![0]).toMatchObject({ start: 8, end: 10, unheard: true });
   // A cut of the take beside it, sent to apply half a minute later, reaches into its footage. It is set aside.
@@ -4476,7 +4476,7 @@ it("lets no later cut replace one staged for the editor's ear, and says when a s
   expect(over.heldForReview).toEqual([{ start: 9, end: 12 }]);
   expect(ctx.repos.projects.header(project.id)!.head).toBe(base);
   expect(await listed(over.review)).toEqual([[8, 10], [14, 16]]);
-  // Nor can the pass move it onto that take itself: where Scarlet placed it is what the editor is asked to hear.
+  // Nor can the pass move it onto that take itself: where AirWaves placed it is what the editor is asked to hear.
   const move = await api("POST", `/changes/${over.review.id}/staged-cuts/0`, { taskId: task.id, start: 9, end: 12, reason: "Both edges are quiet here." });
   expect(move.status).toBe(409);
   expect((await move.json()).error).toMatchObject({ code: "cut_unheard", message: expect.stringMatching(/waits for the editor to hear its join.*Record ask.*or keep/) });
@@ -4505,9 +4505,9 @@ it("lets no later cut replace one staged for the editor's ear, and says when a s
 it("keeps a cut held for its join where the model placed it when a later cut would move it onto other words by unsureJoins cut", async () => {
   const { ctx } = workspace;
   const { task, base, staged, submit, listed } = dialoguePassInParts();
-  // "… really good. ‖ And so in this video": the join runs on, so Scarlet held the cut where the model placed it.
+  // "… really good. ‖ And so in this video": the join runs on, so AirWaves held the cut where the model placed it.
   const { review } = await submit(base, [{ ...staged(8, 10), held: "The words named run on into the ones beside them at the end." }]);
-  // The closing save cuts "And so" as well, at another join Scarlet couldn't place, applied only as unsureJoins cut.
+  // The closing save cuts "And so" as well, at another join AirWaves couldn't place, applied only as unsureJoins cut.
   const moved = await submit(base, [{ ...staged(8, 10.3), review: false, appliedAsPlaced: true }]) as Awaited<ReturnType<typeof submit>> & { heldCutsStay?: unknown };
   expect(moved.heldCutsStay).toEqual([{ asked: { start: 8, end: 10.3 }, staged: { start: 8, end: 10 }, why: expect.stringMatching(/staged cut at 8\.00–10\.00 s.*cut it there with unsureJoins cut, record keep, or ask/) }]);
   expect(ctx.repos.projects.header(project.id)!.head).toBe(base);
@@ -4540,7 +4540,7 @@ it("hands off one call while the pass can still trim and assess its other cuts",
   expect((await assess(review, [note, { index: 2, start: 14, end: 16, verdict: "keep", reason: "Keep the pickup." }])).status).toBe(200);
   const direct = (start: number, end: number) => proposeChange(ctx, localUser(ctx), project.id,
     { intent: "requested", taskId: task.id, description: "Trim", ops: [{ op: "rippleDelete", start, end }] });
-  // The engine's index names the cut for the tools, and the editor's number for Scarlet's words to them.
+  // The engine's index names the cut for the tools, and the editor's number for AirWaves's words to them.
   expect(() => direct(8.5, 9)).toThrow(/cut 1 \(the editor’s “Cut 1”\).*with the editor.*don’t ask them about it.*amend:true/);
   expect(() => direct(3, 8)).toThrow(/would join cut 0 and cut 1 \(the editor’s “Cut 1”\)/);
   const ownTrim = (index: number, start: number, end: number) => api("POST", `/changes/${review.id}/staged-cuts/${index}`,
@@ -4571,7 +4571,7 @@ it("hands off one call while the pass can still trim and assess its other cuts",
   expect(published.filter(c => c.id === next.review.id)).toEqual([next.review]);
 });
 
-it("puts the editor's words on the part of a cut they marked, and tells Scarlet which part it is", async () => {
+it("puts the editor's words on the part of a cut they marked, and tells AirWaves which part it is", async () => {
   const { base, staged, submit, assess } = dialoguePassInParts();
   const { review } = await submit(base, [staged(2, 3), staged(8, 9)]);
   expect((await assess(review, [{ index: 1, start: 8, end: 9, verdict: "ask", reason: "Does this pickup land?" }])).status).toBe(200);
@@ -4617,7 +4617,7 @@ it.each(["cancel", "complete"])("leaves the other unchecked cuts with the editor
   const res = await keep();
   expect(res.status).toBe(201);
   const { change: kept } = await res.json() as { change: Change };
-  // Scarlet never checked the other two cuts: they stay the editor's calls, beside the one they sent back.
+  // AirWaves never checked the other two cuts: they stay the editor's calls, beside the one they sent back.
   expect(kept.cutAssessments).toEqual([{ index: 1, start: 8, end: 10, verdict: "ask", reason: "Kept the take as asked.", revised: true, proposes: "keep" }]);
   expect(kept.cutChoices ?? []).toEqual([]);
   expect(kept.applyWhenDone).toBeUndefined();
@@ -4727,7 +4727,7 @@ it("publishes finished calls in order and preserves the passage and note through
   expect(saved().cutAssessments).toEqual([{ ...early, askOrder: 2 }, { ...late, askOrder: 1 }]);
 });
 
-it("keeps an existing call when Scarlet checks it again and recommends cut or keep", async () => {
+it("keeps an existing call when AirWaves checks it again and recommends cut or keep", async () => {
   const { base, staged, submit, assess } = dialoguePassInParts();
   const { review } = await submit(base, [staged(2, 3), staged(8, 9), staged(12, 13)]);
   const calls = [{ index: 0, start: 2, end: 3, verdict: "ask", reason: "Listen to the breath." },
@@ -4741,7 +4741,7 @@ it("keeps an existing call when Scarlet checks it again and recommends cut or ke
   expect(saved.cutAssessments?.map(a => [a.verdict, a.askOrder])).toEqual([["ask", 1], ["ask", 2], ["cut", undefined]]);
 });
 
-it("amends the note of a call still waiting on the editor when Scarlet asks to, and only then", async () => {
+it("amends the note of a call still waiting on the editor when AirWaves asks to, and only then", async () => {
   const { base, staged, submit, assess } = dialoguePassInParts();
   const { review } = await submit(base, [staged(2, 3), staged(8, 9)]);
   const calls = [{ index: 0, start: 2, end: 3, verdict: "ask", reason: "Listen to the breath.", summary: "The breath" },
@@ -4775,12 +4775,12 @@ it("carries the whole call when two adjacent staged ranges share original footag
   expect(next.review.cutAssessments).toEqual([{ ...note, askOrder: 1 }]);
 });
 
-it("numbers Scarlet's asks in the order it makes them, and a call keeps its number through the pass's next part", async () => {
+it("numbers AirWaves's asks in the order it makes them, and a call keeps its number through the pass's next part", async () => {
   const { ctx } = workspace;
   const { base, staged, submit, listed, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 3), staged(8, 9), staged(12, 13)]);
   const order = (review: Change) => ctx.repos.changes.get(review.id)!.cutAssessments!.map(a => [a.index, a.verdict, a.askOrder]);
-  // Scarlet asks about the cut at 12 s first, then about the one at 2 s, earlier in the video. The later ask comes after.
+  // AirWaves asks about the cut at 12 s first, then about the one at 2 s, earlier in the video. The later ask comes after.
   expect((await assess(one.review, [{ index: 2, start: 12, end: 13, verdict: "ask", reason: "Both takes land." }])).status).toBe(200);
   expect((await assess(one.review, [{ index: 0, start: 2, end: 3, verdict: "ask", reason: "Check the breath." },
     { index: 1, start: 8, end: 9, verdict: "cut", reason: "A clean retake." }])).status).toBe(200);
@@ -4790,7 +4790,7 @@ it("numbers Scarlet's asks in the order it makes them, and a call keeps its numb
   expect((await assess(one.review, [{ index: 2, start: 12, end: 13, verdict: "ask", reason: "Both takes still land." },
     { index: 1, start: 8, end: 9, verdict: "ask", reason: "On second thought.", askOrder: 1 }])).status).toBe(200);
   expect(order(one.review)).toEqual([[0, "ask", 2], [1, "ask", 3], [2, "ask", 1]]);
-  // The next part carries each call with its number, and Scarlet's ask about the cut it staged there comes after them.
+  // The next part carries each call with its number, and AirWaves's ask about the cut it staged there comes after them.
   const two = await submit(base, [staged(16, 17)]);
   expect(await listed(two.review)).toEqual([[2, 3], [8, 9], [12, 13], [16, 17]]);
   expect(order(two.review)).toEqual([[0, "ask", 2], [1, "ask", 3], [2, "ask", 1]]);
@@ -4802,7 +4802,7 @@ it("numbers a pass's asks saved before the engine numbered them first, in timeli
   const { ctx } = workspace;
   const { base, staged, submit, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 3), staged(8, 9), staged(12, 13)]);
-  // Saved before the engine numbered asks: Scarlet asked about the cuts at 2 s and 12 s, and the editor sees them as
+  // Saved before the engine numbered asks: AirWaves asked about the cuts at 2 s and 12 s, and the editor sees them as
   // Cut 1 and Cut 2, by their place in the video.
   ctx.repos.changes.put({ ...ctx.repos.changes.get(one.review.id)!, cutAssessments: [{ index: 0, start: 2, end: 3, verdict: "ask", reason: "Check the breath." },
     { index: 2, start: 12, end: 13, verdict: "ask", reason: "Both takes land." }] });
@@ -4811,12 +4811,12 @@ it("numbers a pass's asks saved before the engine numbered them first, in timeli
   // them is numbered yet: numbering one alone would put it ahead of the others.
   const two = await submit(base, [staged(3, 4), staged(16, 17)]);
   expect(order(two.review)).toEqual([[0, "ask", undefined], [2, "ask", undefined]]);
-  // Scarlet's first ask since: the asks the editor has seen are numbered first, in timeline order, and the new one after.
+  // AirWaves's first ask since: the asks the editor has seen are numbered first, in timeline order, and the new one after.
   expect((await assess(two.review, [{ index: 3, start: 16, end: 17, verdict: "ask", reason: "Retake at 16 s." }])).status).toBe(200);
   expect(order(two.review)).toEqual([[0, "ask", 1], [2, "ask", 2], [3, "ask", 3]]);
 });
 
-it("leaves a cut no one checked out of Scarlet's asks when the editor sends it back, so it keeps its place among those", async () => {
+it("leaves a cut no one checked out of AirWaves's asks when the editor sends it back, so it keeps its place among those", async () => {
   const { ctx } = workspace;
   const { base, staged, submit, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 3), staged(8, 9)]);
@@ -4831,13 +4831,13 @@ it("leaves a cut no one checked out of Scarlet's asks when the editor sends it b
   expect(ctx.repos.changes.get(change.id)!.cutAssessments!.map(a => [a.index, a.verdict, a.askOrder, a.revised])).toEqual([[0, "ask", undefined, true], [1, "ask", 1, undefined]]);
 });
 
-it("carries a part's staged cuts into the next part when Scarlet's own edit moved the video between them", async () => {
+it("carries a part's staged cuts into the next part when AirWaves's own edit moved the video between them", async () => {
   const { ctx } = workspace;
   const { task, base, staged, submit, listed, assess } = dialoguePassInParts();
-  // Part one is sure of one cut and stages another for a closer look, which Scarlet notes.
+  // Part one is sure of one cut and stages another for a closer look, which AirWaves notes.
   const one = await submit(base, [{ start: 2, end: 3, review: false, reason: "false start" }, staged(12, 13)]);
   expect((await assess(one.review, [{ index: 0, start: 11, end: 12, verdict: "ask", reason: "Both takes land." }])).status).toBe(200);
-  // Part two reads the video after Scarlet's crossfades and stages one more cut. Part one's staged cut and its note join its review.
+  // Part two reads the video after AirWaves's crossfades and stages one more cut. Part one's staged cut and its note join its review.
   const two = await submit(crossfades(task.id), [staged(15, 16)]);
   expect(await listed(two.review)).toEqual([[11, 12], [15, 16]]);
   expect(two.review.cutAssessments).toEqual([{ index: 0, start: 11, end: 12, verdict: "ask", reason: "Both takes land.", askOrder: 1 }]);
@@ -4890,18 +4890,18 @@ it("keeps footage the editor skipped once another edit between parts took footag
   expect((await choose(one.review, [{ index: 0, choice: "keep" }])).status).toBe(200);
   // The other edit takes footage out of the skipped cut, and its next part is sure of a cut inside what is left of it.
   const two = await submit(trimBetweenParts(12.5, 13), [{ start: 13, end: 13.5, review: false, reason: "false start" }, staged(15, 16)]);
-  // The editor's call stands over what is left of that footage, and Scarlet is told so.
+  // The editor's call stands over what is left of that footage, and AirWaves is told so.
   expect(two.editorDecided).toEqual([{ start: 13, end: 13.5 }]);
   expect(two.changes.map(c => c.state)).toEqual(["ready"]);
   expect(await listed(two.review)).toEqual([[12, 13.5], [15, 16]]);
   expect(two.review.cutChoices).toEqual([{ index: 0, start: 12, end: 13.5, choice: "keep" }]);
 });
 
-it("folds the parts of a pass that an earlier build left waiting side by side into one, as Scarlet starts", async () => {
+it("folds the parts of a pass that an earlier build left waiting side by side into one, as AirWaves starts", async () => {
   const { ctx } = workspace;
   const { task, base, staged, submit, listed } = dialoguePassInParts();
   const one = await submit(base, [{ start: 2, end: 3, review: false, reason: "false start" }, staged(12, 13)]);
-  // An earlier build didn't carry part one's staged cut past Scarlet's crossfades: both parts' reviews were left waiting.
+  // An earlier build didn't carry part one's staged cut past AirWaves's crossfades: both parts' reviews were left waiting.
   const set = (change: Change) => ctx.repos.changes.put(change);
   set({ ...one.review, state: "rejected" });
   const two = await submit(crossfades(task.id), [staged(15, 16)]);
@@ -5112,7 +5112,7 @@ it("keeps the editor's call on a cut after touching staged cuts through the pass
     { sourceIn: 9, sourceOut: 16 }, { sourceIn: 17, sourceOut: 20 }]);
 });
 
-it("keeps Scarlet's note on a cut after touching staged cuts through the pass's next part", async () => {
+it("keeps AirWaves's note on a cut after touching staged cuts through the pass's next part", async () => {
   const { base, staged, submit, listed, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 3), staged(3, 4), staged(8, 9), staged(12, 13)]);
   const note = { index: 1, start: 8, end: 9, verdict: "ask", reason: "Both takes land." };
@@ -5129,7 +5129,7 @@ it("keeps the editor's call on touching staged cuts through the pass's next part
   // The editor skips the two that touch, which the review shows as one cut.
   expect((await choose(one.review, [{ index: 0, choice: "keep" }])).status).toBe(200);
   expect(ctx.repos.changes.get(one.review.id)!.cutChoices).toEqual([{ index: 0, start: 2, end: 4, choice: "keep" }]);
-  // The next part is sure of a cut inside that range. The editor's call stands, and Scarlet says so.
+  // The next part is sure of a cut inside that range. The editor's call stands, and AirWaves says so.
   const two = await submit(base, [{ start: 3, end: 4, review: false, reason: "false start" }, staged(16, 17)]);
   expect(two.editorDecided).toEqual([{ start: 3, end: 4 }]);
   expect(two.changes.map(c => c.state)).toEqual(["ready"]);
@@ -5163,12 +5163,12 @@ it("asks the editor again about a cut they approved once the pass's next part st
   const two = await submit(base, [staged(9, 10)]);
   expect(two.editorDecided).toBeUndefined();
   expect(await listed(two.review)).toEqual([[8, 10], [12, 13], [16, 17]]);
-  // It waits for the editor, under what Scarlet staged there.
+  // It waits for the editor, under what AirWaves staged there.
   expect(two.review.cutAssessments).toEqual([{ index: 0, start: 8, end: 10, verdict: "ask", provisional: true, reason: "Retake at 8 s. Retake at 9 s." }]);
   expect(two.review.cutChoices).toEqual([{ index: 2, start: 16, end: 17, choice: "cut" }]);
   // With an approval open again the pass waits for the editor instead of applying itself.
   expect(two.review.applyWhenDone).toBeUndefined();
-  // The same for an approved cut Scarlet had no note on. The cut that already waits carries its note.
+  // The same for an approved cut AirWaves had no note on. The cut that already waits carries its note.
   const three = await submit(base, [staged(17, 18)]);
   expect(await listed(three.review)).toEqual([[8, 10], [12, 13], [16, 18]]);
   expect(three.review.cutAssessments).toEqual([{ index: 0, start: 8, end: 10, verdict: "ask", provisional: true, reason: "Retake at 8 s. Retake at 9 s." },
@@ -5176,13 +5176,13 @@ it("asks the editor again about a cut they approved once the pass's next part st
   expect(three.review.cutChoices).toBeUndefined();
   expect((await api("POST", `/tasks/${task.id}/complete`, { state: "done" })).status).toBe(200);
   expect(ctx.repos.changes.get(three.review.id)?.state).toBe("ready");
-  // Scarlet's recommendation replaces the temporary note on the new footage.
+  // AirWaves's recommendation replaces the temporary note on the new footage.
   const note = { index: 0, start: 8, end: 10, verdict: "cut", reason: "One long retake." };
   expect((await assess(ctx.repos.changes.get(three.review.id)!, [note])).status).toBe(200);
   expect(ctx.repos.changes.get(three.review.id)!.cutAssessments).toEqual([note, { index: 2, start: 16, end: 18, verdict: "ask", provisional: true, reason: "Retake at 16 s. Retake at 17 s." }]);
 });
 
-it("leaves an approved cut for the editor without a note in a pass Scarlet hasn't assessed, as a revised cut is left", async () => {
+it("leaves an approved cut for the editor without a note in a pass AirWaves hasn't assessed, as a revised cut is left", async () => {
   const { base, staged, submit, listed, choose } = dialoguePassInParts();
   const one = await submit(base, [staged(8, 9), staged(16, 17)]);
   expect((await choose(one.review, [{ index: 0, choice: "cut" }, { index: 1, choice: "cut" }], true)).status).toBe(200);
@@ -5199,7 +5199,7 @@ it("preserves a skipped call when the next part stages a neighboring cut, and wa
   const { task, base, staged, submit, listed, choose, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(4, 5), staged(8, 9), staged(16, 17)]);
   expect((await assess(one.review, [{ index: 1, start: 8, end: 9, verdict: "ask", reason: "Both takes land." }])).status).toBe(200);
-  // The editor approves the first cut, skips the one Scarlet asked about, and asks for the result once the pass is done.
+  // The editor approves the first cut, skips the one AirWaves asked about, and asks for the result once the pass is done.
   expect((await choose(one.review, [{ index: 0, choice: "cut" }, { index: 1, choice: "keep" }], true)).status).toBe(200);
   // The adjacent proposal would change the published call's passage.
   const two = await submit(base, [staged(9, 10), staged(12, 13)]);
@@ -5258,13 +5258,13 @@ it("keeps a pass scheduled whose notes went with a cut the next part is sure of,
   expect((await assess(one.review, [{ index: 0, start: 8, end: 9, verdict: "cut", reason: "Clean pickup." }])).status).toBe(200);
   expect((await choose(one.review, [{ index: 1, choice: "cut" }], true)).status).toBe(200);
   // Part two is sure of the noted cut's footage. The one cut left has the editor's call, so the pass still applies itself,
-  // and it still reads as a pass Scarlet has assessed.
+  // and it still reads as a pass AirWaves has assessed.
   const two = await submit(base, [{ start: 7.5, end: 9.5, review: false, reason: "dead air" }]);
   expect(await listed(two.review)).toEqual([[14, 15]]);
   expect(two.review.cutAssessments).toEqual([{ index: 0, start: 14, end: 15, verdict: "ask", provisional: true, reason: "Retake at 16 s." }]);
   expect(two.review.cutChoices).toEqual([{ index: 0, start: 14, end: 15, choice: "cut" }]);
   expect(two.review.applyWhenDone).toBeDefined();
-  // Part three stages one more cut, and the run ends before Scarlet has looked at it.
+  // Part three stages one more cut, and the run ends before AirWaves has looked at it.
   const three = await submit(ctx.repos.projects.get(project.id)!.head!, [staged(3, 4)]);
   expect(await listed(three.review)).toEqual([[3, 4], [14, 15]]);
   expect(three.review.cutAssessments).toEqual([{ index: 1, start: 14, end: 15, verdict: "ask", provisional: true, reason: "Retake at 16 s." }]);
@@ -5320,7 +5320,7 @@ it("doesn't apply a scheduled pass by itself while a cut that changed waits for 
     { index: 1, start: 12, end: 13, verdict: "ask", reason: "Both takes land." }])).status).toBe(200);
   // The editor answers the one call, which schedules the pass. Done now, it would take the retake out.
   expect((await choose(one.review, [{ index: 1, choice: "keep" }], true)).status).toBe(200);
-  // Part two stages a cut against the retake. Scarlet's note was about the retake alone, so the cut they make waits for the editor.
+  // Part two stages a cut against the retake. AirWaves's note was about the retake alone, so the cut they make waits for the editor.
   const two = await submit(base, [staged(9, 10)]);
   expect(await listed(two.review)).toEqual([[8, 10], [12, 13]]);
   expect(two.review.cutAssessments).toEqual([{ index: 0, start: 8, end: 10, verdict: "ask", provisional: true, reason: "Retake at 8 s. Retake at 9 s." },
@@ -5344,7 +5344,7 @@ it("keeps a pass's cut list, calls and notes when a staged cut at the very end o
   expect(await listed(two.review)).toEqual([[8, 9], [12, 13], [20, 20.02]]);
   expect(two.review.cutChoices).toEqual([{ index: 1, start: 12, end: 13, choice: "keep" }]);
   expect(two.review.cutAssessments).toHaveLength(2);
-  // The cut Scarlet never checked waits for the editor. They skip it, and the pass applies with their calls and Scarlet's
+  // The cut AirWaves never checked waits for the editor. They skip it, and the pass applies with their calls and AirWaves's
   // note: the retake comes out, the skipped cuts stay.
   await checkPassAudio(task.id);
   expect((await api("POST", `/tasks/${task.id}/complete`, { state: "done" })).status).toBe(200);
@@ -5382,7 +5382,7 @@ it("saves a part whose sure cut starts right where a carried cut's original rang
   const { base, submit } = dialoguePassInParts();
   const fps = ctx.repos.projects.get(project.id)!.settings.fps;
   const frame = (n: number) => n / fps;
-  // Part one takes ten frames out near the start and stages a narrowed cut. What Scarlet first proposed there ran two frames longer either side.
+  // Part one takes ten frames out near the start and stages a narrowed cut. What AirWaves first proposed there ran two frames longer either side.
   await submit(base, [{ start: frame(7), end: frame(17), review: false, reason: "false start" },
     { start: frame(100), end: frame(110), review: true, reason: "A narrowed retake.", originalRange: { start: frame(98), end: frame(112) } }]);
   const left = ctx.repos.projects.get(project.id)!.head!;
@@ -5404,7 +5404,7 @@ it("keeps footage the editor skipped once the pass's next part stages a cut that
   const two = await submit(base, [staged(9, 10)]);
   expect(await listed(two.review)).toEqual([[8, 10], [12, 13]]);
   expect(two.review.cutChoices).toEqual([{ index: 0, start: 8, end: 10, choice: "keep" }]);
-  // Scarlet is told its cut went with the editor's call.
+  // AirWaves is told its cut went with the editor's call.
   expect(two.editorDecided).toEqual([{ start: 9, end: 10 }]);
   // The same when a cut is staged right before the skipped one.
   const three = await submit(base, [staged(7, 8)]);
@@ -5435,7 +5435,7 @@ it("reports cuts that joined skipped footage in the request's own times and in o
   expect(two.editorDecided).toEqual([{ start: 7, end: 8 }, { start: 9, end: 10.01 }, { start: 14, end: 15 }]);
 });
 
-it("tells Scarlet when a cut it staged earlier ends up against footage the editor skipped", async () => {
+it("tells AirWaves when a cut it staged earlier ends up against footage the editor skipped", async () => {
   const { ctx } = workspace;
   const { task, base, staged, submit, listed, choose, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 3), staged(5, 6)]);
@@ -5503,7 +5503,7 @@ it("lists staged cuts as one cut when the rounding goes the other way, and leave
   expect(cuts[1]![1]).toBeCloseTo(frame(268.4), 9);
 });
 
-it("drops Scarlet's note on touching staged cuts once the pass's next part decides one of them again", async () => {
+it("drops AirWaves's note on touching staged cuts once the pass's next part decides one of them again", async () => {
   const { base, staged, submit, listed, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 4), staged(4, 6), staged(8, 9)]);
   const notes = [{ index: 0, start: 2, end: 6, verdict: "cut", reason: "Both retakes are clean." }, { index: 1, start: 8, end: 9, verdict: "keep", reason: "The aside lands." }];
@@ -5514,7 +5514,7 @@ it("drops Scarlet's note on touching staged cuts once the pass's next part decid
   expect(two.review.cutAssessments).toEqual([{ index: 1, start: 4, end: 6, verdict: "ask", provisional: true, reason: "Retake at 4 s." }, { ...notes[1], index: 2 }]);
 });
 
-it("drops Scarlet's note on touching staged cuts when the pass's next part decides the second of them again", async () => {
+it("drops AirWaves's note on touching staged cuts when the pass's next part decides the second of them again", async () => {
   const { base, staged, submit, listed, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 4), staged(4, 6), staged(8, 9)]);
   const notes = [{ index: 0, start: 2, end: 6, verdict: "cut", reason: "Both retakes are clean." }, { index: 1, start: 8, end: 9, verdict: "keep", reason: "The aside lands." }];
@@ -5528,7 +5528,7 @@ it("drops Scarlet's note on touching staged cuts when the pass's next part decid
   expect(three.review.cutAssessments).toEqual([{ index: 0, start: 2, end: 6, verdict: "ask", provisional: true, reason: "Retake at 2 s. Retake at 4 s." }, { ...notes[1], index: 1 }]);
 });
 
-it("drops Scarlet's note on touching staged cuts when the pass's next part stages one of them again over the same range", async () => {
+it("drops AirWaves's note on touching staged cuts when the pass's next part stages one of them again over the same range", async () => {
   const { base, staged, submit, listed, assess } = dialoguePassInParts();
   const one = await submit(base, [staged(2, 4), staged(4, 6), staged(8, 9)]);
   const notes = [{ index: 0, start: 2, end: 6, verdict: "cut", reason: "Both retakes are clean." }, { index: 1, start: 8, end: 9, verdict: "keep", reason: "The aside lands." }];
@@ -5558,7 +5558,7 @@ it("saves a pass's next part after an applied cut leaves the edit a rounding err
   const { base, staged, submit, listed } = dialoguePassInParts();
   const fps = ctx.repos.projects.get(project.id)!.settings.fps;
   const frame = (n: number) => n / fps;
-  // A narrowed cut near the end. What Scarlet first proposed there ran to the end of the edit.
+  // A narrowed cut near the end. What AirWaves first proposed there ran to the end of the edit.
   await submit(base, [{ start: frame(560), end: frame(590), review: true, reason: "Trailing chatter.", originalRange: { start: frame(558), end: 20 } }]);
   // Six frames come out near the start. The clips that are left add up to a hair under 594 frames.
   const two = await submit(base, [{ start: frame(10), end: frame(16), review: false, reason: "false start" }]);
@@ -5647,23 +5647,23 @@ it("lists only the cuts that went in when a pass with a skipped call is applied 
     ["Retake at 8 s.", 8, { start: 8, end: 9 }], ["Retake at 12 s.", 11, { start: 12, end: 13 }]]);
 });
 
-it.each(["applied from its line", "applied when Scarlet finished"] as const)("applies the surviving footage of a pass %s when a manual trim shortened its cuts", async how => {
+it.each(["applied from its line", "applied when AirWaves finished"] as const)("applies the surviving footage of a pass %s when a manual trim shortened its cuts", async how => {
   const { ctx } = workspace;
   const { task, base, staged, submit, choose, assess } = dialoguePassInParts();
-  // Three staged cuts. Scarlet checks the first and second itself and asks about the third: that one is the pass's
-  // only call, "Cut 1". The second is a cut Scarlet settled, which the editor never sees as a call.
+  // Three staged cuts. AirWaves checks the first and second itself and asks about the third: that one is the pass's
+  // only call, "Cut 1". The second is a cut AirWaves settled, which the editor never sees as a call.
   const { review: pass } = await submit(base, [staged(2, 3), staged(6, 7), staged(10, 11)]);
   expect((await assess(pass, [{ index: 0, start: 2, end: 3, verdict: "cut", reason: "False start." },
     { index: 1, start: 6, end: 7, verdict: "cut", reason: "Repeated aside." }, { index: 2, start: 10, end: 11, verdict: "ask", reason: "Both takes land." }])).status).toBe(200);
-  const scheduled = how === "applied when Scarlet finished";
-  // The editor approves the call. Scheduled, the pass applies as Scarlet finishes; otherwise from its line once Scarlet has.
+  const scheduled = how === "applied when AirWaves finished";
+  // The editor approves the call. Scheduled, the pass applies as AirWaves finishes; otherwise from its line once AirWaves has.
   expect((await choose(pass, [{ index: 2, choice: "cut" }], scheduled || undefined)).status).toBe(200);
   const finish = async () => {
     await checkPassAudio(task.id);
     expect((await api("POST", `/tasks/${task.id}/complete`, { state: "done" })).status).toBe(200);
   };
   if (!scheduled) await finish();
-  // Meanwhile the editor trims inside the footage two of the pass's cuts take out: the call's, then Scarlet's own.
+  // Meanwhile the editor trims inside the footage two of the pass's cuts take out: the call's, then AirWaves's own.
   const trim = (start: number, end: number) => proposeChange(ctx, localUser(ctx), project.id, { intent: "requested", autoApprove: true,
     description: "Trim", ops: [{ op: "rippleDelete", start, end }] }).change;
   trim(10.3, 10.6);
@@ -5719,7 +5719,7 @@ it("resumes a pass interrupted by quitting ahead of a queued revision, and the r
   const [staged] = (await submit(pass.id, [{ start: 12, end: 13, review: true, reason: "First retake." }, { start: 15, end: 16, review: true, reason: "Second retake." }])).changes;
   expect((await api("PUT", `/changes/${staged!.id}/cut-choices`, { fromVersion: staged!.fromVersion, toVersion: staged!.toVersion,
     choices: [{ index: 0, choice: "cut" }] })).status).toBe(200);
-  // The editor sends one cut back while the pass still runs, then quits Scarlet.
+  // The editor sends one cut back while the pass still runs, then quits AirWaves.
   const revision = createTask(ctx, { projectId: project.id, kind: "edit", agent: "codex", instruction: "Left in an extra “I”", createdBy: author,
     context: { threadId: pass.id, changeId: staged!.id, cutIndex: 1 } });
   expect((await api("POST", `/tasks/${pass.id}/complete`, { state: "cancelled", interrupted: true })).status).toBe(200);
@@ -5795,7 +5795,7 @@ it("carries a run's CLI session to the attempt that resumes it after a quit, and
   await api("POST", `/tasks/${moved.id}/cancel`, {});
   const prompt = await (await api("GET", `/tasks/${resumed!.id}/prompt`)).json();
   expect(prompt.resumeSession).toBe("session-1");
-  expect(prompt.instruction).toMatch(/^Scarlet closed while you were working/);
+  expect(prompt.instruction).toMatch(/^AirWaves closed while you were working/);
   // The host found no such session: the full recap goes to a fresh one.
   const fresh = await (await api("GET", `/tasks/${resumed!.id}/prompt?fresh=1`)).json();
   expect(fresh.resumeSession).toBeUndefined();
@@ -5823,7 +5823,7 @@ it("holds a pass's apply-when-done through the run that resumes it after a quit,
   const [staged] = (await submitted.json()).changes as Change[];
   const choose = (body: object) => api("PUT", `/changes/${staged!.id}/cut-choices`, { fromVersion: staged!.fromVersion, toVersion: staged!.toVersion, ...body });
   expect((await choose({ choices: [{ index: 0, choice: "cut" }], applyWhenDone: true })).status).toBe(200);
-  // Scarlet quits. The pass carries on under a new task, and the calls keep waiting for it.
+  // AirWaves quits. The pass carries on under a new task, and the calls keep waiting for it.
   expect((await api("POST", `/tasks/${pass.id}/complete`, { state: "cancelled", interrupted: true })).status).toBe(200);
   const resumed = await claim();
   expect(resumed?.resumeRootId).toBe(pass.id);
@@ -5836,7 +5836,7 @@ it("holds a pass's apply-when-done through the run that resumes it after a quit,
   expect(ctx.repos.projects.get(project.id)!.head).toBe(applied.appliedVersion ?? applied.toVersion);
 });
 
-it("takes a pass off apply-when-done when Scarlet then asks about a cut the editor hasn't called", async () => {
+it("takes a pass off apply-when-done when AirWaves then asks about a cut the editor hasn't called", async () => {
   const { ctx } = workspace;
   vi.spyOn(ctx.render, "renderRange").mockImplementation(async (_project, _timeline, _range, file) => { writeFileSync(file, "preview"); });
   const host = (await (await api("POST", "/hosts/register", { name: "Test", platform: "test", agents: [{ id: "codex", installed: true }] })).json()).host;
@@ -5851,9 +5851,9 @@ it("takes a pass off apply-when-done when Scarlet then asks about a cut the edit
   const versions = { fromVersion: staged!.fromVersion, toVersion: staged!.toVersion };
   const assess = (index: number, start: number, reason: string) => api("POST", `/changes/${staged!.id}/cut-assessments`,
     { ...versions, assessments: [{ index, start, end: start + 1, verdict: "ask", reason }] });
-  // The editor made the one call there was and set the pass to apply when Scarlet finishes.
+  // The editor made the one call there was and set the pass to apply when AirWaves finishes.
   expect((await api("PUT", `/changes/${staged!.id}/cut-choices`, { ...versions, choices: [{ index: 0, choice: "cut" }], applyWhenDone: true })).status).toBe(200);
-  // Scarlet asks about the cut they called. Their call stands, and so does the schedule.
+  // AirWaves asks about the cut they called. Their call stands, and so does the schedule.
   expect((await assess(0, 12, "First retake.")).status).toBe(200);
   expect(ctx.repos.changes.get(staged!.id)?.applyWhenDone).toBeDefined();
   // Then it asks about one they never saw. Applying on schedule would skip it unseen, so the pass waits for them.
@@ -5877,7 +5877,7 @@ it("takes a pass off apply-when-done when the editor sends one of its calls back
   const submitted = await api("POST", projectsPath() + "/dialogue-cuts", { taskId: pass.id, fromVersion: base, description: "Part",
     cuts: [{ start: 12, end: 13, review: true, reason: "First retake." }, { start: 15, end: 16, review: true, reason: "Second retake." }] });
   const [staged] = (await submitted.json()).changes as Change[];
-  /** The editor's last call on a pass Scarlet still works on, which sets it to apply when Scarlet finishes. */
+  /** The editor's last call on a pass AirWaves still works on, which sets it to apply when AirWaves finishes. */
   const schedule = (change: Change) => api("PUT", `/changes/${change.id}/cut-choices`, { fromVersion: change.fromVersion, toVersion: change.toVersion,
     choices: [{ index: 0, choice: "cut" }, { index: 1, choice: "cut" }], applyWhenDone: true });
   /** A request about the pass's second cut, as the message box sends it while the pass's thread is still at work. */
@@ -6036,7 +6036,7 @@ it("reads an agent's time within a millisecond of a frame as that frame, so late
   expect(put.change.ops![0]).toEqual({ op: "rippleInsertGap", at: 263 / 30, duration: 167 / 30 });
 });
 
-it("approves a fully assessed pass by the editor's calls first, then Scarlet's verdicts, as applying it when done does", async () => {
+it("approves a fully assessed pass by the editor's calls first, then AirWaves's verdicts, as applying it when done does", async () => {
   const { ctx } = workspace;
   vi.spyOn(ctx.render, "renderRange").mockImplementation(async (_project, _timeline, _range, file) => { writeFileSync(file, "preview"); });
   const author = { type: "human" as const, name: "Editor" };
@@ -6049,7 +6049,7 @@ it("approves a fully assessed pass by the editor's calls first, then Scarlet's v
     { start: 12, end: 13, review: true, reason: "Third retake." }] });
   const pass = ((await submitted.json()).changes as Change[]).find(c => c.intent === "suggestion")!;
   const versions = { fromVersion: pass.fromVersion, toVersion: pass.toVersion };
-  // The editor keeps the second cut before Scarlet checks it. Scarlet then checks every cut and asks about none.
+  // The editor keeps the second cut before AirWaves checks it. AirWaves then checks every cut and asks about none.
   expect((await api("PUT", `/changes/${pass.id}/cut-choices`, { ...versions, choices: [{ index: 1, choice: "keep" }] })).status).toBe(200);
   const assessments = [{ index: 0, start: 2, end: 3, verdict: "keep", reason: "Keep it." }, { index: 1, start: 6, end: 8, verdict: "cut", reason: "Clean." },
     { index: 2, start: 12, end: 13, verdict: "cut", reason: "Also clean." }].map(a => ({ ...a, inspected: true }));
@@ -6311,7 +6311,7 @@ it("revises the pass that waits now when a queued request names one a revision r
   expect(ctx.repos.changes.get(pass.id)!.state).toBe("revising");
   expect(ctx.repos.changes.get(one.id)).toMatchObject({ state: "rejected", replacedBy: two.change.id });
   expect(waiting()).toEqual([]);
-  // One already left behind by an earlier build is put away as Scarlet starts.
+  // One already left behind by an earlier build is put away as AirWaves starts.
   ctx.repos.changes.put({ ...leftover, id: "chg_older_review" });
   expect(waiting()).toEqual(["chg_older_review"]);
   await ctx.close();
@@ -6552,7 +6552,7 @@ it("rechecks an approved call as soon as it is made when its footage changed, no
   // The first cut's footage is as it was: approving it only saves the call.
   const first = await choose([{ index: 0, choice: "cut" }]);
   expect(first.state).toBe("ready");
-  // The second cut's take was replaced since the pass staged it. Approved, it goes back to Scarlet at once, and the
+  // The second cut's take was replaced since the pass staged it. Approved, it goes back to AirWaves at once, and the
   // first call stands.
   const second = await choose([{ index: 0, choice: "cut" }, { index: 1, choice: "cut" }]);
   expect(second.state).toBe("revising");
@@ -6880,7 +6880,7 @@ it("keeps a pass's own later save from changing footage under a cut that waits f
   expect(refused.status).toBe(400);
   expect((await refused.json()).error).toMatchObject({ code: "same_note", message: expect.stringContaining("Cuts 0, 1") });
   expect(ctx.repos.changes.get(staged.id)!.cutAssessments).toBeUndefined();
-  // A note of its own on each goes in, and so does the same verdict in the same words on cuts Scarlet settles itself.
+  // A note of its own on each goes in, and so does the same verdict in the same words on cuts AirWaves settles itself.
   expect((await api("POST", `/changes/${staged.id}/cut-assessments`, { ...versions, assessments: [
     { index: 0, start: 12, end: 13, verdict: "ask", reason: "Repeats “this letter”; the cut ends inside “now”." },
     { index: 1, start: 30, end: 32, verdict: "ask", reason: "Restarts the description; no quiet point before “it”." }] })).status).toBe(200);
@@ -7096,7 +7096,7 @@ it("works on two calls of one pass at once and lands both revisions, with a call
       if (next?.kind !== "learning_check") return next?.id ?? null;
     }
   };
-  // Scarlet starts on both calls at once. The new edit waits for the editor's calls, as it did.
+  // AirWaves starts on both calls at once. The new edit waits for the editor's calls, as it did.
   expect([await claim(), await claim(), await claim()]).toEqual([first.id, third.id, null]);
   expect(ctx.repos.tasks.get(captions.id)!.state).toBe("queued");
   // Each is told about the pass as it stands, which no revision has replaced yet.

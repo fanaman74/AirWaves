@@ -63,7 +63,7 @@ it("reads a claimed first dialogue pass's recordings ahead of its first scan cal
     // The second page is still being read when the pass asks.
     whisper.mockImplementationOnce(async () => result).mockImplementationOnce(async () => { await gate; return result; });
     const create = (context = {}) => createTask(ctx, { projectId: project.id, kind: "edit", agent: "api", instruction: "First cut",
-      state: "running", context: { dialogueOperation: "first-cut", ...context }, createdBy: { type: "scarlet", name: "Scarlet" } });
+      state: "running", context: { dialogueOperation: "first-cut", ...context }, createdBy: { type: "scarlet", name: "AirWaves" } });
 
     // A request about one cut, or one that isn't a dialogue pass, reads nothing ahead.
     for (const other of [create({ cutIndex: 0, changeId: "chg_x" }), create({ dialogueOperation: "none" })]) {

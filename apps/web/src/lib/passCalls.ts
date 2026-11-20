@@ -31,13 +31,13 @@ export function cutOnWorkingCut(cut: TimeRange, onto: { map: TimeMap; timeline: 
 export type CutChoice = "keep" | "cut";
 export const savedChoices = (change: Change): Record<number, CutChoice> =>
   Object.fromEntries((change.cutChoices ?? []).map(c => [c.index, c.choice]));
-/** A cut the editor can call now. Unchecked: staged while the pass runs, before Scarlet has looked at it again. */
+/** A cut the editor can call now. Unchecked: staged while the pass runs, before AirWaves has looked at it again. */
 export type Call = CutAssessment & { unchecked?: boolean };
 
 /**
- * The calls the editor can make now: the cuts Scarlet asked about. Once the pass's run is over, the staged cuts it never
+ * The calls the editor can make now: the cuts AirWaves asked about. Once the pass's run is over, the staged cuts it never
  * checked are the editor's calls too, whether it stopped early or finished without getting to them: nothing else will
- * check them, and Apply would put them in unseen (2026-11-10). While the pass runs they are still Scarlet's to check,
+ * check them, and Apply would put them in unseen (2026-11-10). While the pass runs they are still AirWaves's to check,
  * and it settles most of them itself, so they aren't calls yet: a call listed then would be gone again a moment later.
  * A requested revision keeps its earlier call on screen until the author finishes it.
  */
@@ -121,7 +121,7 @@ function editsBetween(from: string, to: string, changes: readonly Change[]): Cha
 
 /**
  * Where the footage of a cut of an earlier proposal sits on the version this pass starts from: earlier by the length of
- * every confident cut the parts since applied before it. Any other edit between the parts, such as Scarlet's crossfades
+ * every confident cut the parts since applied before it. Any other edit between the parts, such as AirWaves's crossfades
  * on the joins it made, is crossed as the engine crosses it: by the cut's footage, read on the timelines either side.
  * Undefined when a part applied that very footage, an edit since changed the length of the cut's footage, or the edit
  * moved on some other way.
@@ -284,7 +284,7 @@ export function revisedFrom(made: Change, task: Task, changes: readonly Change[]
 }
 
 /**
- * The revisions each call went through, by call, oldest first: what Scarlet proposed then and the note the editor sent back.
+ * The revisions each call went through, by call, oldest first: what AirWaves proposed then and the note the editor sent back.
  * A pass revised at one call is a new pass, so this walks back once through the requests that made it, whichever kind
  * of run each was.
  */
@@ -298,7 +298,7 @@ export function callRevisions(pass: Change, tasks: readonly Task[], changes: rea
     for (const index of indices) {
       const revisions = byCall.get(index) ?? [];
       const staged = previous && reviewReasons(previous, stagedCuts(previous).map(removed => ({ removed })))[index]?.join(" ");
-      // A recheck Scarlet asked for itself has no words of the editor's to show.
+      // A recheck AirWaves asked for itself has no words of the editor's to show.
       revisions.unshift({ note: isRecheck(task) ? undefined : requestText(task),
         reason: previous?.cutAssessments?.find(a => a.index === index)?.reason ?? (staged || undefined) });
       byCall.set(index, revisions);
@@ -318,13 +318,13 @@ export function revisionCut(task: Task) {
   return conflict?.changeId && conflict.index !== undefined ? { changeId: conflict.changeId, cutIndex: conflict.index } : task.context;
 }
 
-/** The revision Scarlet is running on a pass, if any: the editor can keep calling the pass's other cuts meanwhile. */
+/** The revision AirWaves is running on a pass, if any: the editor can keep calling the pass's other cuts meanwhile. */
 export function passRevision(change: Change, tasks: readonly Task[]) {
   if (change.state !== "revising" || change.intent !== "suggestion" || !change.cutReasons?.length) return undefined;
   return tasks.find(t => runIsActive(t) && (t.id === change.revisionFrom?.taskId || (t.kind === "revise" && revisionCut(t).changeId === change.id)));
 }
 
-/** A dialogue pass still waiting on the editor, including while Scarlet revises one of its cuts. */
+/** A dialogue pass still waiting on the editor, including while AirWaves revises one of its cuts. */
 export function isOpenPass(change: Change, tasks: readonly Task[]) {
   return isDialoguePass(change) || passRevision(change, tasks)?.context.cutIndex !== undefined;
 }

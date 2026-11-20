@@ -16,7 +16,7 @@ const versions = {
 };
 
 function parts(version: string) {
-  if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version)) throw new Error("Invalid Scarlet version.");
+  if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version)) throw new Error("Invalid AirWaves version.");
   return version.split(".").map(BigInt);
 }
 
@@ -29,7 +29,7 @@ function newer(left: string, right: string) {
 }
 
 function hasInstallers(release: Release, channel: ReleaseChannel, version: string) {
-  const name = (channel === "early-access" ? "Scarlet-Early-Access-" : "Scarlet-") + version + "-";
+  const name = (channel === "early-access" ? "AirWaves-Early-Access-" : "AirWaves-") + version + "-";
   const required = channel === "linux-preview" ? ["Ubuntu-24.04-amd64.deb"]
     : ["macOS-Apple-Silicon.dmg", "macOS-Intel.dmg", "Windows-x64-Setup.exe"];
   if (channel === "stable") required.push("Windows-x64.msi");
@@ -47,7 +47,7 @@ export async function publishedUpdate(channel: ReleaseChannel, installed: string
     const response = await fetch(stable ? api + "/latest" : api + "?per_page=100&page=" + page, {
       headers: { Accept: "application/vnd.github+json" }, credentials: "omit", signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) throw new Error("Couldn’t check Scarlet releases. Try again later.");
+    if (!response.ok) throw new Error("Couldn’t check AirWaves releases. Try again later.");
     const data = await response.json();
     const releases: Release[] = stable ? [data] : data;
     for (const release of releases) {

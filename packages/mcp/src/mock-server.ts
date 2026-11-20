@@ -1,5 +1,5 @@
 /**
- * Tiny in-process Scarlet API mock used by the MCP tests (and reusable by the
+ * Tiny in-process AirWaves API mock used by the MCP tests (and reusable by the
  * agent host tests). Implements only the routes the tools touch and records
  * operational requests and tool diagnostics separately so tests can assert on both.
  */

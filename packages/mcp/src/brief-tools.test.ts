@@ -32,7 +32,7 @@ describe("brief tools", () => {
       // Claude Code is shown every tool whole, as before.
       expect(full.map(t => t.name)).not.toContain("tool_help");
       expect(brief.map(t => t.name).sort()).toEqual([...full.map(t => t.name), "tool_help"].sort());
-      // agy dropped the largest of Scarlet's tools past about 60 KB of definitions (2026-11-19). A new tool that takes
+      // agy dropped the largest of AirWaves's tools past about 60 KB of definitions (2026-11-19). A new tool that takes
       // this past the bound needs a shorter first sentence or fewer parameters, or Gemini loses a tool.
       expect(JSON.stringify(brief).length).toBeLessThan(55_000);
       for (const tool of brief.filter(t => t.name !== "tool_help")) {
@@ -46,7 +46,7 @@ describe("brief tools", () => {
       expect(text).toContain(JSON.stringify(whole.inputSchema, null, 1));
       const unknown = await gemini.callTool({ name: "tool_help", arguments: { name: "timeline_delete" } }) as CallToolResult;
       expect(unknown.isError).toBe(true);
-      expect((unknown.content[0] as { text: string }).text).toMatch(/^No Scarlet tool is named timeline_delete\. Its tools: .*timeline_propose/);
+      expect((unknown.content[0] as { text: string }).text).toMatch(/^No AirWaves tool is named timeline_delete\. Its tools: .*timeline_propose/);
     } finally {
       await Promise.all([gemini.close(), claude.close()]);
     }

@@ -6,7 +6,7 @@
  *   scarlet-engine mcp --server URL --token-file PATH --project ID [...]
  *
  * `serve` is the default when no subcommand is given (so `scarlet-server` keeps
- * working). Scarlet is single-user: there is no login, just an access token
+ * working). AirWaves is single-user: there is no login, just an access token
  * for the local user (kept in `<data>/access-token`). The desktop app uses
  * `--solo` to bind the API to loopback and receive the startup handshake:
  *
@@ -43,10 +43,10 @@ function parseArgs(argv: string[]) {
 const HELP = `scarlet-engine <command> [options]
 
   serve   [--port 4000] [--data ./data] [--solo]
-          Run the headless Scarlet engine (default command).
+          Run the headless AirWaves engine (default command).
           --solo   loopback only, print SCARLET_READY {...} when up (the desktop app).
   mcp     --server URL --token-file PATH --project ID [--task ID] [--agent X] [--model M] [--workdir DIR]
-          Run the Scarlet MCP server over stdio (what AI CLIs connect to).
+          Run the AirWaves MCP server over stdio (what AI CLIs connect to).
 
 Environment: SCARLET_PORT, SCARLET_DATA, SCARLET_SKILLS_SEED,
              SCARLET_HOST (bind address, default 127.0.0.1),
@@ -69,7 +69,7 @@ async function runServe(argv: string[]) {
     return;
   }
   if (args.web !== undefined) {
-    console.error("The engine serves the API only. Open the Scarlet desktop app to edit a project.");
+    console.error("The engine serves the API only. Open the AirWaves desktop app to edit a project.");
     process.exitCode = 2;
     return;
   }
@@ -122,7 +122,7 @@ async function runServe(argv: string[]) {
       return;
     }
     const settings = ctx.settings();
-    console.log(`Scarlet engine listening on ${hostname}:${info.port}`);
+    console.log(`AirWaves engine listening on ${hostname}:${info.port}`);
     console.log(`  data:          ${dataDir}`);
     console.log(`  transcription: ${settings.transcription.provider}`);
     console.log(`  note cleanup:  ${settings.noteCleanup.enabled ? "on" : "off"}`);

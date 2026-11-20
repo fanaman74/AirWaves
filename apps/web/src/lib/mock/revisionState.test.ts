@@ -118,7 +118,7 @@ it("preserves an explicit rejection during cancellation and can reopen the origi
   expect((await api.reopenChange("chg_ready")).change.state).toBe("ready");
 });
 
-it("keeps the words the app sends for the editor apart from what it asks of Scarlet, as the engine does", async () => {
+it("keeps the words the app sends for the editor apart from what it asks of AirWaves, as the engine does", async () => {
   const [{ changes }, { tasks }, { notes }] = await finish(Promise.all([api.changes(PRJ), api.tasks(PRJ), api.notes(PRJ)]));
   const threadId = buildThreads({ changes, tasks, notes }).find(t => t.changes.some(c => c.id === "chg_approved_2"))!.id;
   // Undo edit, pressed on an edit's card: the request reads "Undo", and the instruction says which edit to put back.

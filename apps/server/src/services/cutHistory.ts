@@ -58,7 +58,7 @@ export interface RejectedEdit {
  * every edit is rejected comes out whole, as History's Undo takes it out. Every other edit stays as it is.
  *
  * It is refused (`needs_scarlet`) where the engine can't tell what an edit changed, where a later edit changed it
- * since, or where the result doesn't play a cut's footage whole: the editor's × asks Scarlet then.
+ * since, or where the result doesn't play a cut's footage whole: the editor's × asks AirWaves then.
  */
 export function rejectEdits(ctx: Ctx, user: User, projectId: string, threadId: string, rejected: RejectedEdit[], expectedHead: string, branch: string) {
   return ctx.db.transaction(() => {

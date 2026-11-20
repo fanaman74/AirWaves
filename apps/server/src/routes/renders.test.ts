@@ -219,7 +219,7 @@ it("has no file to measure for a render that failed, and says so when a finished
   await settle();
   const unfinished = await read(`/renders/${failed.id}?inspectFile=true`);
   expect(unfinished.body.render).toMatchObject({ state: "failed",
-    error: "Scarlet couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it.", errorDetail: "ffmpeg exited with code 1" });
+    error: "AirWaves couldn’t render this part of the video: try once more, or export the logs from Settings → Advanced to report it.", errorDetail: "ffmpeg exited with code 1" });
   expect(unfinished.body).not.toHaveProperty("fileInfo");
 
   fails = false;

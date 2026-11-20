@@ -94,7 +94,7 @@ it("tells an engine that can't start from one still starting or starting again",
   fixture.engineStatus.mockResolvedValue({ state: "starting", url: null, error: "engine exited with code 1" });
   await open();
   expect(useAuthStore.getState()).toMatchObject({ status: "offline", failed: false });
-  fixture.engineStatus.mockResolvedValue({ state: "error", url: null, error: "Could not prepare the Scarlet workspace" });
+  fixture.engineStatus.mockResolvedValue({ state: "error", url: null, error: "Could not prepare the AirWaves workspace" });
   await open();
   expect(useAuthStore.getState().failed).toBe(true);
   fixture.engineStatus.mockResolvedValue(engine);

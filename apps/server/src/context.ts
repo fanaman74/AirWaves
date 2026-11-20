@@ -88,7 +88,7 @@ export function engineIsAlive(ctx: Pick<Ctx, "db" | "track" | "log">, pid: numbe
   const note = ctx.db.prepare("SELECT started_at FROM engines WHERE pid = ?").get(pid) as { started_at: number } | undefined;
   if (!note) return true;
   // An engine that began before the computer did is gone, whatever has its id now. This is known at once and on
-  // every system, so a restart or a power cut never leaves an import or an export held for a program that isn't Scarlet.
+  // every system, so a restart or a power cut never leaves an import or an export held for a program that isn't AirWaves.
   if (note.started_at < Date.now() - os.uptime() * 1000 - BOOT_MARGIN_MS) {
     startChecks.delete(pid);
     return false;
@@ -173,7 +173,7 @@ export interface Ctx {
   /** Stops when the project goes to Trash or the engine quits. For work the editor or a running edit asked for. */
   projectSignal(projectId: string): AbortSignal;
   /**
-   * Stops with those and when the project's media work is paused. For the work Scarlet does unasked, such as caching
+   * Stops with those and when the project's media work is paused. For the work AirWaves does unasked, such as caching
    * and reading new files. A read a running edit asks for is not that work, and uses `projectSignal`. A transcription
    * does too: the pause holds it only while no request is under way (`holdTranscriptions`).
    */
@@ -192,7 +192,7 @@ export interface Ctx {
   whisperModel: LocalWhisperModel;
   speakers: RecordingSpeakers;
   spotChecks: AnalysisCache<Array<number | null> | null>;
-  /** A review selection's saved draft, and the crossfade Scarlet put on its joins. */
+  /** A review selection's saved draft, and the crossfade AirWaves put on its joins. */
   reviewDrafts: Map<string, { version: string; joinFades?: JoinFades }>;
   projectWorkPending(projectId: string): boolean;
   /** Track work for shutdown and, when it belongs to a project, for storage cleanup. */
@@ -314,7 +314,7 @@ export function createContext(options: ServerOptions): Omit<Ctx, "renders"> {
       }
     },
   };
-  // Runs Scarlet couldn't price show their cost once a fetched list has it.
+  // Runs AirWaves couldn't price show their cost once a fetched list has it.
   prices.onUpdate = () => {
     const recent = db.prepare(`SELECT task_id, project_id FROM task_usage GROUP BY task_id ORDER BY max(at) DESC LIMIT 200`)
       .all() as { task_id: string; project_id: string }[];

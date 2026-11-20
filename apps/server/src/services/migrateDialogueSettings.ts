@@ -53,7 +53,7 @@ export function migrateDialogueSettings(ctx: Ctx) {
     preservePendingSuggestions(ctx, legacy.aiCuts);
     const lines = editorialPreferences(legacy);
     const guides = ctx.repos.skills.select(`name = 'dialogue-pass' OR json_extract(json, '$.bundledName') IN ('first-cut-dialogue', 'dialogue-pass')`);
-    // Scarlet used to add the default two-frame crossfade at every join by itself, and no longer does: a join is a
+    // AirWaves used to add the default two-frame crossfade at every join by itself, and no longer does: a join is a
     // straight cut unless a skill asks for a crossfade. An editor's own guide that says nothing about crossfades would
     // lose the one they had, so it is written into that guide. The stock guide states its own.
     const frames = legacy.crossfadeFrames;
@@ -77,7 +77,7 @@ export function migrateDialogueSettings(ctx: Ctx) {
       const preferences = lines.map(line => `- ${line}`).join("\n");
       let name = "dialogue-preferences";
       for (let n = 2; ctx.repos.skills.select("name = ?", [name]).length; n++) name = `dialogue-preferences-${n}`;
-      const description = "Preferences saved for dialogue cuts in an earlier version of Scarlet.";
+      const description = "Preferences saved for dialogue cuts in an earlier version of AirWaves.";
       const content = `---\nname: ${name}\ndescription: ${description}\n---\n\n# Dialogue preferences\n\n${preferences}\n`;
       createSkill(ctx, null, { name, content, description, scope: "team", enabled: false }, { source: "dialogue-settings" });
     }

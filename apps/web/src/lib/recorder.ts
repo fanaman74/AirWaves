@@ -156,7 +156,7 @@ export function useRecorder(onResult: (r: RecorderResult) => void) {
       const name = err instanceof DOMException ? err.name : "";
       appLog("error", "microphone", { when: "starting", name: name || (err instanceof Error ? err.name : "unknown") }, { level: "warn" });
       if (name === "NotAllowedError" || name === "SecurityError") {
-        setError("Microphone access was denied. Allow the microphone for Scarlet and try again.");
+        setError("Microphone access was denied. Allow the microphone for AirWaves and try again.");
         setState("denied");
       } else if (name === "NotFoundError") {
         setError("No microphone found.");

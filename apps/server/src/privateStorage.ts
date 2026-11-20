@@ -9,15 +9,15 @@ $pending.Push([System.IO.DirectoryInfo]::new($env:SCARLET_PRIVATE_PATH))
 while ($pending.Count) {
   foreach ($entry in $pending.Pop().EnumerateFileSystemInfos()) {
     if ($entry.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-      throw 'The Scarlet library contains a linked item. Move it outside the library or choose an empty directory for --data.'
+      throw 'The AirWaves library contains a linked item. Move it outside the library or choose an empty directory for --data.'
     }
     $security=$entry.GetAccessControl([System.Security.AccessControl.AccessControlSections]'Access,Owner')
     if ($security.GetOwner([System.Security.Principal.SecurityIdentifier]) -ne $id) {
-      throw 'A Scarlet library item belongs to another account. Use an owner-only library or choose an empty directory for --data.'
+      throw 'A AirWaves library item belongs to another account. Use an owner-only library or choose an empty directory for --data.'
     }
     foreach ($rule in $security.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier])) {
       if ($rule.AccessControlType -eq 'Allow' -and $rule.IdentityReference -ne $id) {
-        throw 'The Scarlet library still grants access to another account. Restrict its existing files to your account or choose an empty directory for --data.'
+        throw 'The AirWaves library still grants access to another account. Restrict its existing files to your account or choose an empty directory for --data.'
       }
     }
     if ($entry -is [System.IO.DirectoryInfo]) { $pending.Push($entry) }

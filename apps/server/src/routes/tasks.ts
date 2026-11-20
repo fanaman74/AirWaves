@@ -54,8 +54,8 @@ export function taskRoutes(ctx: Ctx) {
     const body = await jsonBody(c, CreateTaskRequest);
     if (body.kind === "skill_from_change") throw badRequest("use_skill_from_change", "Create this task from an approved change with /skills/from-change");
     if (body.kind === "skill_edit") throw badRequest("use_skill_edit", "Ask for a change to a skill with /skills/:skillId/edit");
-    if (body.kind === "learning_check") throw badRequest("not_a_request", "Scarlet starts this check itself, with each request.");
-    if (body.kind === "area_check") throw badRequest("not_a_request", "Scarlet starts this check itself, when a save needs it.");
+    if (body.kind === "learning_check") throw badRequest("not_a_request", "AirWaves starts this check itself, with each request.");
+    if (body.kind === "area_check") throw badRequest("not_a_request", "AirWaves starts this check itself, when a save needs it.");
     const { mediaId, version } = body.context ?? {};
     if (mediaId && !ctx.db.prepare("SELECT 1 FROM media WHERE id = ? AND project_id = ?").get(mediaId, project.id)) {
       throw badRequest("unknown_media", "The selected footage does not belong to this project.");
@@ -94,7 +94,7 @@ export function taskRoutes(ctx: Ctx) {
         context: { ...(body.context ?? {}), attachments, ...(threadId || aboutCut ? { message: said, asked: said === body.instruction ? undefined : body.instruction } : {}) },
         createdBy: actorFor(user),
       });
-      // A pass set to apply when Scarlet finishes waits for a call the editor sends back, instead of applying over it.
+      // A pass set to apply when AirWaves finishes waits for a call the editor sends back, instead of applying over it.
       if (changeId && cutIndex !== undefined) callSentBack(ctx, task);
       logActivity(ctx, {
         projectId: project.id,
@@ -149,7 +149,7 @@ export function taskRoutes(ctx: Ctx) {
     return c.json(ctx.db.transaction(() => {
       const task = requireTask(c.req.param("taskId"));
       if (c.req.query("queuedOnly") === "1" && !FINISHED_TASK.has(task.state) && (task.state !== "queued" || task.startedAt || (task.resumeRootId && !task.resumesAfterProjectStop))) {
-        throw conflict("already_started", "Scarlet has already started on this request.");
+        throw conflict("already_started", "AirWaves has already started on this request.");
       }
       return { task: cancelTask(ctx, task) };
     }, "immediate")());
@@ -268,7 +268,7 @@ export function taskRoutes(ctx: Ctx) {
     const count = (sql: string) => (ctx.db.prepare(sql).get() as { n: number }).n;
     const live = "project_id IN (SELECT id FROM projects WHERE deleted_at IS NULL)";
     const requests = `kind IN ${PROJECT_EDIT_KINDS} AND project_id IN (SELECT id FROM projects WHERE deleted_at IS NULL AND editing_paused = 0)`;
-    // Quitting stops a skill Scarlet writes or revises too, and it carries on at the next launch as a request does.
+    // Quitting stops a skill AirWaves writes or revises too, and it carries on at the next launch as a request does.
     // A learning check isn't run again, and the request it reads is counted already.
     const runs = `kind IN ('edit','note','revise','skill_edit','skill_from_change') AND ${live}`;
     // A request held for Continue, an answer or calls will wait for the editor after a quit too.

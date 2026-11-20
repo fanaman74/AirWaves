@@ -113,7 +113,7 @@ it("prepares the following cuts while the agent reads, and hands each over once"
   expect(sheets.some(s => s.from >= 398)).toBe(true);
   const before = sheets.length;
   const result = await inspect({ index: 3 });
-  // A held cut carries what Scarlet measured, what its join plays and what keeping it plays; a cut that wasn't held has none.
+  // A held cut carries what AirWaves measured, what its join plays and what keeping it plays; a cut that wasn't held has none.
   expect(texts(result).find(t => "firstPass" in t)).toMatchObject({ index: 3, start: 400, end: 405, firstPass: ["Restart"], held: HELD });
   expect(texts(await inspect({ index: 0 })).find(t => "firstPass" in t)).not.toHaveProperty("held");
   expect(sheets.slice(before).filter(s => s.from >= 398)).toEqual([]);

@@ -33,7 +33,7 @@ const lastKey = "scarlet.lastProject";
 const placeKey = "scarlet.lastPlace";
 const openingKey = "scarlet.lastProject.opening";
 
-/** The project on screen, so Scarlet reopens it after a quit. Null once the editor goes back to the library. */
+/** The project on screen, so AirWaves reopens it after a quit. Null once the editor goes back to the library. */
 export function rememberProject(id: string | null) {
   try {
     if (id) localStorage.setItem(lastKey, id);
@@ -67,7 +67,7 @@ function lastPlace(id: string) {
 }
 
 /**
- * Open the project that was on screen when Scarlet last closed. A project that didn't finish opening last
+ * Open the project that was on screen when AirWaves last closed. A project that didn't finish opening last
  * time isn't tried again, so one that can't open never keeps the editor out of the library.
  */
 export function restoreLastProject() {

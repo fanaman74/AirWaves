@@ -2,7 +2,7 @@
  * Stretches where nobody speaks. A pause is a quiet interior, measured by level and voice activity,
  * so typing, a breath or a cough splits one long wait into slivers and the pause list hides it.
  * A silence here is only the absence of words, with what sounds and what the picture does reported
- * beside it. Scarlet reports; the model decides.
+ * beside it. AirWaves reports; the model decides.
  */
 import { clipDuration, rangesOverlap, timelineToSource, type MediaAsset, type MediaClip, type TimeRange, type Timeline, type Transcript, type TranscriptWord } from "@scarlet/timeline";
 import type { PictureActivityWindow } from "@scarlet/shared";

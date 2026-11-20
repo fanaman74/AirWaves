@@ -382,11 +382,11 @@ const MIGRATIONS: string[] = [
    );
    CREATE UNIQUE INDEX task_usage_run ON task_usage(task_id, run_started_at);
    CREATE INDEX task_usage_project ON task_usage(project_id, at);`,
-  // Skills Scarlet comes with are ordinary skills. One the editor had edited becomes their own; nothing merges into it again.
+  // Skills AirWaves comes with are ordinary skills. One the editor had edited becomes their own; nothing merges into it again.
   `UPDATE skills SET json = json_remove(json, '$.source') WHERE json_extract(json, '$.source') IN ('seed', 'bundled')
      AND json_extract(json, '$.stockBase') IS NOT json_extract(json, '$.content');
    UPDATE skills SET json = json_remove(json, '$.stockBase', '$.stockUpdate');`,
-  // Rules Scarlet picked up from the editor's requests, waiting for them to approve or decline.
+  // Rules AirWaves picked up from the editor's requests, waiting for them to approve or decline.
   `CREATE TABLE learnings (
      id TEXT PRIMARY KEY,
      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -400,7 +400,7 @@ const MIGRATIONS: string[] = [
   "CREATE TABLE engines (pid INTEGER PRIMARY KEY, started_at REAL NOT NULL);",
   `CREATE UNIQUE INDEX IF NOT EXISTS media_import_request ON media(project_id, json_extract(json, '$.importId'))
      WHERE json_extract(json, '$.importId') IS NOT NULL;`,
-  // An older Scarlet can update this recording's transcript or status while it shares the library.
+  // An older AirWaves can update this recording's transcript or status while it shares the library.
   // It serializes the media fields it knows, so preserve the request that already imported this original.
   `CREATE TRIGGER IF NOT EXISTS media_keep_import_request AFTER UPDATE OF json ON media
      WHEN json_extract(OLD.json, '$.importId') IS NOT NULL AND json_extract(NEW.json, '$.importId') IS NULL
@@ -468,7 +468,7 @@ export function openDb(path: string): Db {
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
   migrate(db);
-  // These private in-flight results can coexist with a newer library schema used by another Scarlet build.
+  // These private in-flight results can coexist with a newer library schema used by another AirWaves build.
   db.exec(`CREATE TABLE IF NOT EXISTS transcription_work (
     media_id TEXT PRIMARY KEY REFERENCES media(id) ON DELETE CASCADE,
     task_id TEXT UNIQUE NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -610,7 +610,7 @@ function ensureReadIndexes(db: Db): void {
 /**
  * Lookups the engine makes as it starts and while it runs that would otherwise read every row of a growing table.
  * Installed by name, as the read indexes are. A partial index holds only the rows its query looks for: the repairs
- * that run as Scarlet starts find nothing to do without reading the edits and requests that were done with long ago.
+ * that run as AirWaves starts find nothing to do without reading the edits and requests that were done with long ago.
  */
 const LOOKUP_INDEXES = {
   changes_by_task: "ON changes(project_id, json_extract(json, '$.taskId'))",

@@ -3,6 +3,7 @@
  * browsers (uses global fetch). Used by the web UI, MCP server and agent host.
  */
 import type { EditReviewRequest } from "./telemetry.js";
+import type { ApiProviderId, ApiProviderModel, ApiProviderSecret, ApiProviderStatus, TestApiKeyResult, TestApiModelResult } from "./apiProviders.js";
 import type { z } from "zod/v3";
 import { requireSecureEngineUrl } from "./engineTransport.js";
 import type { TranscriptSearchResult } from "./transcriptSearch.js";
@@ -732,6 +733,31 @@ export class ScarletClient {
   /** Change the words of a request that is still waiting its turn. It keeps its place in the queue. */
   rewordTask(taskId: string, text: string, skillIds?: string[]) {
     return this.post<{ task: Task }>(`/tasks/${taskId}/reword`, { text, skillIds } satisfies RewordTaskRequest);
+  }
+
+  // AirWave AI providers (Settings → AI providers)
+  apiProviders() {
+    return this.get<{ providers: ApiProviderStatus[] }>("/providers");
+  }
+  /** Keys and models as an agent host needs them to run a request. */
+  apiProviderSecrets() {
+    return this.get<{ providers: ApiProviderSecret[] }>("/providers/secrets");
+  }
+  /** With no key, tests the saved one. */
+  testApiKey(provider: ApiProviderId, apiKey?: string) {
+    return this.post<TestApiKeyResult>(`/providers/${provider}/test-key`, { apiKey });
+  }
+  apiProviderModels(provider: ApiProviderId, apiKey?: string) {
+    return this.post<{ models: ApiProviderModel[] }>(`/providers/${provider}/models`, { apiKey });
+  }
+  testApiModel(provider: ApiProviderId, model: string, apiKey?: string) {
+    return this.post<TestApiModelResult>(`/providers/${provider}/test-model`, { apiKey, model });
+  }
+  saveApiProvider(provider: ApiProviderId, body: { apiKey?: string; model: string; modelLabel?: string; enabled?: boolean }) {
+    return this.request<{ provider: ApiProviderStatus }>("PUT", `/providers/${provider}`, body);
+  }
+  removeApiProvider(provider: ApiProviderId) {
+    return this.request<{ ok: true }>("DELETE", `/providers/${provider}`);
   }
 
   // Agent hosts

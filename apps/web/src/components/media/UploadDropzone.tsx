@@ -164,7 +164,7 @@ export function enqueueImports(projectId: string, sources: ImportSource[], match
 }
 
 /**
- * Carry on with the imports that were waiting or copying when Scarlet last closed. A file being copied that reached the
+ * Carry on with the imports that were waiting or copying when AirWaves last closed. A file being copied that reached the
  * project just before the quit isn't added twice. A new project's first files still give it its format, so they
  * wait, still saved, until it is on screen to show whether it is still new.
  */

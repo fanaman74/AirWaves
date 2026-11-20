@@ -64,7 +64,7 @@ it("never follows a bookmark that leads off the app or to something that isn't a
   }
 });
 
-it("reopens the project that was on screen when Scarlet last closed, and the library after the editor went back to it", () => {
+it("reopens the project that was on screen when AirWaves last closed, and the library after the editor went back to it", () => {
   rememberProject("prj_1");
   restoreLastProject();
   expect(here()).toBe("/p/prj_1");
@@ -96,7 +96,7 @@ it("reopens the project where the editor was in it: the time, the speed and what
     rememberPlace();
     expect(write).toHaveBeenCalledTimes(1);
     write.mockRestore();
-    // Scarlet closed without a word, and opens there.
+    // AirWaves closed without a word, and opens there.
     at("/");
     restoreLastProject();
     expect(here()).toBe("/p/prj_1?t=760&speed=1.5");

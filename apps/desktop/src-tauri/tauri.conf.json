@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Scarlet",
+  "productName": "AirWaves",
   "version": "0.1.4",
   "identifier": "com.forwardfuture.scarlet",
   "build": {
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Scarlet",
+        "title": "AirWaves",
         "width": 1440,
         "height": 900,
         "minWidth": 1100,

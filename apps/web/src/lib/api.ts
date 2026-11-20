@@ -8,6 +8,12 @@ import type { ScarletClient } from "@scarlet/shared";
 export type ScarletApi = Pick<
   ScarletClient,
   | "token"
+  | "apiProviders"
+  | "testApiKey"
+  | "apiProviderModels"
+  | "testApiModel"
+  | "saveApiProvider"
+  | "removeApiProvider"
   | "url"
   | "fileUrl"
   | "wsUrl"

@@ -134,7 +134,7 @@ it("transcribes with the GPU build first, and on the CPU build once it has finis
     await whisper.transcribeWav("a.wav", dir);
     expect(binaries).toEqual(["gpu/whisper-cli.exe", "gpu/whisper-cli.exe", "whisper-cli", "whisper-cli"]);
     // The failure is logged when it happens, and the switch once the CPU build has finished the run.
-    expect(logs).toEqual([expect.stringContaining("device lost"), expect.stringContaining("until Scarlet restarts")]);
+    expect(logs).toEqual([expect.stringContaining("device lost"), expect.stringContaining("until AirWaves restarts")]);
     // A cancelled run is not a GPU failure: nothing is logged against the GPU build, and the next run starts on it.
     const cancelled = new AbortController();
     cancelled.abort(new Error("stopped"));
@@ -206,7 +206,7 @@ it("keeps the GPU build in use when the CPU build can't finish the transcription
     expect(binaries.at(-1)).toBe("gpu4/whisper-cli.exe");
     // Each GPU failure is logged with its error, and nothing says the GPU build was given up.
     expect(logs).toEqual([expect.stringContaining("gpu4/whisper-cli.exe exited with code 11"), expect.stringContaining("device lost")]);
-    expect(logs.join(" ")).not.toContain("until Scarlet restarts");
+    expect(logs.join(" ")).not.toContain("until AirWaves restarts");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

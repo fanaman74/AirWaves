@@ -110,7 +110,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
     setRevealError("");
     // The file is named once, in the system's Save dialog, which also picks its folder and asks before replacing a
     // file. It opens on the project's name.
-    const stem = project.name.replace(/[\\/:*?"<>|]+/g, " ").trim() || "Scarlet";
+    const stem = project.name.replace(/[\\/:*?"<>|]+/g, " ").trim() || "AirWaves";
     const name = format === "folder" ? stem : `${stem}.${format}`;
     void exportFile(current, { format, name, video, ...(captions && exportTrackId ? { trackId: exportTrackId } : {}) });
   };
@@ -194,7 +194,7 @@ function ExportForm({ current, hasCut, onClose }: { current: ProjectData; hasCut
 
 const SHOWN_LOSSES = 4;
 
-/** What the folder holds and what another app won't show as Scarlet does. */
+/** What the folder holds and what another app won't show as AirWaves does. */
 function HandoffSummary({ summary }: { summary?: { bytes?: number; files: number; captions: boolean; losses: Array<{ at?: number; what: string }> } }) {
   if (!summary) return null;
   const { losses } = summary;

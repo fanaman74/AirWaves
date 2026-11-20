@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { openDb } from "../db.js";
 import { createRepos } from "./index.js";
 
-it("reads an Off saved before as the engine Scarlet ships with, since transcription can't be turned off", () => {
+it("reads an Off saved before as the engine AirWaves ships with, since transcription can't be turned off", () => {
   const repos = createRepos(openDb(":memory:"), "whispercpp");
   repos.settings.update({ transcription: { provider: "none" } });
   expect(repos.settings.get().transcription.provider).toBe("whispercpp");

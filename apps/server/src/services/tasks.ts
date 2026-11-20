@@ -120,7 +120,7 @@ export function createTask(
   },
 ): Task {
   // "api" names the engine's own jobs, such as transcription. No host claims an editor's request for it.
-  if (input.agent === "api" && input.createdBy.type === "human") throw badRequest("agent_unavailable", "Choose Claude, Codex or Gemini to run this request.");
+  if (input.agent === "api" && input.createdBy.type === "human") throw badRequest("agent_unavailable", "Choose Claude, Codex, Gemini or a saved AI provider to run this request.");
   const id = newId("tsk");
   const selected = input.context?.cutIndex !== undefined && input.context.changeId ? ctx.repos.changes.get(input.context.changeId) : undefined;
   const task = ctx.repos.tasks.put({
@@ -211,7 +211,7 @@ export function appendTaskEvent(ctx: Ctx, task: Task, ev: TaskEvent): { task: Ta
   if (FINISHED_TASK.has(task.state)) throw conflict("task_finished", `task is already ${task.state}`);
   if (ev.type === "answer" && task.state !== "waiting_for_user") throw conflict("no_question", "task is not waiting for an answer");
   if (ev.type === "plan") {
-    // The agent's own plan, as its harness reported it. Scarlet keeps the steps and their states, and says them as text.
+    // The agent's own plan, as its harness reported it. AirWaves keeps the steps and their states, and says them as text.
     const plan = TaskPlan.safeParse(ev.data);
     if (!plan.success) throw badRequest("invalid_plan", "a plan event carries data.steps, each with text and a state of pending, in_progress or done");
     // A harness repeats its plan, as Codex does when a turn ends. Only a change is recorded.
@@ -243,7 +243,7 @@ export function appendTaskEvent(ctx: Ctx, task: Task, ev: TaskEvent): { task: Ta
     const id = ev.data.changeId;
     if (!next.changeIds.includes(id)) next = { ...next, changeIds: [...next.changeIds, id] };
   } else if (ev.type === "log" && ev.data?.kind === "init" && typeof ev.data.sessionId === "string" && ev.data.sessionId && RESUMABLE.has(task.agent)) {
-    // The CLI session this run works in. A run cut short when Scarlet quits carries on in it.
+    // The CLI session this run works in. A run cut short when AirWaves quits carries on in it.
     if (next.session?.id !== ev.data.sessionId) next = { ...next, session: { agent: task.agent, id: ev.data.sessionId } };
   }
   if (next !== task) next = saveTask(ctx, next);
@@ -298,7 +298,7 @@ export function completeTask(ctx: Ctx, task: Task, body: CompleteTaskRequest): T
       ctx.db.afterCommit(() => ctx.log(`[task] completion_deferred task=${logId(task.id)} project=${logId(task.projectId)} outcome=waiting_for_user reason=cut_changed`));
       return asked;
     }
-    body = { state: "failed", error: "Scarlet could not finish the cut using your answer. Your answer is saved." };
+    body = { state: "failed", error: "AirWaves could not finish the cut using your answer. Your answer is saved." };
   }
   if (task.kind === "skill_from_change" && body.state === "done" && !task.resultSkillId) {
     body = { state: "failed", error: "The requested skill was not saved. Request it again from the approved change." };
@@ -365,7 +365,7 @@ export function completeTask(ctx: Ctx, task: Task, body: CompleteTaskRequest): T
     if (c.state === "ready") return [`“${c.description.replace(/[.!?]$/, "")}” is pending review.`];
     return [];
   }).join(" ") : body.summary ?? task.summary;
-  // The receipt takes a pass's summary, so what Scarlet said as it finished is kept beside it, for the editor.
+  // The receipt takes a pass's summary, so what AirWaves said as it finished is kept beside it, for the editor.
   const reply = dialogue ? task.reply ?? (body.summary?.trim() || undefined) : task.reply;
   // The run finished without transcripts it waited for. What it saved stands, and the editor can resume it once they're ready.
   const needsTranscripts = body.state === "done" && task.kind !== "transcribe" ? unmetTranscriptWaits(ctx, task.id) : [];
@@ -394,7 +394,7 @@ export function completeTask(ctx: Ctx, task: Task, body: CompleteTaskRequest): T
     if (needsTranscripts.length) ctx.log(`[task] completion_deferred task=${logId(task.id)} project=${logId(task.projectId)} outcome=awaiting_transcripts reason=transcripts remaining=${needsTranscripts.length}`);
   });
   const asked = saved.context.message ?? saved.instruction.split("\n").pop() ?? saved.instruction;
-  // A learning check is Scarlet's own reading of a request. What it offers is in Learnings; the run itself is no one's news.
+  // A learning check is AirWaves's own reading of a request. What it offers is in Learnings; the run itself is no one's news.
   if (!isLearningCheck(saved)) logActivity(ctx, {
     projectId: isSkillEdit(saved) ? null : saved.projectId,
     actor: { type: "agent", id: saved.agent, name: saved.agent, model: saved.model },
@@ -441,14 +441,14 @@ export function cancelTask(ctx: Ctx, task: Task): Task {
 }
 
 /**
- * CLIs whose sessions Scarlet resumes after an answer or a quit. A Codex run keeps its thread in a private Codex home
+ * CLIs whose sessions AirWaves resumes after an answer or a quit. A Codex run keeps its thread in a private Codex home
  * beside its task folder, out of the user's own Codex thread list. Started afresh, a pass resumed after a quit spent
  * 120 more turns and 13.7M tokens finding its place again (2026-11-18).
  */
 export const RESUMABLE = new Set<string>(["claude", "codex"]);
 
-/** What a run hears when it carries on in its own CLI session after Scarlet closed on it. */
-const INTERRUPTED = "Scarlet closed while you were working on this request, and it is open again. Carry on from where you stopped. " +
+/** What a run hears when it carries on in its own CLI session after AirWaves closed on it. */
+const INTERRUPTED = "AirWaves closed while you were working on this request, and it is open again. Carry on from where you stopped. " +
   "What you saved is kept. Read the current project and change states first: the editor may have decided some of it since.";
 
 /** Pair each `question` event with the `answer` that followed it. */
@@ -499,7 +499,7 @@ export function taskPrompt(ctx: Ctx, task: Task, opts: { workDir?: string; fresh
   const interrupted = !last && !!task.resumeRootId;
   const resumeSession = !opts.fresh && (answered || interrupted) && task.session?.agent === task.agent && RESUMABLE.has(task.agent) ? task.session.id : undefined;
   // The run is launched with its harness's to-do tool, and asked to lay out its steps, when the harness has one and the
-  // chat will show the plan. A dialogue pass shows the stages Scarlet measures and a request about one staged cut its
+  // chat will show the plan. A dialogue pass shows the stages AirWaves measures and a request about one staged cut its
   // own two, and a skill edit changes no video: none is given the tool or asked, so each runs exactly as it did.
   const plans = task.kind !== "skill_from_change" && !isAsideTask(task) && !taskRunKind(task)
     && agentCapabilities(task.agent, (ctx.options.env ?? process.env).SCARLET_AGENT_CAPS).plan;
@@ -586,7 +586,7 @@ export function followUpInstruction(ctx: Ctx, projectId: string, threadId: strin
 }
 
 /**
- * What Scarlet told the editor about the one staged cut a request is about, as a revision sent from that cut's card
+ * What AirWaves told the editor about the one staged cut a request is about, as a revision sent from that cut's card
  * says it: why it was proposed and how it was assessed. A call can be sent back this way while its pass still runs.
  * Empty when the request isn't about one.
  */
@@ -602,12 +602,12 @@ const REWORDING_HOLD_MS = 90_000;
 
 /**
  * Only a request that hasn't begun can have its words changed: a run that started has already read them. And only one
- * the editor asked: a request Scarlet made itself, such as a redo of a change that no longer fits, is told more than
+ * the editor asked: a request AirWaves made itself, such as a redo of a change that no longer fits, is told more than
  * the few words shown for it.
  */
 function stillWaiting(task: Task): void {
-  if (task.state !== "queued" || task.startedAt || task.resumeRootId) throw conflict("already_started", "Scarlet has already started on this request.");
-  if (task.createdBy.type !== "human") throw conflict("not_yours", "This request is Scarlet’s own, so its words can’t be changed.");
+  if (task.state !== "queued" || task.startedAt || task.resumeRootId) throw conflict("already_started", "AirWaves has already started on this request.");
+  if (task.createdBy.type !== "human") throw conflict("not_yours", "This request is AirWaves’s own, so its words can’t be changed.");
 }
 
 /** Hold a queued request while the editor changes its words, or let it go. The requests behind it keep waiting for it. */
@@ -624,11 +624,11 @@ export function holdForRewording(ctx: Ctx, task: Task, on: boolean): Task {
 
 /**
  * Start a queued request without waiting for the editor's calls on a dialogue pass. It is the editor's word that the
- * request can run beside those calls, so it takes its turn like any request no pass holds back: after what Scarlet is
+ * request can run beside those calls, so it takes its turn like any request no pass holds back: after what AirWaves is
  * on and what is ahead of it in line.
  */
 export function startBeforeCalls(ctx: Ctx, user: User, task: Task): Task {
-  if (task.state !== "queued") throw conflict("already_started", "Scarlet has already started on this request.");
+  if (task.state !== "queued") throw conflict("already_started", "AirWaves has already started on this request.");
   if (task.startsBeforeCalls) return task;
   const saved = saveTask(ctx, { ...task, startsBeforeCalls: true });
   logActivity(ctx, { projectId: task.projectId, actor: actorFor(user), type: "request.started_early",

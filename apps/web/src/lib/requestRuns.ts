@@ -13,18 +13,18 @@ export function lastAttempt(task: Task | undefined, tasks: readonly Task[]) {
 }
 
 /**
- * A request the editor took out of the queue before Scarlet began it. Nothing ran, so there is nothing to show or
+ * A request the editor took out of the queue before AirWaves began it. Nothing ran, so there is nothing to show or
  * resume: it isn't in the conversation, and the timeline never takes it for the latest request. A run picked up again
  * and then taken out keeps its card, which says it stopped.
  */
 export const takenFromQueue = (task: Task) => task.state === "cancelled" && !task.startedAt && !task.resumeRootId;
 /** The attempts made by Retry or Resume on an earlier one. Such an attempt belongs to that request, whatever became of it. */
 export const laterAttempts = (tasks: readonly Task[]) => new Set(tasks.flatMap(t => t.retryTaskId ? [t.retryTaskId] : []));
-/** The attempt that made the suggestion a redo of Scarlet's makes again. The redo carries that request on. */
+/** The attempt that made the suggestion a redo of AirWaves's makes again. The redo carries that request on. */
 const redoOf = (redo: Task, tasks: readonly Task[]) => isRedo(redo) && redo.context.changeId
   ? tasks.find(t => t.id !== redo.id && t.changeIds.includes(redo.context.changeId!)) : undefined;
 /**
- * What Scarlet's redo of a suggestion waits under in the tray: the words of the request it carries on, or the
+ * What AirWaves's redo of a suggestion waits under in the tray: the words of the request it carries on, or the
  * suggestion's own when no request made it. Never the engine's name for the task ("Redo on the current edit").
  */
 export function redoWords(redo: Task, tasks: readonly Task[], changes: readonly Change[]) {
@@ -35,8 +35,8 @@ export function redoWords(redo: Task, tasks: readonly Task[], changes: readonly 
 /**
  * The request each attempt belongs to, by its first attempt. A run picked up after an interruption names it. One tried
  * again from the start doesn't, so it is found through the attempt whose Retry made it: the request keeps its one
- * block, instead of leaving the failed block behind and starting a second. Scarlet's own redo of a suggestion is found
- * through the attempt that made the suggestion, once Scarlet has started on it: the request goes back to work under
+ * block, instead of leaving the failed block behind and starting a second. AirWaves's own redo of a suggestion is found
+ * through the attempt that made the suggestion, once AirWaves has started on it: the request goes back to work under
  * its own heading, as it does on Retry. Until then the redo waits its turn in the tray, as every request does.
  */
 export function requestRoots(tasks: readonly Task[]) {
@@ -56,8 +56,8 @@ export function requestRoots(tasks: readonly Task[]) {
   };
 }
 /**
- * A request that hasn't begun: it waits in the tray. One Scarlet already began and that is in line again, after the
- * editor answered its question or Scarlet reopened, has its place in the conversation and keeps it.
+ * A request that hasn't begun: it waits in the tray. One AirWaves already began and that is in line again, after the
+ * editor answered its question or AirWaves reopened, has its place in the conversation and keeps it.
  */
 export const waitingToStart = (task: Task) => task.state === "queued" && !task.startedAt;
 /** The notes without what those requests said: a revision's words are saved as a note, which would stay as a message with nothing under it. */
@@ -97,11 +97,11 @@ export function threadRuns(thread: Thread): Run[] {
   return all.filter(run => run.attempts.some(t => !waitingToStart(t)));
 }
 
-/** Scarlet's closing words on a change it applied, which draw with the request they answer. */
+/** AirWaves's closing words on a change it applied, which draw with the request they answer. */
 export const closingReply = (entry: ThreadEntry): entry is Extract<ThreadEntry, { kind: "agent" }> => entry.kind === "agent" && !entry.taskId && !!entry.replyTo;
 const namesOne = (task: Task) => task.context.cutIndex !== undefined || task.context.editIndex !== undefined;
 /**
- * The attempt that says which cut or edit a request is about. Scarlet's redo of what the request suggested names
+ * The attempt that says which cut or edit a request is about. AirWaves's redo of what the request suggested names
  * neither, so it is the latest of the request's own attempts that does.
  */
 export const aimOf = (run: Run) => run.attempts.findLast(namesOne) ?? run.task;

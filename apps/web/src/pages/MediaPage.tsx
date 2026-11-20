@@ -162,7 +162,7 @@ export function MediaPage({ uploads, onPlay }: {
                 {/* A file with no audio track has nothing to transcribe. */}
                 {(m.kind === "video" || m.kind === "audio") && m.hasAudio !== false && <TranscriptLine asset={m} available={transcriptionAvailable} cloud={local === false} />}
               </div>
-              {/* A file Scarlet couldn't read ends in a small ×, named on hover, that asks before taking it out of the project. */}
+              {/* A file AirWaves couldn't read ends in a small ×, named on hover, that asks before taking it out of the project. */}
               {m.status === "failed" && <button type="button" className="edit-card-icon media-remove" aria-label={`Remove ${m.name}`} title="Remove"
                 onClick={() => setRemoval(m)}><Icon name="x" size={12} /></button>}
             </li>
@@ -172,7 +172,7 @@ export function MediaPage({ uploads, onPlay }: {
       <ImportUrlModal projectId={projectId} open={importOpen} notice={notice} onClose={() => setImportOpen(false)} />
       {/* The project's copy is deleted with it, so it asks first, as every press that deletes does. The dialog says why the engine wouldn't. */}
       {removal && <ConfirmDialog open danger onClose={() => setRemoval(null)} title={`Remove “${removal.name}”?`} confirmLabel="Remove"
-        body="Scarlet deletes the project's copy of this file. This cannot be undone."
+        body="AirWaves deletes the project's copy of this file. This cannot be undone."
         onConfirm={() => useProjectStore.getState().removeMedia(removal.id)} />}
     </>
   );

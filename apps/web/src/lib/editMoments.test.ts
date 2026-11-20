@@ -17,7 +17,7 @@ describe("listMoments", () => {
     expect(moments[2]).toMatchObject({ key: "chg_pass/3", start: 30, end: 33 });
   });
 
-  it("names a moment for the cut Scarlet described, between two as large", () => {
+  it("names a moment for the cut AirWaves described, between two as large", () => {
     const moments = listMoments([{ ...cut(0, 37, 1.4), label: "Cut" }, { ...cut(1, 37, 1.4), label: "Keep the response close to the cube movement." }]);
     expect(moments.map(m => m.main.spot)).toEqual([1]);
   });

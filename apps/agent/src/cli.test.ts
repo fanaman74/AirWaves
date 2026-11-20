@@ -220,7 +220,7 @@ describe("scarlet-agent", { timeout: 30_000 }, () => {
       const { out, err } = output();
       const launch = vi.spyOn(runners, "runAgent");
       await main(["run", "--project", "prj_test", "Make", "the first cut"]);
-      expect(out()).toEqual(["[log] Claude Code session started; Scarlet MCP connected", "[result] Proposed chg_1.", "\nOK\nProposed chg_1."]);
+      expect(out()).toEqual(["[log] Claude Code session started; AirWaves MCP connected", "[result] Proposed chg_1.", "\nOK\nProposed chg_1."]);
       expect(err()).toEqual([]);
       expect(process.exitCode).toBe(0);
       expect(server.requests.map((r) => `${r.method} ${r.path}`)).toEqual(["GET /projects/prj_test", "GET /skills"]);

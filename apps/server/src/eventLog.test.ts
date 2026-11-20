@@ -104,7 +104,7 @@ it("logs an edit, a render and the working edit only when their state changes", 
   publish({ type: "render.updated", projectId: "prj_1", render: { ...render, state: "failed", error: "ffmpeg exited with code 1" } });
   expect(said).toEqual([
     '[edit] chg_1 ready in prj_1, v1 → v2, from tsk_1, 1 place',
-    '[edit] chg_1 ready → approved (applied by Scarlet) in prj_1, v1 → v3, from tsk_1, 1 place',
+    '[edit] chg_1 ready → approved (applied by AirWaves) in prj_1, v1 → v3, from tsk_1, 1 place',
     "[project] prj_1 working edit v1 → v3",
     expect.stringMatching(/^\[render\] rnd_1 failed after \d+ms: playback preview 4\.00–8\.00 s of v3 in prj_1: ffmpeg exited with code 1$/),
   ]);

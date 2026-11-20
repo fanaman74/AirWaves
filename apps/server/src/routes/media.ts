@@ -182,7 +182,7 @@ export function mediaRoutes(ctx: Ctx) {
   });
 
   /**
-   * Take a file Scarlet couldn't read out of the project. A file it read stays for now: it may be caching or
+   * Take a file AirWaves couldn't read out of the project. A file it read stays for now: it may be caching or
    * transcribing, and its caches can serve another copy of the same recording.
    */
   r.delete("/projects/:id/media/:mediaId", async (c) => {
@@ -220,8 +220,8 @@ export function mediaRoutes(ctx: Ctx) {
     if (!getTranscriptionProvider(ctx)) {
       const provider = ctx.settings().transcription.provider;
       throw conflict("transcription_unavailable", provider === "none"
-        ? "Transcription isn't available in this build of Scarlet. Waveform analysis is still available."
-        : `The selected transcription provider (${provider}) is missing its configuration in Scarlet Settings.`);
+        ? "Transcription isn't available in this build of AirWaves. Waveform analysis is still available."
+        : `The selected transcription provider (${provider}) is missing its configuration in AirWaves Settings.`);
     }
     const { task, done } = startTranscription(ctx, project.id, media, undefined, "interrupt", "missing");
     if (task.state === "done") return c.json({ state: "ready" });
@@ -363,7 +363,7 @@ export function mediaRoutes(ctx: Ctx) {
     const t = numberParam(c.req.query("t"), "t", 0);
     const w = Math.min(3840, Math.max(16, numberParam(c.req.query("w"), "w", 640)));
     const file = join(ctx.paths.media(media.projectId), media.path);
-    // A recording moved or deleted outside Scarlet is asked for with every scrub.
+    // A recording moved or deleted outside AirWaves is asked for with every scrub.
     const source = await stat(file).catch(() => null);
     if (!source) throw notFound("source file");
     const preview = c.req.query("preview") === "1";

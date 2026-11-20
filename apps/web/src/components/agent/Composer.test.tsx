@@ -132,11 +132,11 @@ it.each([
   }));
 });
 
-it("names Scarlet, not a browser, where the window can’t record", async () => {
+it("names AirWaves, not a browser, where the window can’t record", async () => {
   // This test window has no recorder, as a webview without one.
   await show();
-  const micButton = container.querySelector<HTMLButtonElement>('button[aria-label="Talk to Scarlet"]')!;
-  expect([micButton.disabled, micButton.title]).toEqual([true, "Scarlet can’t record audio on this computer"]);
+  const micButton = container.querySelector<HTMLButtonElement>('button[aria-label="Talk to AirWaves"]')!;
+  expect([micButton.disabled, micButton.title]).toEqual([true, "AirWaves can’t record audio on this computer"]);
 });
 
 it("allows Shift+Enter for a new line and sends the multiline request with Enter", async () => {
@@ -814,7 +814,7 @@ it("tells the page once a message has gone out, and not when sending fails", asy
   await type("Tighten the opening");
   await submit();
   expect(onSent).toHaveBeenCalledTimes(1);
-  // A revision of the proposal that's waiting, then an answer to Scarlet's question.
+  // A revision of the proposal that's waiting, then an answer to AirWaves's question.
   const threads = buildThreads(current);
   await show({ thread: threads.find(t => t.needs === "decision")!, onSent });
   await type("Keep the pause");
@@ -1004,7 +1004,7 @@ it("puts a spoken message that couldn't be sent back with the request it was sai
   await act(async () => useUiStore.getState().openDraft(PRJ, thread.id));
   await show({ thread });
   await act(async () => { micProps.onStart?.(); micProps.onResult({ blob: new Blob(["voice"]), seconds: 1, mimeType: "audio/mp4" }); });
-  // While it is written down the editor turns the box to Scarlet's question in another request.
+  // While it is written down the editor turns the box to AirWaves's question in another request.
   await act(async () => useUiStore.getState().openDraft(PRJ, "asking"));
   await act(async () => heard({ text: "Keep the last word" }));
   expect(useUiStore.getState().agentDraft).toBe("");
@@ -1150,7 +1150,7 @@ it("keeps a picked moment, and a whole-video choice, through a time typed in the
   }));
 });
 
-it("answers Scarlet's question with a stretch marked on the ruler beside it, still tagged Answer", async () => {
+it("answers AirWaves's question with a stretch marked on the ruler beside it, still tagged Answer", async () => {
   const asking = buildThreads(current).find(t => t.question)!;
   await act(async () => useUiStore.getState().setAgentContext({ time: 42, end: 51.5, clipIds: [], markedRange: { start: 42, end: 51.5 } }));
   await show({ thread: asking, targetTag: "Answer" });
@@ -1206,7 +1206,7 @@ it("changes a queued request's words in the box, across its whole width, saving 
   await type("Keep the aside, trim the breath.");
   expect(rewording.onChange).toHaveBeenLastCalledWith("Keep the aside, trim the breath.");
   expect(useUiStore.getState().agentDraft).toBe("Tighten every pause");
-  // Sending saves them. Nothing new is sent to Scarlet.
+  // Sending saves them. Nothing new is sent to AirWaves.
   const save = container.querySelector<HTMLButtonElement>(".composer-send")!;
   expect(save.title).toBe("Save the new words");
   await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
@@ -1220,9 +1220,9 @@ it("changes a queued request's words in the box, across its whole width, saving 
   await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
   expect(rewording.onCancel).toHaveBeenCalledTimes(1);
   // A save that fails says why under the box.
-  rewording.onSave.mockRejectedValueOnce(new Error("Scarlet has already started on this request."));
+  rewording.onSave.mockRejectedValueOnce(new Error("AirWaves has already started on this request."));
   await submit();
-  expect(container.querySelector(".composer-dock")?.textContent).toContain("Scarlet has already started on this request.");
+  expect(container.querySelector(".composer-dock")?.textContent).toContain("AirWaves has already started on this request.");
 });
 
 it("saves a queued request's new words with the skills their /commands name, as a send does", async () => {

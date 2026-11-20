@@ -10,7 +10,7 @@ import { cacheLabel, cachePercent, useSourceCaches } from "./sourceCaches";
 import { useMediaProcessing } from "./useMediaProcessing";
 
 /**
- * What's wrong with the project's media, in a few words, or nothing. A file Scarlet couldn't read or a transcription
+ * What's wrong with the project's media, in a few words, or nothing. A file AirWaves couldn't read or a transcription
  * that stopped is explained only in Media, so the header's Media button is marked until it's dealt with.
  * A transcription the pause stopped isn't one: it starts again on resume. A file that failed to import never became
  * the project's, so only Media's list of imports says why: `importFailed` marks the button for it the same way.
